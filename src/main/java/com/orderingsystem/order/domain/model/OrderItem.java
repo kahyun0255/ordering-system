@@ -47,7 +47,9 @@ public class OrderItem {
     @AttributeOverride(name = "amount", column = @Column(name = "subTotal"))
     private Money subTotal;
 
+    @Column(columnDefinition = "varchar(36)")
     private UUID productId;
+
     private Integer quantity;
 
     @Transient
@@ -69,7 +71,7 @@ public class OrderItem {
 
     void initializeOrderItem(Order order, Long orderItemId) {
         this.order=order;
-        this.id = orderItemId;
+//        this.id = orderItemId;
     }
 
     boolean isPriceValid() {

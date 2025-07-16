@@ -10,7 +10,8 @@ import lombok.Getter;
 public class OrderApproval {
 
     private final UUID orderApprovalId;
-    private final RestaurantId restaurantId;
+    private final UUID restaurantId;
+    private final UUID productId;
     private final UUID orderId;
     private final OrderApprovalStatus approvalStatus;
 

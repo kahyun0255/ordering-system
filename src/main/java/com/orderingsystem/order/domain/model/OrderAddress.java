@@ -1,6 +1,7 @@
 package com.orderingsystem.order.domain.model;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -24,6 +25,7 @@ import lombok.Setter;
 public class OrderAddress {
 
     @Id
+    @Column(columnDefinition = "varchar(36)")
     private UUID id;
 
     @OneToOne(cascade = CascadeType.ALL)

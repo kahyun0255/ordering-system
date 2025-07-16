@@ -34,10 +34,16 @@ import lombok.Setter;
 public class Order extends AggregateRoot {
 
     @Id
+    @Column(columnDefinition = "varchar(36)")
     private UUID id;
 
+    @Column(columnDefinition = "varchar(36)")
     private UUID customerId;
+
+    @Column(columnDefinition = "varchar(36)")
     private UUID restaurantId;
+
+    @Column(columnDefinition = "varchar(36)")
     private UUID trackingId;
 
     @Embedded
@@ -118,7 +124,7 @@ public class Order extends AggregateRoot {
     private void validateItemPrice(OrderItem orderItem) {
         if (!orderItem.isPriceValid()) {
             throw new OrderDomainException("상품: " + orderItem.getProduct().getProductId() +
-                    "의 항목 가격 : " + orderItem.getProduct().getPrice() + "이 유효하지 않습니다.");
+                    "의 항목 가격 : " + orderItem.getProduct().getPrice().getAmount() + "이 유효하지 않습니다.");
         }
     }
 

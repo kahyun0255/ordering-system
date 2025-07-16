@@ -1,6 +1,7 @@
 package com.orderingsystem.restaurant.domain.model;
 
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -23,6 +24,7 @@ import lombok.Setter;
 public class OrderApprovalEntity {
 
     @Id
+    @Column(columnDefinition = "varchar(36)")
     private UUID id;
 
     private UUID restaurantId;

@@ -4,8 +4,8 @@ import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.math.BigDecimal;
@@ -18,28 +18,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
-@Table(name = "restaurant_restaurant")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Restaurant extends AggregateRoot {
+public class RestaurantVO extends AggregateRoot {
 
-    @EmbeddedId
-    private RestaurantId restaurantId;
-
+    private UUID restaurantId;
+    private UUID productId;
     private String restaurantName;
-    private boolean restaurantActive;
+    private Boolean restaurantActive;
     private String productName;
     private BigDecimal productPrice;
-    private boolean productAvailable;
-
-    @Transient
+    private Boolean productAvailable;
     private OrderApproval orderApproval;
-
-    @Transient
     private OrderDetail orderDetail;
 
     public void validateOrder(List<String> failureMessages) {
@@ -63,6 +56,7 @@ public class Restaurant extends AggregateRoot {
         this.orderApproval=OrderApproval.builder()
                 .orderApprovalId(UUID.randomUUID())
                 .restaurantId(this.getRestaurantId())
+                .productId(this.getProductId())
                 .orderId(this.orderDetail.getOrderId())
                 .approvalStatus(orderApprovalStatus)
                 .build();
@@ -77,12 +71,13 @@ public class Restaurant extends AggregateRoot {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Restaurant that = (Restaurant) o;
-        return Objects.equals(restaurantId, that.restaurantId);
+        RestaurantVO that = (RestaurantVO) o;
+        return Objects.equals(restaurantId, that.restaurantId) && Objects.equals(productId,
+                that.productId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(restaurantId);
+        return Objects.hash(restaurantId, productId);
     }
 }

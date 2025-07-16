@@ -19,6 +19,10 @@ public class Product {
         this.price = price;
     }
 
+    public Product(UUID productId) {
+        this.productId = productId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {

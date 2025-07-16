@@ -1,30 +1,31 @@
-package com.orderingsystem.order.domain.model;
+package com.orderingsystem.restaurant.domain.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity(name = "orders_customers")
-@Table(name = "orders_customers")
+@Entity
+@Table(name = "restaurant_restaurant_products")
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor
-public class Customer {
+public class RestaurantProduct {
 
     @Id
     @Column(columnDefinition = "varchar(36)")
     private UUID id;
-    private String name;
+    @Column(columnDefinition = "varchar(36)")
+    private UUID restaurantId;
+    @Column(columnDefinition = "varchar(36)")
+    private UUID productId;
 
 }
