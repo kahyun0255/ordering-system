@@ -1,12 +1,10 @@
 package com.orderingsystem.restaurant.domain.model;
 
-import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,21 +13,21 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name="restaurant_order_approval")
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-@Setter
+@Table(name = "restaurant_restaurants")
 @Getter
-public class OrderApprovalEntity {
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Restaurant {
 
     @Id
     @Column(columnDefinition = "varchar(36)")
-    private UUID id;
-
     private UUID restaurantId;
-    private UUID orderId;
+    private String name;
+    private Boolean active;
 
-    @Enumerated(EnumType.STRING)
-    private OrderApprovalStatus status;
+    @Transient
+    private OrderDetail orderDetail;
+
 }

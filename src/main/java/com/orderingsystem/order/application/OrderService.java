@@ -1,6 +1,5 @@
 package com.orderingsystem.order.application;
 
-import com.orderingsystem.common.saga.EmptyEvent;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.publisher.OrderCreatedPaymentRequestMessagePublisher;

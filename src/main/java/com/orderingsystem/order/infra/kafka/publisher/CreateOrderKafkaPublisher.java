@@ -30,7 +30,8 @@ public class CreateOrderKafkaPublisher implements OrderCreatedPaymentRequestMess
         log.info("OrderCreatedEvent 수신. Order Id :{}", orderId);
 
         try {
-            PaymentRequestMessage paymentRequestMessage = orderMessagingDataMapper.toPaymentRequestMessage(domainEvent);
+            PaymentRequestMessage paymentRequestMessage =
+                    orderMessagingDataMapper.orderCreateEventToPaymentRequestMessage(domainEvent);
             String requestMessage = objectMapper.writeValueAsString(paymentRequestMessage);
 
             kafkaProducer.send(orderMessageConfigData.getPaymentRequestTopicName(),

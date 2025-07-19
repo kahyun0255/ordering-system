@@ -11,6 +11,7 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
@@ -59,7 +60,7 @@ public class Order extends AggregateRoot {
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
     private OrderAddress address;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<OrderItem> items;
 
     @Override
@@ -171,7 +172,6 @@ public class Order extends AggregateRoot {
             this.failureMessages = null;
         } else {
             this.failureMessages = String.join(",", messages);
-            System.out.println(this.failureMessages);
         }
     }
 

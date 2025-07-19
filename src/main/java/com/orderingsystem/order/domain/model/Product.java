@@ -4,10 +4,12 @@ import com.orderingsystem.common.domain.Money;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
+@Builder
 public class Product {
 
     private UUID productId;

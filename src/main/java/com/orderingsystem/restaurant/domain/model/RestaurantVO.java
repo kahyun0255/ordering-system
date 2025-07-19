@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,7 +27,9 @@ public class RestaurantVO extends AggregateRoot {
     private String productName;
     private BigDecimal productPrice;
     private Boolean productAvailable;
+    @Setter
     private OrderApproval orderApproval;
+    @Setter
     private OrderDetail orderDetail;
 
     public void validateOrder(List<String> failureMessages) {
@@ -50,11 +51,10 @@ public class RestaurantVO extends AggregateRoot {
 
     public void constructOrderApproval(OrderApprovalStatus orderApprovalStatus) {
         this.orderApproval=OrderApproval.builder()
-                .orderApprovalId(UUID.randomUUID())
+                .id(UUID.randomUUID())
                 .restaurantId(this.getRestaurantId())
-                .productId(this.getProductId())
                 .orderId(this.orderDetail.getOrderId())
-                .approvalStatus(orderApprovalStatus)
+                .status(orderApprovalStatus)
                 .build();
     }
 

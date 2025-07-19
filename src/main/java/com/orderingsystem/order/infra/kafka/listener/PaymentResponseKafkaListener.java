@@ -2,7 +2,6 @@ package com.orderingsystem.order.infra.kafka.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.infrastructure.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.OrderService;
