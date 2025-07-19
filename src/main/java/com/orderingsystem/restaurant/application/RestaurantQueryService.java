@@ -1,8 +1,7 @@
 package com.orderingsystem.restaurant.application;
 
-import com.orderingsystem.order.application.exception.OrderApplicationException;
-import com.orderingsystem.order.domain.model.Product;
-import com.orderingsystem.order.domain.model.Restaurant;
+import com.orderingsystem.restaurant.application.dto.RestaurantDTO;
+import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
 import com.orderingsystem.restaurant.application.dto.response.ProductInfoResponse;
 import com.orderingsystem.restaurant.application.dto.response.RestaurantInfoResponse;
@@ -27,7 +26,7 @@ public class RestaurantQueryService {
             throw new RestaurantApplicationException("레스토랑 정보를 찾을 수 없습니다.");
         }
 
-        Restaurant restaurant = restaurantEntityToRestaurant(restaurantInfo);
+        RestaurantDTO restaurant = restaurantEntityToRestaurant(restaurantInfo);
 
         return RestaurantInfoResponse.builder()
                 .restaurantId(restaurant.getRestaurantId())
@@ -40,17 +39,19 @@ public class RestaurantQueryService {
                 .build();
     }
 
-    private Restaurant restaurantEntityToRestaurant(List<RestaurantInfoView> restaurantInfo) {
+    private RestaurantDTO restaurantEntityToRestaurant(List<RestaurantInfoView> restaurantInfo) {
         RestaurantInfoView restaurantEntity = restaurantInfo.stream().findFirst()
-                .orElseThrow(() -> new OrderApplicationException("레스토랑을 찾을 수 없습니다."));
+                .orElseThrow(() -> new RestaurantApplicationException("레스토랑을 찾을 수 없습니다."));
 
-        List<Product> restaurantProducts = restaurantInfo.stream().map(entity ->
-                        new Product(entity.getProductId(),
-                                entity.getProductName(),
-                                entity.getProductPrice()))
+        List<Product> restaurantProducts = restaurantInfo.stream().map(restaurant ->
+                        Product.builder()
+                                .productId(restaurant.getProductId())
+                                .name(restaurant.getProductName())
+                                .price(restaurant.getProductPrice())
+                                .build())
                 .toList();
 
-        return Restaurant.builder()
+        return RestaurantDTO.builder()
                 .restaurantId(restaurantEntity.getRestaurantId())
                 .products(restaurantProducts)
                 .active(restaurantEntity.getRestaurantActive())
