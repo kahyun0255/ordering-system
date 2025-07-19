@@ -53,6 +53,7 @@ public class Order extends AggregateRoot {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
+    @Column(columnDefinition = "TEXT")
     private String failureMessages;
 
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
@@ -170,6 +171,7 @@ public class Order extends AggregateRoot {
             this.failureMessages = null;
         } else {
             this.failureMessages = String.join(",", messages);
+            System.out.println(this.failureMessages);
         }
     }
 

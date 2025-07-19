@@ -45,6 +45,9 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
                 if (PaymentStatus.COMPLETED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                     log.info("결제 완료. order Id : {}", paymentResponseMessage.getOrderId());
                     orderService.completePayment(paymentResponseMessage.toPaymentResponse());
+                } if (PaymentStatus.FAILED.name().equals(paymentResponseMessage.getPaymentStatus())){
+                    log.info("결제 실패. order Id : {}", paymentResponseMessage.getOrderId());
+                    orderService.paymentCancelled(paymentResponseMessage.toPaymentResponse());
                 }
 
             } catch (JsonProcessingException e) {

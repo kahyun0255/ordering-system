@@ -49,7 +49,7 @@ public class PaymentValidateAndInitiateService {
     private void validateCreditEntry(Payment payment, CreditEntry creditEntry, List<String> failureMessages) {
         if (payment.getPrice().isGreaterThan(creditEntry.getTotalCreditAmount())) {
             log.error("고객의 크레딧이 결제 금액보다 부족합니다. Customer Id : {}", payment.getCustomerId());
-            failureMessages.add("고객의 크레딧이 결제 금액보다 부족합니다. Customer Id : " + payment.getCustomerId());
+            failureMessages.add("고객의 크레딧이 결제 금액보다 부족합니다.");
         }
     }
 
@@ -75,14 +75,12 @@ public class PaymentValidateAndInitiateService {
         if (totalDebitHistory.isGreaterThan(totalCreditHistory)) {
             log.error("Credit History 기준으로 크레딧이 부족합니다.(총 사용액이 총 충전액보다 큽니다.). Customer Id : {}",
                     creditEntry.getCustomerId());
-            failureMessages.add("Credit History 기준으로 크레딧이 부족합니다.(총 사용액이 총 충전액보다 큽니다.). "
-                    + "Customer Id : {}" + creditEntry.getCustomerId());
+            failureMessages.add("Credit History 기준으로 크레딧이 부족합니다.");
         }
 
         if (!creditEntry.getTotalCreditAmount().equals(totalCreditHistory.subtract(totalDebitHistory))) {
             log.error("Credit History 이력 총합이 현재 크레딧과 일치하지 않습니다. Customer Id : {}", creditEntry.getCustomerId());
-            failureMessages.add("Credit History 이력 총합이 현재 크레딧과 일치하지 않습니다. Customer Id : {}"
-                    + creditEntry.getCustomerId());
+            failureMessages.add("Credit History 이력 총합이 현재 크레딧과 일치하지 않습니다.");
         }
     }
 

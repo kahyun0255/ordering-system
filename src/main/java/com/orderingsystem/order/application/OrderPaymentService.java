@@ -38,6 +38,18 @@ public class OrderPaymentService implements SagaStep<PaymentResponse, OrderPaidE
         return domainEvent;
     }
 
+    @Override
+    public EmptyEvent rollback(PaymentResponse paymentResponse) {
+        log.info("해당 주문의 주문 취소를 시작합니다. Order Id : {}", paymentResponse.getOrderId());
+
+        Order order = findOrder(paymentResponse.getOrderId());
+        order.cancel(paymentResponse.getFailureMessages());
+        orderRepository.save(order);
+
+        log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", paymentResponse.getOrderId());
+        return EmptyEvent.INSTANCE;
+    }
+
     private Order findOrder(UUID orderId) {
         Optional<Order> order = orderRepository.findById(orderId);
 
@@ -46,10 +58,5 @@ public class OrderPaymentService implements SagaStep<PaymentResponse, OrderPaidE
             throw new OrderNotFoundException("주문을 찾을 수 없습니다. Order Id : " + orderId);
         }
         return order.get();
-    }
-
-    @Override
-    public EmptyEvent rollback(PaymentResponse paymentResponse) {
-        return null;
     }
 }

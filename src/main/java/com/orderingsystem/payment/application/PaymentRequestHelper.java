@@ -36,7 +36,7 @@ public class PaymentRequestHelper {
 
     @Transactional
     public PaymentEvent persistPayment(PaymentRequest paymentRequest) {
-        log.info("결제 완료 이벤트 수신. Order Id : {}", paymentRequest.getOrderId());
+        log.info("결제 이벤트 수신. Order Id : {}", paymentRequest.getOrderId());
 
         Payment payment = paymentRequest.toPayment();
 

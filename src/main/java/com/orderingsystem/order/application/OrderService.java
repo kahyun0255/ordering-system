@@ -1,5 +1,6 @@
 package com.orderingsystem.order.application;
 
+import com.orderingsystem.common.saga.EmptyEvent;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.publisher.OrderCreatedPaymentRequestMessagePublisher;
@@ -33,5 +34,11 @@ public class OrderService {
         OrderPaidEvent orderPaidEvent = orderPaymentService.process(paymentResponse);
         log.info("OrderPaidEvent 발행. order Id : {}", orderPaidEvent.getOrder().getId());
         orderPaidEvent.fire();
+    }
+
+    public void paymentCancelled(PaymentResponse paymentResponse) {
+        orderPaymentService.rollback(paymentResponse);
+        log.info("주문 rollback. Order Id : {}, failureMassages : {} ",
+                paymentResponse.getOrderId(), String.join(",", paymentResponse.getFailureMessages()));
     }
 }
