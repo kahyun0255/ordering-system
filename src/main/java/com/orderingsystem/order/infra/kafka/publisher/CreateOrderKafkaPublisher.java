@@ -37,15 +37,13 @@ public class CreateOrderKafkaPublisher implements OrderCreatedPaymentRequestMess
                     orderId,
                     requestMessage,
                     kafkaMessageHelper.getKafkaCallback(
-                            orderMessageConfigData.getPaymentResponseTopicName(),
+                            orderMessageConfigData.getPaymentRequestTopicName(),
                             requestMessage,
-                            orderId,
-                            "PaymentRequestMessage"
+                            orderId
                     ));
             log.info("PaymentRequestMessage를 Kafka로 전송했습니다. order id : {}", paymentRequestMessage.getOrderId());
         } catch (JsonProcessingException e) {
-            log.error("PaymentRequestMessage Json 파싱에 실패했습니다.");
-            throw new RuntimeException(e);
+            log.error("PaymentRequestMessage Json 파싱에 실패했습니다. error : {}", e.getMessage());
         } catch (Exception e) {
             log.error("PaymentRequestMessage 전송에 실패했습니다. order id : {}, error : {}", orderId, e.getMessage());
         }

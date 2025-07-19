@@ -1,11 +1,12 @@
-package com.orderingsystem.payment.infra.kafka.listener;
+package com.orderingsystem.order.infra.kafka.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
+import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.infrastructure.kafka.KafkaConsumer;
-import com.orderingsystem.payment.application.PaymentService;
-import com.orderingsystem.payment.infra.kafka.message.PaymentRequestMessage;
+import com.orderingsystem.order.application.OrderService;
+import com.orderingsystem.order.infra.kafka.message.PaymentResponseMessage;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,13 +19,14 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class PaymentRequestKafkaListener implements KafkaConsumer<String> {
+public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final PaymentService paymentService;
+    private final OrderService orderService;
 
     @Override
-    @KafkaListener(id = "${kafka-consumer-config.payment-consumer-group-id}", topics = "${payment-topic.payment-request-topic-name}")
+    @KafkaListener(id = "${kafka-consumer-config.payment-response-consumer-group-id}",
+            topics = "${order-topic.payment-response-topic-name}")
     public void receive(@Payload List<String> messages,
                         @Header(KafkaHeaders.RECEIVED_KEY) List<String> keys,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) List<Integer> partitions,
@@ -35,14 +37,14 @@ public class PaymentRequestKafkaListener implements KafkaConsumer<String> {
 
         messages.forEach(message -> {
             try {
-                PaymentRequestMessage paymentRequestMessage = objectMapper.readValue(message,
-                        PaymentRequestMessage.class);
-                log.info("결제 요청 수신. Order Id : {}, PaymentStatus: {}", paymentRequestMessage.getOrderId(),
-                        paymentRequestMessage.getPaymentOrderStatus());
+                PaymentResponseMessage paymentResponseMessage =
+                        objectMapper.readValue(message, PaymentResponseMessage.class);
+                log.info("결제 응답 수신. Order Id : {}, PaymentStatus: {}", paymentResponseMessage.getOrderId(),
+                        paymentResponseMessage.getPaymentStatus());
 
-                if (PaymentOrderStatus.PENDING.equals(paymentRequestMessage.getPaymentOrderStatus())) {
-                    log.info("결제 진행. order Id : {}", paymentRequestMessage.getOrderId());
-                    paymentService.completePayment(paymentRequestMessage.toPaymentRequest());
+                if (PaymentStatus.COMPLETED.name().equals(paymentResponseMessage.getPaymentStatus())) {
+                    log.info("결제 완료. order Id : {}", paymentResponseMessage.getOrderId());
+                    orderService.completePayment(paymentResponseMessage.toPaymentResponse());
                 }
 
             } catch (JsonProcessingException e) {

@@ -1,0 +1,19 @@
+package com.orderingsystem.order.domain.service;
+
+import com.orderingsystem.common.domain.publisher.DomainEventPublisher;
+import com.orderingsystem.order.domain.event.OrderPaidEvent;
+import com.orderingsystem.order.domain.model.Order;
+import java.time.ZonedDateTime;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+public class PayOrderService {
+
+    public OrderPaidEvent payOrder(Order order, DomainEventPublisher<OrderPaidEvent> orderPaidEventPublisher){
+        order.pay();
+        log.info("주문 결제가 완료되었습니다. Order Id : {}", order.getId());
+        return new OrderPaidEvent(order, ZonedDateTime.now(), orderPaidEventPublisher);
+    }
+}
