@@ -5,10 +5,10 @@ import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.model.Order;
 import java.time.ZonedDateTime;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 @Slf4j
-@Service
+@Component
 public class PayOrderService {
 
     public OrderPaidEvent payOrder(Order order, DomainEventPublisher<OrderPaidEvent> orderPaidEventPublisher){

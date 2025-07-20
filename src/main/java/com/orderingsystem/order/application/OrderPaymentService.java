@@ -39,6 +39,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse, OrderPaidE
     }
 
     @Override
+    @Transactional
     public EmptyEvent rollback(PaymentResponse paymentResponse) {
         log.info("해당 주문의 주문 취소를 시작합니다. Order Id : {}", paymentResponse.getOrderId());
 
