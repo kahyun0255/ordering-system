@@ -3,10 +3,13 @@ package com.orderingsystem.order.application;
 import com.orderingsystem.common.saga.EmptyEvent;
 import com.orderingsystem.common.saga.SagaStep;
 import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
+import com.orderingsystem.order.application.publisher.OrderCancelledPaymentRequestMessagePublisher;
+import com.orderingsystem.order.application.publisher.OrderCreatedPaymentRequestMessagePublisher;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.repository.OrderRepository;
+import com.orderingsystem.restaurant.domain.service.OrderPaymentCancelService;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderApprovalService implements SagaStep<RestaurantApprovalResponse, EmptyEvent, OrderCancelledEvent> {
 
     private final OrderRepository orderRepository;
+    private final OrderPaymentCancelService orderPaymentCancelService;
+    private final OrderCancelledPaymentRequestMessagePublisher orderCancelledPaymentRequestMessagePublisher;
 
     @Override
     @Transactional
@@ -33,6 +38,20 @@ public class OrderApprovalService implements SagaStep<RestaurantApprovalResponse
         return EmptyEvent.INSTANCE;
     }
 
+    @Override
+    @Transactional
+    public OrderCancelledEvent rollback(RestaurantApprovalResponse restaurantApprovalResponse) {
+        log.info("주문 취소 처리 중. Order Id : {}", restaurantApprovalResponse.getOrderId());
+
+        Order order = findOrder(restaurantApprovalResponse.getOrderId());
+        OrderCancelledEvent orderCancelledEvent = orderPaymentCancelService.cancelOrderPayment(order,
+                restaurantApprovalResponse.getFailureMessages(),
+                orderCancelledPaymentRequestMessagePublisher);
+        log.info("레스토랑 승인 거절로 인해 주문 ID: {} 의 주문을 취소 처리합니다", order.getId());
+
+        return orderCancelledEvent;
+    }
+
     private Order findOrder(UUID orderId) {
         Optional<Order> order = orderRepository.findById(orderId);
 
@@ -41,10 +60,5 @@ public class OrderApprovalService implements SagaStep<RestaurantApprovalResponse
             throw new OrderNotFoundException("주문 정보를 찾을 수 없습니다. Order Id : " + orderId);
         }
         return order.get();
-    }
-
-    @Override
-    public OrderCancelledEvent rollback(RestaurantApprovalResponse restaurantApprovalResponse) {
-        return null;
     }
 }

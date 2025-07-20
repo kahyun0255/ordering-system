@@ -31,7 +31,7 @@ public class RestaurantApprovedKafkaPublisher implements OrderApprovedMessagePub
 
         try {
             RestaurantApprovalResponseMessage restaurantApprovalResponseMessage =
-                    restaurantMessagingDataMapper.orderApprovedEventToRestaurantApprovalResponseMessage(domainEvent);
+                    restaurantMessagingDataMapper.orderApprovalEventToRestaurantApprovalResponseMessage(domainEvent);
             String responseMessage = objectMapper.writeValueAsString(restaurantApprovalResponseMessage);
 
             kafkaProducer.send(restaurantMessageConfigData.getRestaurantApprovalResponseTopicName(),

@@ -43,8 +43,16 @@ public class OrderService {
                 paymentResponse.getOrderId(), String.join(",", paymentResponse.getFailureMessages()));
     }
 
-    public void orderApproved(RestaurantApprovalResponse restaurantApprovalResponse) {
+    public void orderApprove(RestaurantApprovalResponse restaurantApprovalResponse) {
         orderApprovalService.process(restaurantApprovalResponse);
         log.info("주문이 승인되었습니다. Order Id : {}", restaurantApprovalResponse.getOrderId());
+    }
+
+    public void orderReject(RestaurantApprovalResponse restaurantApprovalResponse) {
+        orderApprovalService.rollback(restaurantApprovalResponse);
+
+        log.info("레스토랑 승인 거절로 인해 주문 ID: {} 의 주문을 취소 처리했습니다. failureMessages : {}",
+                restaurantApprovalResponse.getOrderId(),
+                String.join(",", restaurantApprovalResponse.getFailureMessages()));
     }
 }
