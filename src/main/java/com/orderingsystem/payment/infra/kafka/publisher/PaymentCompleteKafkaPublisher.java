@@ -31,7 +31,7 @@ public class PaymentCompleteKafkaPublisher implements PaymentCompleteMessagePubl
 
         try {
             PaymentResponseMessage paymentResponseMessage =
-                    paymentMessageDataMapper.paymentCompletedEventToPaymentResponseMessage(domainEvent);
+                    paymentMessageDataMapper.paymentEventToPaymentResponseMessage(domainEvent);
             String responseMessage = objectMapper.writeValueAsString(paymentResponseMessage);
 
             kafkaProducer.send(paymentMessageConfigData.getPaymentResponseTopicName(),
@@ -42,10 +42,12 @@ public class PaymentCompleteKafkaPublisher implements PaymentCompleteMessagePubl
                             responseMessage,
                             orderId
                     ));
+
+            log.info("PaymentResponseMessage를 Kafka로 전송했습니다. Order Id : {}", orderId);
         } catch (JsonProcessingException e) {
-            log.error("PaymentRequestMessage Json 파싱에 실패했습니다. error : {}", e.getMessage());
+            log.error("PaymentResponseMessage Json 파싱에 실패했습니다. error : {}", e.getMessage());
         } catch (Exception e){
-            log.error("PaymentRequestMessage 전송에 실패했습니다. order id : {}, error : {}", orderId, e.getMessage());
+            log.error("PaymentResponseMessage 전송에 실패했습니다. order id : {}, error : {}", orderId, e.getMessage());
         }
     }
 }

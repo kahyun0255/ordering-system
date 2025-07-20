@@ -31,7 +31,7 @@ public class PaymentFailedKafkaPublisher implements PaymentFailedMessagePublishe
 
         try {
             PaymentResponseMessage paymentResponseMessage =
-                    paymentMessageDataMapper.paymentFailedEventToPaymentResponseMessage(domainEvent);
+                    paymentMessageDataMapper.paymentEventToPaymentResponseMessage(domainEvent);
             String responseMessage = objectMapper.writeValueAsString(paymentResponseMessage);
 
             kafkaProducer.send(paymentMessageConfigData.getPaymentResponseTopicName(),
@@ -42,6 +42,8 @@ public class PaymentFailedKafkaPublisher implements PaymentFailedMessagePublishe
                             responseMessage,
                             orderId
                     ));
+
+            log.info("PaymentResponseMessage를 Kafka로 전송했습니다. Order Id : {}", orderId);
         } catch (JsonProcessingException e) {
             log.error("PaymentRequestMessage Json 파싱에 실패했습니다. error : {}", e.getMessage());
         } catch (Exception e){
