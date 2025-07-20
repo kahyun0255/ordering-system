@@ -1,5 +1,6 @@
 package com.orderingsystem.payment.domain.model;
 
+import com.orderingsystem.common.domain.BaseEntity;
 import com.orderingsystem.common.domain.Money;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -25,7 +26,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Table(name = "payment_credit_entry")
 @Entity
-public class CreditEntry {
+public class CreditEntry extends BaseEntity {
 
     @Id
     private UUID id;
@@ -35,19 +36,19 @@ public class CreditEntry {
     @AttributeOverride(name = "amount", column = @Column(name = "totalCreditAmount"))
     private Money totalCreditAmount;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
+//    private LocalDateTime createdAt;
+//    private LocalDateTime updatedAt;
+//
+//    @PrePersist
+//    protected void onCreate() {
+//        this.createdAt = LocalDateTime.now();
+//        this.updatedAt = LocalDateTime.now();
+//    }
+//
+//    @PreUpdate
+//    protected void onUpdate() {
+//        this.updatedAt = LocalDateTime.now();
+//    }
 
     @Override
     public boolean equals(Object o) {

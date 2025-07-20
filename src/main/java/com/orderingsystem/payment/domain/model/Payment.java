@@ -43,11 +43,8 @@ public class Payment extends AggregateRoot {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
-    private ZonedDateTime createdAt;
-
     public void initializePayment() {
         id = UUID.randomUUID();
-        createdAt = ZonedDateTime.now();
     }
 
     public void validatePayment(List<String> failureMessages) {

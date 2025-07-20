@@ -1,5 +1,6 @@
 package com.orderingsystem.restaurant.domain.model;
 
+import com.orderingsystem.common.domain.BaseEntity;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,7 +22,7 @@ import lombok.Setter;
 @Builder
 @Setter
 @Getter
-public class OrderApproval {
+public class OrderApproval extends BaseEntity {
 
     @Id
     @Column(columnDefinition = "varchar(36)")

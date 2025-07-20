@@ -1,5 +1,6 @@
 package com.orderingsystem.order.domain.model;
 
+import com.orderingsystem.common.domain.BaseEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,7 +23,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderAddress {
+public class OrderAddress extends BaseEntity {
 
     @Id
     @Column(columnDefinition = "varchar(36)")

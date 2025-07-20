@@ -1,4 +1,4 @@
 package com.orderingsystem.common.domain;
 
-public abstract class AggregateRoot {
+public abstract class AggregateRoot extends BaseEntity {
 }
