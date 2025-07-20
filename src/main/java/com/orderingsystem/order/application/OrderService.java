@@ -6,6 +6,7 @@ import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.publisher.OrderCreatedPaymentRequestMessagePublisher;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
+import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import lombok.RequiredArgsConstructor;
@@ -49,10 +50,12 @@ public class OrderService {
     }
 
     public void orderReject(RestaurantApprovalResponse restaurantApprovalResponse) {
-        orderApprovalService.rollback(restaurantApprovalResponse);
+        OrderCancelledEvent orderCancelledEvent = orderApprovalService.rollback(restaurantApprovalResponse);
 
         log.info("레스토랑 승인 거절로 인해 주문 ID: {} 의 주문을 취소 처리했습니다. failureMessages : {}",
                 restaurantApprovalResponse.getOrderId(),
                 String.join(",", restaurantApprovalResponse.getFailureMessages()));
+
+        orderCancelledEvent.fire();
     }
 }

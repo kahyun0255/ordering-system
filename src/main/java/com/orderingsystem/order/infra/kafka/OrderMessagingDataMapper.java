@@ -2,6 +2,7 @@ package com.orderingsystem.order.infra.kafka;
 
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
+import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.infra.kafka.message.PaymentRequestMessage;
@@ -21,6 +22,17 @@ public class OrderMessagingDataMapper {
                 .price(domainEvent.getOrder().getPrice().getAmount())
                 .createdAt(domainEvent.getCreatedAt().toInstant())
                 .paymentOrderStatus(PaymentOrderStatus.PENDING)
+                .build();
+    }
+
+    public PaymentRequestMessage orderCancelledEventToPaymentRequestMessage(OrderCancelledEvent domainEvent) {
+        return PaymentRequestMessage.builder()
+                .id(UUID.randomUUID())
+                .customerId(domainEvent.getOrder().getCustomerId())
+                .orderId(domainEvent.getOrder().getId())
+                .price(domainEvent.getOrder().getPrice().getAmount())
+                .createdAt(domainEvent.getCreatedAt().toInstant())
+                .paymentOrderStatus(PaymentOrderStatus.CANCELLED)
                 .build();
     }
 

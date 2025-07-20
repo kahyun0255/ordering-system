@@ -19,4 +19,12 @@ public class PaymentService {
                 paymentEvent.getPayment().getOrderId());
         paymentEvent.fire();
     }
+
+    public void cancelPayment(PaymentRequest paymentRequest) {
+        PaymentEvent paymentEvent = paymentRequestHelper.persistCancelPayment(paymentRequest);
+
+        log.info("결제 이벤트 발행. Payment Id : {}, Order Id : {}", paymentEvent.getPayment().getId(),
+                paymentEvent.getPayment().getOrderId());
+        paymentEvent.fire();
+    }
 }

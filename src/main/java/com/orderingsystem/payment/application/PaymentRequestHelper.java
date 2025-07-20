@@ -3,6 +3,7 @@ package com.orderingsystem.payment.application;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
+import com.orderingsystem.payment.application.publisher.PaymentCancelledMessagePublisher;
 import com.orderingsystem.payment.application.publisher.PaymentCompleteMessagePublisher;
 import com.orderingsystem.payment.application.publisher.PaymentFailedMessagePublisher;
 import com.orderingsystem.payment.domain.event.PaymentEvent;
@@ -12,6 +13,7 @@ import com.orderingsystem.payment.domain.model.Payment;
 import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
 import com.orderingsystem.payment.domain.repository.PaymentRepository;
+import com.orderingsystem.payment.domain.service.PaymentValidateAndCancelService;
 import com.orderingsystem.payment.domain.service.PaymentValidateAndInitiateService;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +35,8 @@ public class PaymentRequestHelper {
     private final PaymentCompleteMessagePublisher paymentCompleteMessagePublisher;
     private final PaymentFailedMessagePublisher paymentFailedMessagePublisher;
     private final PaymentRepository paymentRepository;
+    private final PaymentValidateAndCancelService paymentValidateAndCancelService;
+    private final PaymentCancelledMessagePublisher paymentCancelledMessagePublisher;
 
     @Transactional
     public PaymentEvent persistPayment(PaymentRequest paymentRequest) {
@@ -51,6 +55,37 @@ public class PaymentRequestHelper {
         persistDataBase(payment, creditEntry, creditHistories, failureMassages, payment.getPrice());
 
         return paymentEvent;
+    }
+
+    @Transactional
+    public PaymentEvent persistCancelPayment(PaymentRequest paymentRequest) {
+        log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
+
+        Payment payment = getPayment(paymentRequest.getOrderId());
+        CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
+        List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
+        List<String> failureMessages = new ArrayList<>();
+
+        PaymentEvent paymentEvent = paymentValidateAndCancelService.validateAndCancel(payment, creditEntry,
+                creditHistories,
+                failureMessages, paymentCancelledMessagePublisher, paymentFailedMessagePublisher);
+
+        if (failureMessages.isEmpty()) {
+            creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
+        }
+
+        return paymentEvent;
+    }
+
+    private Payment getPayment(UUID orderId) {
+        Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
+
+        if (payment.isEmpty()) {
+            log.error("해당 주문에 대한 결제 정보를 찾지 못했습니다. Order Id : {}", orderId);
+            throw new PaymentApplicationException("해당 주문에 대한 결제 정보를 찾지 못했습니다. Order Id : " + orderId);
+        }
+
+        return payment.get();
     }
 
     private CreditEntry getCreditEntry(UUID customerId) {
