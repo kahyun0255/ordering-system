@@ -19,8 +19,8 @@ public class RestaurantValidateOrderService {
                                             List<String> failureMessages,
                                             DomainEventPublisher<OrderApprovedEvent> orderApprovedEventDomainEventPublisher,
                                             DomainEventPublisher<OrderRejectedEvent> orderRejectedEventDomainEventPublisher) {
-        restaurant.validateOrder(failureMessages);
         log.info("주문 검증 시작. Order Id : {}", restaurant.getOrderDetail().getOrderId());
+        restaurant.validateOrder(failureMessages);
 
         if (failureMessages.isEmpty()) {
             log.info("주문이 승인되었습니다. Order Id : {}", restaurant.getOrderDetail().getOrderId());
