@@ -1,6 +1,7 @@
 package com.orderingsystem.order.application;
 
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
+import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.publisher.OrderCreatedPaymentRequestMessagePublisher;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
@@ -20,6 +21,7 @@ public class OrderService {
     private final OrderCreatedPaymentRequestMessagePublisher orderCreatedPaymentRequestMessagePublisher;
     private final OrderDataMapper orderDataMapper;
     private final OrderPaymentService orderPaymentService;
+    private final OrderApprovalService orderApprovalService;
 
     public CreateOrderResponse createOrder(CreateOrderApplicationRequest createOrderRequest) {
         OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest);
@@ -39,5 +41,10 @@ public class OrderService {
         orderPaymentService.rollback(paymentResponse);
         log.info("주문 rollback. Order Id : {}, failureMassages : {} ",
                 paymentResponse.getOrderId(), String.join(",", paymentResponse.getFailureMessages()));
+    }
+
+    public void orderApproved(RestaurantApprovalResponse restaurantApprovalResponse) {
+        orderApprovalService.process(restaurantApprovalResponse);
+        log.info("주문이 승인되었습니다. Order Id : {}", restaurantApprovalResponse.getOrderId());
     }
 }
