@@ -1,5 +1,6 @@
 package com.orderingsystem.payment.application;
 
+import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
 import com.orderingsystem.payment.application.publisher.PaymentCompleteMessagePublisher;
@@ -33,7 +34,6 @@ public class PaymentRequestHelper {
     private final PaymentFailedMessagePublisher paymentFailedMessagePublisher;
     private final PaymentRepository paymentRepository;
 
-
     @Transactional
     public PaymentEvent persistPayment(PaymentRequest paymentRequest) {
         log.info("결제 이벤트 수신. Order Id : {}", paymentRequest.getOrderId());
@@ -48,7 +48,7 @@ public class PaymentRequestHelper {
                 creditHistories, failureMassages,
                 paymentCompleteMessagePublisher, paymentFailedMessagePublisher);
 
-        persistDataBase(payment, creditEntry, creditHistories, failureMassages);
+        persistDataBase(payment, creditEntry, creditHistories, failureMassages, payment.getPrice());
 
         return paymentEvent;
     }
@@ -76,10 +76,10 @@ public class PaymentRequestHelper {
     }
 
     private void persistDataBase(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
-                                 List<String> failureMassages) {
+                                 List<String> failureMassages, Money price) {
         paymentRepository.save(payment);
         if (failureMassages.isEmpty()) {
-            creditEntryRepository.save(creditEntry);
+            creditEntry.subtractCreditAmount(price);
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
         }
     }

@@ -8,6 +8,7 @@ import com.orderingsystem.payment.domain.event.PaymentEvent;
 import com.orderingsystem.payment.domain.event.PaymentFailedEvent;
 import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
+import com.orderingsystem.payment.domain.model.CreditInfo;
 import com.orderingsystem.payment.domain.model.Payment;
 import com.orderingsystem.payment.domain.model.TransactionType;
 import java.time.ZonedDateTime;
@@ -22,17 +23,22 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PaymentValidateAndInitiateService {
 
-    public PaymentEvent validateAndInitiate(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
-                                     List<String> failureMessages,
-                                     DomainEventPublisher<PaymentCompletedEvent> paymentCompletedEventDomainEventPublisher,
-                                     DomainEventPublisher<PaymentFailedEvent> paymentFailedEventDomainEventPublisher) {
+    public PaymentEvent validateAndInitiate(Payment payment, CreditEntry creditEntry,
+                                            List<CreditHistory> creditHistories,
+                                            List<String> failureMessages,
+                                            DomainEventPublisher<PaymentCompletedEvent> paymentCompletedEventDomainEventPublisher,
+                                            DomainEventPublisher<PaymentFailedEvent> paymentFailedEventDomainEventPublisher) {
 
         payment.validatePayment(failureMessages);
         payment.initializePayment();
-        validateCreditEntry(payment, creditEntry, failureMessages);
-        subtractCreditEntry(payment, creditEntry);
+
+        CreditInfo creditInfo = new CreditInfo(creditEntry.getId(), creditEntry.getCustomerId(),
+                creditEntry.getTotalCreditAmount());
+
+        validateCreditEntry(payment, creditInfo, failureMessages);
+        subtractCreditEntry(payment, creditInfo);
         updateCreditHistory(payment, creditHistories, TransactionType.DEBIT);
-        validateCreditHistory(creditEntry, creditHistories, failureMessages);
+        validateCreditHistory(creditInfo, creditHistories, failureMessages);
 
         if (failureMessages.isEmpty()) {
             log.info("Order Id에 대한 결제가 준비되었습니다. Order Id : {}", payment.getOrderId());
@@ -46,15 +52,15 @@ public class PaymentValidateAndInitiateService {
         }
     }
 
-    private void validateCreditEntry(Payment payment, CreditEntry creditEntry, List<String> failureMessages) {
-        if (payment.getPrice().isGreaterThan(creditEntry.getTotalCreditAmount())) {
+    private void validateCreditEntry(Payment payment, CreditInfo creditInfo, List<String> failureMessages) {
+        if (payment.getPrice().isGreaterThan(creditInfo.getTotalCreditAmount())) {
             log.error("고객의 크레딧이 결제 금액보다 부족합니다. Customer Id : {}", payment.getCustomerId());
             failureMessages.add("고객의 크레딧이 결제 금액보다 부족합니다.");
         }
     }
 
-    private void subtractCreditEntry(Payment payment, CreditEntry creditEntry) {
-        creditEntry.subtractCreditAmount(payment.getPrice());
+    private void subtractCreditEntry(Payment payment, CreditInfo creditInfo) {
+        creditInfo.subtractCreditAmount(payment.getPrice());
     }
 
     private void updateCreditHistory(Payment payment, List<CreditHistory> creditHistories,
@@ -67,19 +73,19 @@ public class PaymentValidateAndInitiateService {
                 .build());
     }
 
-    private void validateCreditHistory(CreditEntry creditEntry, List<CreditHistory> creditHistories,
+    private void validateCreditHistory(CreditInfo creditInfo, List<CreditHistory> creditHistories,
                                        List<String> failureMessages) {
         Money totalCreditHistory = getTotalHistoryAmount(creditHistories, TransactionType.CREDIT);
         Money totalDebitHistory = getTotalHistoryAmount(creditHistories, TransactionType.DEBIT);
 
         if (totalDebitHistory.isGreaterThan(totalCreditHistory)) {
             log.error("Credit History 기준으로 크레딧이 부족합니다.(총 사용액이 총 충전액보다 큽니다.). Customer Id : {}",
-                    creditEntry.getCustomerId());
+                    creditInfo.getCustomerId());
             failureMessages.add("Credit History 기준으로 크레딧이 부족합니다.");
         }
 
-        if (!creditEntry.getTotalCreditAmount().equals(totalCreditHistory.subtract(totalDebitHistory))) {
-            log.error("Credit History 이력 총합이 현재 크레딧과 일치하지 않습니다. Customer Id : {}", creditEntry.getCustomerId());
+        if (!creditInfo.getTotalCreditAmount().equals(totalCreditHistory.subtract(totalDebitHistory))) {
+            log.error("Credit History 이력 총합이 현재 크레딧과 일치하지 않습니다. Customer Id : {}", creditInfo.getCustomerId());
             failureMessages.add("Credit History 이력 총합이 현재 크레딧과 일치하지 않습니다.");
         }
     }
