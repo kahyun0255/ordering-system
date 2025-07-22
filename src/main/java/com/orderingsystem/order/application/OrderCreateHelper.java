@@ -30,15 +30,11 @@ public class OrderCreateHelper {
     private final DomainEventPublisher<OrderCreateEvent> orderCreateEventDomainEventPublisher;
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
-    private final RestaurantApi restaurantApi;
     private final OrderAddressRepository orderAddressRepository;
 
     @Transactional
-    public OrderCreateEvent persistOrder(CreateOrderApplicationRequest createOrderRequest) {
+    public OrderCreateEvent persistOrder(CreateOrderApplicationRequest createOrderRequest, RestaurantInfo restaurantInfo) {
         checkCustomer(createOrderRequest.getCustomerId());
-
-        RestaurantInfo restaurantInfo = restaurantApi.getRestaurantInfo(createOrderRequest.getRestaurantId(),
-                orderDataMapper.itemsToItemIdList(createOrderRequest.getItems()));
 
         OrderAddress orderAddress = orderDataMapper.orderAddressToStreetAddress(createOrderRequest.getAddress());
         Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest, orderAddress.getId());
