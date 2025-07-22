@@ -13,7 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "restaurant_restaurant_products")
+@Table(name = "restaurant_products")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

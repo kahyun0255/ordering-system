@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "payment_credit_entry")
+@Table(name = "credit_entry")
 @Entity
 public class CreditEntry extends BaseEntity {
 

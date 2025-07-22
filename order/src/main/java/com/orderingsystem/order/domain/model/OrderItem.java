@@ -3,6 +3,7 @@ package com.orderingsystem.order.domain.model;
 import com.orderingsystem.common.domain.BaseEntity;
 import com.orderingsystem.common.domain.Money;
 import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -23,7 +24,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "orders_order_items")
+@Table(name = "order_items")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -39,11 +40,15 @@ public class OrderItem extends BaseEntity {
     private Order order;
 
     @Embedded
-    @AttributeOverride(name = "amount", column = @Column(name = "price"))
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount", column = @Column(name = "price"))
+    })
     private Money price;
 
     @Embedded
-    @AttributeOverride(name = "amount", column = @Column(name = "subTotal"))
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount", column = @Column(name = "sub_total"))
+    })
     private Money subTotal;
 
     @Column(columnDefinition = "varchar(36)")
