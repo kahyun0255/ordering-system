@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "orders_address")
+@Table(name = "address")
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
