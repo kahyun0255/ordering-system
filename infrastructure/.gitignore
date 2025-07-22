@@ -44,6 +44,13 @@ out/
 
 ### env value ###
 .env
+src/main/java/com/orderingsystem/docker-compose/.env
 
 application.yml
 src/main/resources/application.yml
+
+volumes/
+src/main/java/com/orderingsystem/docker-compose/volumes
+*.log
+src/main/java/com/orderingsystem/docker-compose/start-up.sh
+src/main/java/com/orderingsystem/docker-compose/shutdown.sh

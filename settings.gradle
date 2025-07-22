@@ -1,1 +1,8 @@
 rootProject.name = 'ordering-system'
+include 'common'
+include 'infrastructure'
+include 'order'
+include 'payment'
+include 'customer'
+include 'restaurant'
+
