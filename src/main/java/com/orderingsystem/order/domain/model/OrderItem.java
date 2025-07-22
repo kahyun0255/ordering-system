@@ -1,10 +1,10 @@
 package com.orderingsystem.order.domain.model;
 
+import com.orderingsystem.common.domain.BaseEntity;
 import com.orderingsystem.common.domain.Money;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,20 +16,19 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "orders_order_items")
 @Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class OrderItem {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class OrderItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,7 +46,9 @@ public class OrderItem {
     @AttributeOverride(name = "amount", column = @Column(name = "subTotal"))
     private Money subTotal;
 
+    @Column(columnDefinition = "varchar(36)")
     private UUID productId;
+
     private Integer quantity;
 
     @Transient
@@ -67,9 +68,8 @@ public class OrderItem {
         return Objects.hashCode(id);
     }
 
-    void initializeOrderItem(Order order, Long orderItemId) {
+    void initializeOrderItem(Order order) {
         this.order=order;
-        this.id = orderItemId;
     }
 
     boolean isPriceValid() {

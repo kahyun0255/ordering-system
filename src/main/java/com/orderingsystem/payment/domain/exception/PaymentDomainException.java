@@ -1,6 +1,6 @@
 package com.orderingsystem.payment.domain.exception;
 
-import com.orderingsystem.common.exceptioin.DomainException;
+import com.orderingsystem.common.exception.DomainException;
 
 public class PaymentDomainException extends DomainException {
 

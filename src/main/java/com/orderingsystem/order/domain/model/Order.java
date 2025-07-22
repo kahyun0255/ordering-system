@@ -11,33 +11,38 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "orders_orders")
 @Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Order extends AggregateRoot {
 
     @Id
+    @Column(columnDefinition = "varchar(36)")
     private UUID id;
 
+    @Column(columnDefinition = "varchar(36)")
     private UUID customerId;
+
+    @Column(columnDefinition = "varchar(36)")
     private UUID restaurantId;
+
+    @Column(columnDefinition = "varchar(36)")
     private UUID trackingId;
 
     @Embedded
@@ -47,12 +52,12 @@ public class Order extends AggregateRoot {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
+    @Column(columnDefinition = "TEXT")
     private String failureMessages;
 
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
-    private OrderAddress address;
+    private UUID address;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<OrderItem> items;
 
     @Override
@@ -79,9 +84,8 @@ public class Order extends AggregateRoot {
     }
 
     private void initializeOrderItems() {
-        long itemId = 1;
         for (OrderItem orderItem : items) {
-            orderItem.initializeOrderItem(this, itemId++);
+            orderItem.initializeOrderItem(this);
         }
     }
 
@@ -118,7 +122,7 @@ public class Order extends AggregateRoot {
     private void validateItemPrice(OrderItem orderItem) {
         if (!orderItem.isPriceValid()) {
             throw new OrderDomainException("상품: " + orderItem.getProduct().getProductId() +
-                    "의 항목 가격 : " + orderItem.getProduct().getPrice() + "이 유효하지 않습니다.");
+                    "의 항목 가격 : " + orderItem.getProduct().getPrice().getAmount() + "이 유효하지 않습니다.");
         }
     }
 
@@ -165,6 +169,10 @@ public class Order extends AggregateRoot {
         } else {
             this.failureMessages = String.join(",", messages);
         }
+    }
+
+    public void updateItems(List<OrderItem> items){
+        this.items=items;
     }
 
 }

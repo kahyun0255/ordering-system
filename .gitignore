@@ -48,3 +48,8 @@ out/
 application.yml
 src/main/resources/application.yml
 
+volumes/
+src/main/java/com/orderingsystem/infrastructure/docker-compose/volumes
+*.log
+src/main/java/com/orderingsystem/infrastructure/docker-compose/start-up.sh
+src/main/java/com/orderingsystem/infrastructure/docker-compose/shutdown.sh

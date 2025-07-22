@@ -11,22 +11,19 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "payment_payments")
 @Entity
 public class Payment extends AggregateRoot {
@@ -43,11 +40,8 @@ public class Payment extends AggregateRoot {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
-    private ZonedDateTime createdAt;
-
     public void initializePayment() {
         id = UUID.randomUUID();
-        createdAt = ZonedDateTime.now(ZoneId.of("UTC"));
     }
 
     public void validatePayment(List<String> failureMessages) {

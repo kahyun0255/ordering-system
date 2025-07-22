@@ -8,21 +8,21 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "payment_credit_history")
 @Entity
 public class CreditHistory {
@@ -37,6 +37,13 @@ public class CreditHistory {
 
     @Enumerated(EnumType.STRING)
     private TransactionType type;
+
+    private LocalDateTime paidAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.paidAt = LocalDateTime.now();
+    }
 
     @Override
     public boolean equals(Object o) {

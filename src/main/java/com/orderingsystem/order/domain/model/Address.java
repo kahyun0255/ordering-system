@@ -2,10 +2,11 @@ package com.orderingsystem.order.domain.model;
 
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class Address {
     private final UUID id;

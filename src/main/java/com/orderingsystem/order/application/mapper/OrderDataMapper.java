@@ -1,0 +1,67 @@
+package com.orderingsystem.order.application.mapper;
+
+import com.orderingsystem.common.domain.Money;
+import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
+import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
+import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
+import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
+import com.orderingsystem.order.domain.model.Order;
+import com.orderingsystem.order.domain.model.OrderAddress;
+import com.orderingsystem.order.domain.model.OrderItem;
+import com.orderingsystem.order.domain.model.Product;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
+
+@Component
+public class OrderDataMapper {
+
+    public Order createOrderRequestToOrder(CreateOrderApplicationRequest createOrderApplicationRequest, UUID orderAddress) {
+        Order order = Order.builder()
+                .customerId(createOrderApplicationRequest.getCustomerId())
+                .restaurantId(createOrderApplicationRequest.getRestaurantId())
+                .address(orderAddress)
+                .price(new Money(createOrderApplicationRequest.getPrice()))
+                .build();
+
+        List<OrderItem> items = orderItemsToOrderItemEntity(order, createOrderApplicationRequest.getItems());
+        order.updateItems(items);
+
+        return order;
+    }
+
+    public OrderAddress orderAddressToStreetAddress(OrderAddressApplicationRequest address) {
+        return OrderAddress.builder()
+                .id(UUID.randomUUID())
+                .street(address.getStreet())
+                .city(address.getCity())
+                .postalCode(address.getPostalCode())
+                .build();
+    }
+
+    private List<OrderItem> orderItemsToOrderItemEntity(Order order, List<OrderItemApplicationRequest> items) {
+        return items.stream().map(orderItem ->
+                        OrderItem.builder()
+                                .order(order)
+                                .product(new Product(orderItem.getProductId()))
+                                .price(new Money(orderItem.getPrice()))
+                                .quantity(orderItem.getQuantity())
+                                .subTotal(new Money(orderItem.getSubTotal()))
+                                .productId(orderItem.getProductId())
+                                .build())
+                .collect(Collectors.toList());
+    }
+
+    public CreateOrderResponse orderToCreateOrderResponse(Order order, String massage) {
+        return CreateOrderResponse.builder()
+                .orderTrackingId(order.getTrackingId())
+                .orderStatus(order.getOrderStatus())
+                .message(massage)
+                .build();
+    }
+
+    public List<UUID> itemsToItemIdList(List<OrderItemApplicationRequest> items) {
+        return items.stream().map(OrderItemApplicationRequest::getProductId).toList();
+    }
+}

@@ -3,11 +3,14 @@ package com.orderingsystem.order.domain.model;
 import com.orderingsystem.common.domain.Money;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
+@Builder
 public class Product {
 
     private UUID productId;
@@ -17,6 +20,10 @@ public class Product {
     public void updateWithConfirmedNameAndPrice(String name, Money price) {
         this.name = name;
         this.price = price;
+    }
+
+    public Product(UUID productId) {
+        this.productId = productId;
     }
 
     @Override
