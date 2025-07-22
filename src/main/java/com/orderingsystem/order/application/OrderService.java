@@ -1,5 +1,6 @@
 package com.orderingsystem.order.application;
 
+import com.orderingsystem.order.application.dto.RestaurantInfo;
 import com.orderingsystem.order.application.dto.response.OrderStatusResponse;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
@@ -32,9 +33,14 @@ public class OrderService {
     private final OrderPaymentService orderPaymentService;
     private final OrderApprovalService orderApprovalService;
     private final OrderRepository orderRepository;
+    private final RestaurantApi restaurantApi;
 
     public CreateOrderResponse createOrder(CreateOrderApplicationRequest createOrderRequest) {
-        OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest);
+        RestaurantInfo restaurantInfo = restaurantApi.getRestaurantInfo(createOrderRequest.getRestaurantId(),
+                orderDataMapper.itemsToItemIdList(createOrderRequest.getItems()));
+
+        OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest, restaurantInfo);
+
         log.info("주문이 생성되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
         orderCreatedPaymentRequestMessagePublisher.publish(orderCreateEvent);
 
