@@ -1,5 +1,6 @@
 package com.orderingsystem.order.application;
 
+import com.orderingsystem.order.application.dto.response.OrderStatusResponse;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
@@ -9,9 +10,16 @@ import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
+import com.orderingsystem.order.domain.exception.OrderNotFoundException;
+import com.orderingsystem.order.domain.model.Order;
+import com.orderingsystem.order.domain.repository.OrderRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +31,7 @@ public class OrderService {
     private final OrderDataMapper orderDataMapper;
     private final OrderPaymentService orderPaymentService;
     private final OrderApprovalService orderApprovalService;
+    private final OrderRepository orderRepository;
 
     public CreateOrderResponse createOrder(CreateOrderApplicationRequest createOrderRequest) {
         OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest);
@@ -57,5 +66,20 @@ public class OrderService {
                 String.join(",", restaurantApprovalResponse.getFailureMessages()));
 
         orderCancelledEvent.fire();
+    }
+
+    @Transactional(readOnly = true)
+    public OrderStatusResponse trackOrder(UUID trackingId) {
+        Optional<Order> order = orderRepository.findByTrackingId(trackingId);
+
+        if (order.isEmpty()) {
+            log.warn("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : {}", trackingId);
+            throw new OrderNotFoundException("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : " + trackingId);
+        }
+        return OrderStatusResponse.builder()
+                .orderTrackingId(order.get().getTrackingId())
+                .orderStatus(order.get().getOrderStatus())
+                .failureMessages(order.get().getFailureMessageList())
+                .build();
     }
 }
