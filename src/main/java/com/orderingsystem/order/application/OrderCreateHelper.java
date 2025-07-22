@@ -8,7 +8,9 @@ import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.model.Order;
+import com.orderingsystem.order.domain.model.OrderAddress;
 import com.orderingsystem.order.domain.repository.CustomerRepository;
+import com.orderingsystem.order.domain.repository.OrderAddressRepository;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.service.OrderValidateAndInitiateService;
 import java.util.Optional;
@@ -29,6 +31,7 @@ public class OrderCreateHelper {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final RestaurantApi restaurantApi;
+    private final OrderAddressRepository orderAddressRepository;
 
     @Transactional
     public OrderCreateEvent persistOrder(CreateOrderApplicationRequest createOrderRequest) {
@@ -37,12 +40,14 @@ public class OrderCreateHelper {
         RestaurantInfo restaurantInfo = restaurantApi.getRestaurantInfo(createOrderRequest.getRestaurantId(),
                 orderDataMapper.itemsToItemIdList(createOrderRequest.getItems()));
 
-        Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest);
+        OrderAddress orderAddress = orderDataMapper.orderAddressToStreetAddress(createOrderRequest.getAddress());
+        Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest, orderAddress.getId());
 
         OrderCreateEvent orderCreateEvent =
                 orderValidateAndInitiateService.validateAndInitiate(order, restaurantInfo.toRestaurant(), orderCreateEventDomainEventPublisher);
 
         Order savedOrder = saveOrder(order);
+        saveOrderAddress(orderAddress, order);
 
         log.info("주문이 생성되었습니다. Order Id : {}", savedOrder.getId());
         return orderCreateEvent;
@@ -64,6 +69,16 @@ public class OrderCreateHelper {
         } catch (Exception e) {
             log.warn("주문이 저장되지 않았습니다.");
             throw new OrderDomainException("주문이 저장되지 않았습니다.");
+        }
+    }
+
+    private void saveOrderAddress(OrderAddress orderAddress, Order order) {
+        try {
+            orderAddress.updateOrderId(order.getId());
+            orderAddressRepository.save(orderAddress);
+        } catch (Exception e){
+            log.warn("주문 주소가 저장되지 않았습니다.");
+            throw new OrderDomainException("주문 주소가 저장되지 않았습니다.");
         }
     }
 }

@@ -14,24 +14,22 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "orders_orders")
 @Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Order extends AggregateRoot {
 
     @Id
@@ -57,8 +55,7 @@ public class Order extends AggregateRoot {
     @Column(columnDefinition = "TEXT")
     private String failureMessages;
 
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
-    private OrderAddress address;
+    private UUID address;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<OrderItem> items;
@@ -172,6 +169,10 @@ public class Order extends AggregateRoot {
         } else {
             this.failureMessages = String.join(",", messages);
         }
+    }
+
+    public void updateItems(List<OrderItem> items){
+        this.items=items;
     }
 
 }

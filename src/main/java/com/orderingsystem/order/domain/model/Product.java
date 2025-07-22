@@ -3,11 +3,12 @@ package com.orderingsystem.order.domain.model;
 import com.orderingsystem.common.domain.Money;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Builder
 public class Product {

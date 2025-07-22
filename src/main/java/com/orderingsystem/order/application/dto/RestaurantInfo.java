@@ -25,7 +25,12 @@ public class RestaurantInfo {
                 .restaurantId(this.restaurantId)
                 .active(this.active)
                 .products(products.stream().map(product ->
-                        new Product(product.getProductId(), product.getName(), new Money(product.getPrice()))).toList())
+                                Product.builder()
+                                        .productId(product.getProductId())
+                                        .name(product.getName())
+                                        .price(new Money(product.getPrice()))
+                                        .build())
+                        .toList())
                 .build();
     }
 }

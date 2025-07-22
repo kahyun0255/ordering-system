@@ -1,38 +1,30 @@
 package com.orderingsystem.order.domain.model;
 
 import com.orderingsystem.common.domain.BaseEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.Objects;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "orders_address")
 @Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderAddress extends BaseEntity {
 
     @Id
     @Column(columnDefinition = "varchar(36)")
     private UUID id;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "ORDER_ID")
-    private Order order;
-
+    private UUID orderId;
     private String street;
     private String postalCode;
     private String city;
@@ -51,4 +43,7 @@ public class OrderAddress extends BaseEntity {
         return Objects.hashCode(id);
     }
 
+    public void updateOrderId(UUID orderId){
+        this.orderId = orderId;
+    }
 }

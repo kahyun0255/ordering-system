@@ -2,13 +2,14 @@ package com.orderingsystem.payment.domain.model;
 
 import com.orderingsystem.common.domain.Money;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Builder
 @Getter
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CreditInfo {
 
     private final UUID id;

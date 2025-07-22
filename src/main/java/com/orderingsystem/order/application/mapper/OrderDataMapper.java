@@ -17,21 +17,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderDataMapper {
 
-    public Order createOrderRequestToOrder(CreateOrderApplicationRequest createOrderApplicationRequest) {
+    public Order createOrderRequestToOrder(CreateOrderApplicationRequest createOrderApplicationRequest, UUID orderAddress) {
         Order order = Order.builder()
                 .customerId(createOrderApplicationRequest.getCustomerId())
                 .restaurantId(createOrderApplicationRequest.getRestaurantId())
-                .address(orderAddressToStreetAddress(createOrderApplicationRequest.getAddress()))
+                .address(orderAddress)
                 .price(new Money(createOrderApplicationRequest.getPrice()))
                 .build();
 
         List<OrderItem> items = orderItemsToOrderItemEntity(order, createOrderApplicationRequest.getItems());
-        order.setItems(items);
+        order.updateItems(items);
 
         return order;
     }
 
-    private OrderAddress orderAddressToStreetAddress(OrderAddressApplicationRequest address) {
+    public OrderAddress orderAddressToStreetAddress(OrderAddressApplicationRequest address) {
         return OrderAddress.builder()
                 .id(UUID.randomUUID())
                 .street(address.getStreet())

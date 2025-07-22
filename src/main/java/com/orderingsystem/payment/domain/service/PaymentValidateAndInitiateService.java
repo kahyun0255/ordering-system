@@ -32,8 +32,11 @@ public class PaymentValidateAndInitiateService {
         payment.validatePayment(failureMessages);
         payment.initializePayment();
 
-        CreditInfo creditInfo = new CreditInfo(creditEntry.getId(), creditEntry.getCustomerId(),
-                creditEntry.getTotalCreditAmount());
+        CreditInfo creditInfo = CreditInfo.builder()
+                .id(creditEntry.getId())
+                .customerId(creditEntry.getCustomerId())
+                .totalCreditAmount(creditEntry.getTotalCreditAmount())
+                .build();
 
         validateCreditEntry(payment, creditInfo, failureMessages);
         subtractCreditEntry(payment, creditInfo);
