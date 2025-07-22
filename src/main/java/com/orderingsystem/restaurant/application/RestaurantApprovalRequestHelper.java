@@ -11,7 +11,7 @@ import com.orderingsystem.restaurant.domain.model.OrderDetail;
 import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantInfoView;
-import com.orderingsystem.restaurant.domain.model.RestaurantVO;
+import com.orderingsystem.restaurant.domain.model.RestaurantInfo;
 import com.orderingsystem.restaurant.domain.repository.OrderApprovalRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
 import com.orderingsystem.restaurant.domain.service.RestaurantValidateOrderService;
@@ -41,12 +41,12 @@ public class RestaurantApprovalRequestHelper {
 
         List<String> failureMessage = new ArrayList<>();
         Restaurant restaurant = findRestaurant(approvalRequest.getRestaurantId());
-        RestaurantVO restaurantVO = findRestaurantVO(restaurant.getRestaurantId(), approvalRequest);
+        RestaurantInfo restaurantInfo = findRestaurantVO(restaurant.getRestaurantId(), approvalRequest);
 
-        OrderApprovalEvent orderApprovalEvent = restaurantValidateOrderService.validateOrder(restaurantVO,
+        OrderApprovalEvent orderApprovalEvent = restaurantValidateOrderService.validateOrder(restaurantInfo,
                 failureMessage, orderApprovedMessagePublisher, orderRejectedMessagePublisher);
 
-        orderApprovalRepository.save(restaurantVO.getOrderApproval());
+        orderApprovalRepository.save(restaurantInfo.getOrderApproval());
         return orderApprovalEvent;
     }
 
@@ -61,8 +61,8 @@ public class RestaurantApprovalRequestHelper {
         return restaurant.get();
     }
 
-    private RestaurantVO findRestaurantVO(UUID restaurantId, ApprovalRequest approvalRequest) {
-        RestaurantVO restaurant = RestaurantVO.builder()
+    private RestaurantInfo findRestaurantVO(UUID restaurantId, ApprovalRequest approvalRequest) {
+        RestaurantInfo restaurant = RestaurantInfo.builder()
                 .restaurantId(restaurantId)
                 .orderDetail(OrderDetail.builder()
                         .orderId(approvalRequest.getOrderId())

@@ -5,7 +5,7 @@ import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.restaurant.domain.event.OrderApprovalEvent;
 import com.orderingsystem.restaurant.domain.event.OrderApprovedEvent;
 import com.orderingsystem.restaurant.domain.event.OrderRejectedEvent;
-import com.orderingsystem.restaurant.domain.model.RestaurantVO;
+import com.orderingsystem.restaurant.domain.model.RestaurantInfo;
 import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class RestaurantValidateOrderService {
 
-    public OrderApprovalEvent validateOrder(RestaurantVO restaurant,
+    public OrderApprovalEvent validateOrder(RestaurantInfo restaurant,
                                             List<String> failureMessages,
                                             DomainEventPublisher<OrderApprovedEvent> orderApprovedEventDomainEventPublisher,
                                             DomainEventPublisher<OrderRejectedEvent> orderRejectedEventDomainEventPublisher) {

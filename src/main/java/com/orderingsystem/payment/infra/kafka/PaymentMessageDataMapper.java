@@ -1,8 +1,6 @@
 package com.orderingsystem.payment.infra.kafka;
 
-import com.orderingsystem.payment.domain.event.PaymentCompletedEvent;
 import com.orderingsystem.payment.domain.event.PaymentEvent;
-import com.orderingsystem.payment.domain.event.PaymentFailedEvent;
 import com.orderingsystem.payment.infra.kafka.message.PaymentResponseMessage;
 import java.util.UUID;
 import org.springframework.stereotype.Component;

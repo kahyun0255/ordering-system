@@ -1,6 +1,6 @@
 package com.orderingsystem.order.domain.exception;
 
-import com.orderingsystem.common.exceptioin.DomainException;
+import com.orderingsystem.common.exception.DomainException;
 
 public class OrderNotFoundException extends DomainException {
 

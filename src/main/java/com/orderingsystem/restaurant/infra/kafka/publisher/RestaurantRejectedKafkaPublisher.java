@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.infrastructure.kafka.KafkaMessageHelper;
 import com.orderingsystem.infrastructure.kafka.KafkaProducer;
 import com.orderingsystem.restaurant.application.publisher.OrderRejectedMessagePublisher;
-import com.orderingsystem.restaurant.domain.event.OrderApprovedEvent;
 import com.orderingsystem.restaurant.domain.event.OrderRejectedEvent;
 import com.orderingsystem.restaurant.infra.kafka.RestaurantMessageConfigData;
 import com.orderingsystem.restaurant.infra.kafka.RestaurantMessagingDataMapper;

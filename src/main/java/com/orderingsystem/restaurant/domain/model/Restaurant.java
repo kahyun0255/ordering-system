@@ -1,7 +1,5 @@
 package com.orderingsystem.restaurant.domain.model;
 
-import com.fasterxml.jackson.databind.ser.Serializers.Base;
-import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

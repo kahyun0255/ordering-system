@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 @AllArgsConstructor
 @Slf4j
-public class RestaurantVO extends AggregateRoot {
+public class RestaurantInfo extends AggregateRoot {
 
     private UUID restaurantId;
     private UUID productId;
@@ -73,7 +73,7 @@ public class RestaurantVO extends AggregateRoot {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        RestaurantVO that = (RestaurantVO) o;
+        RestaurantInfo that = (RestaurantInfo) o;
         return Objects.equals(restaurantId, that.restaurantId) && Objects.equals(productId,
                 that.productId);
     }

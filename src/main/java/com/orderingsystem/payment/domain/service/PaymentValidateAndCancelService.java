@@ -3,12 +3,10 @@ package com.orderingsystem.payment.domain.service;
 import com.orderingsystem.common.domain.publisher.DomainEventPublisher;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.payment.domain.event.PaymentCancelledEvent;
-
 import com.orderingsystem.payment.domain.event.PaymentEvent;
 import com.orderingsystem.payment.domain.event.PaymentFailedEvent;
 import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
-import com.orderingsystem.payment.domain.model.CreditInfo;
 import com.orderingsystem.payment.domain.model.Payment;
 import com.orderingsystem.payment.domain.model.TransactionType;
 import java.time.ZonedDateTime;

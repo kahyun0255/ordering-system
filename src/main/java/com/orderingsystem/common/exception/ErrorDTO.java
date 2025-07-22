@@ -1,4 +1,4 @@
-package com.orderingsystem.common.exceptioin;
+package com.orderingsystem.common.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

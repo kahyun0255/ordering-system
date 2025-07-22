@@ -1,6 +1,5 @@
 package com.orderingsystem.payment.domain.model;
 
-import com.orderingsystem.common.domain.BaseEntity;
 import com.orderingsystem.common.domain.Money;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;

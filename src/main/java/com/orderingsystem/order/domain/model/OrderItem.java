@@ -69,9 +69,8 @@ public class OrderItem extends BaseEntity {
         return Objects.hashCode(id);
     }
 
-    void initializeOrderItem(Order order, Long orderItemId) {
+    void initializeOrderItem(Order order) {
         this.order=order;
-//        this.id = orderItemId;
     }
 
     boolean isPriceValid() {

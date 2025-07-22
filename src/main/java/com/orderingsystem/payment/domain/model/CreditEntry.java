@@ -7,10 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -35,20 +32,6 @@ public class CreditEntry extends BaseEntity {
     @Embedded
     @AttributeOverride(name = "amount", column = @Column(name = "totalCreditAmount"))
     private Money totalCreditAmount;
-
-//    private LocalDateTime createdAt;
-//    private LocalDateTime updatedAt;
-//
-//    @PrePersist
-//    protected void onCreate() {
-//        this.createdAt = LocalDateTime.now();
-//        this.updatedAt = LocalDateTime.now();
-//    }
-//
-//    @PreUpdate
-//    protected void onUpdate() {
-//        this.updatedAt = LocalDateTime.now();
-//    }
 
     @Override
     public boolean equals(Object o) {

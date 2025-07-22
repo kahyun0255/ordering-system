@@ -1,4 +1,4 @@
-package com.orderingsystem.restaurant.domain.service;
+package com.orderingsystem.order.domain.service;
 
 import com.orderingsystem.common.domain.publisher.DomainEventPublisher;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
