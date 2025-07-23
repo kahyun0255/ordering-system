@@ -26,28 +26,6 @@ public class OrderCancelPaymentKafkaPublisher implements OrderCancelledPaymentRe
 
     @Override
     public void publish(OrderCancelledEvent domainEvent) {
-        String orderId = domainEvent.getOrder().getId().toString();
-        log.info("OrderCancelledEvent 수신. Order Id :{}", orderId);
 
-        try {
-            PaymentRequestMessage paymentRequestMessage =
-                    orderMessagingDataMapper.orderCancelledEventToPaymentRequestMessage(domainEvent);
-            String requestMessage = objectMapper.writeValueAsString(paymentRequestMessage);
-
-            kafkaProducer.send(
-                    orderMessageConfigData.getPaymentRequestTopicName(),
-                    orderId,
-                    requestMessage,
-                    kafkaMessageHelper.getKafkaCallback(
-                            orderMessageConfigData.getPaymentRequestTopicName(),
-                            requestMessage,
-                            orderId));
-
-            log.info("PaymentRequestMessage를 Kafka로 전송했습니다. order id : {}", paymentRequestMessage.getOrderId());
-
-        } catch (JsonProcessingException e) {
-            log.error("PaymentRequestMessage Json 프로세싱에 실패했습니다. error : {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
     }
 }

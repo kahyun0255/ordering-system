@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
-import com.orderingsystem.order.application.OrderService;
+import com.orderingsystem.order.application.OrderRestaurantApprovalService;
 import com.orderingsystem.order.infra.kafka.message.RestaurantApprovalResponseMessage;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class RestaurantApprovalResponseKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final OrderService orderService;
+    private final OrderRestaurantApprovalService orderRestaurantApprovalService;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.restaurant-response-consumer-group-id}",
@@ -42,11 +42,11 @@ public class RestaurantApprovalResponseKafkaListener implements KafkaConsumer<St
 
                 if (OrderApprovalStatus.APPROVED.name().equals(responseMessage.getOrderApprovalStatus().name())) {
                     log.info("주문 승인 진행. Order Id : {}", responseMessage.getOrderId());
-                    orderService.orderApprove(responseMessage.toRestaurantApprovalResponse());
+                    orderRestaurantApprovalService.orderApprove(responseMessage.toRestaurantApprovalResponse());
                 } else if (OrderApprovalStatus.REJECTED.name()
                         .equals(responseMessage.getOrderApprovalStatus().name())) {
                     log.info("주문 거절 진행. Order Id :{}", responseMessage.getOrderId());
-                    orderService.orderReject(responseMessage.toRestaurantApprovalResponse());
+                    orderRestaurantApprovalService.orderReject(responseMessage.toRestaurantApprovalResponse());
                 }
 
             } catch (JsonMappingException e) {

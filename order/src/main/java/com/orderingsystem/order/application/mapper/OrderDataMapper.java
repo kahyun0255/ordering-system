@@ -1,10 +1,13 @@
 package com.orderingsystem.order.application.mapper;
 
 import com.orderingsystem.common.domain.Money;
+import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
+import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
+import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderAddress;
 import com.orderingsystem.order.domain.model.OrderItem;
@@ -63,5 +66,15 @@ public class OrderDataMapper {
 
     public List<UUID> itemsToItemIdList(List<OrderItemApplicationRequest> items) {
         return items.stream().map(OrderItemApplicationRequest::getProductId).toList();
+    }
+
+    public OrderPaymentEventPayload orderCreatedToOrderPaymentEventPayload(OrderCreateEvent orderCreateEvent) {
+        return OrderPaymentEventPayload.builder()
+                .customerId(orderCreateEvent.getOrder().getCustomerId().toString())
+                .orderId(orderCreateEvent.getOrder().getId().toString())
+                .price(orderCreateEvent.getOrder().getPrice().getAmount())
+                .createdAt(orderCreateEvent.getCreatedAt())
+                .paymentOrderStatus(PaymentOrderStatus.PENDING.name())
+                .build();
     }
 }
