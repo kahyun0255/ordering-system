@@ -9,6 +9,7 @@ import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
+import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.util.Arrays;
 import java.util.List;

@@ -15,6 +15,7 @@ import lombok.Getter;
 public class PaymentRequestMessage {
 
     private UUID id;
+    private UUID sagaId;
     private UUID orderId;
     private UUID customerId;
     private BigDecimal price;
@@ -24,6 +25,7 @@ public class PaymentRequestMessage {
     public PaymentRequest toPaymentRequest() {
         return PaymentRequest.builder()
                 .id(this.getId())
+                .sagaId(this.getSagaId())
                 .orderId(this.getOrderId())
                 .customerId(this.getCustomerId())
                 .price(this.getPrice())

@@ -34,8 +34,7 @@ public class PaymentValidateAndCancelService {
         } else {
             payment.updateStatus(PaymentStatus.FAILED);
             log.error("결제 취소에 실패했습니다. Order Id : {}", payment.getOrderId());
-            return new PaymentFailedEvent(payment, ZonedDateTime.now(), failureMessages,
-                    paymentFailedEventDomainEventPublisher);
+            return new PaymentFailedEvent(payment, ZonedDateTime.now(), failureMessages);
         }
     }
 

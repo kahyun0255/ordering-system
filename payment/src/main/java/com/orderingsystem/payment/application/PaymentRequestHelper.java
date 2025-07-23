@@ -4,7 +4,6 @@ import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
 import com.orderingsystem.payment.application.publisher.PaymentCancelledMessagePublisher;
-import com.orderingsystem.payment.application.publisher.PaymentCompleteMessagePublisher;
 import com.orderingsystem.payment.application.publisher.PaymentFailedMessagePublisher;
 import com.orderingsystem.payment.domain.event.PaymentEvent;
 import com.orderingsystem.payment.domain.model.CreditEntry;
@@ -14,7 +13,6 @@ import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
 import com.orderingsystem.payment.domain.repository.PaymentRepository;
 import com.orderingsystem.payment.domain.service.PaymentValidateAndCancelService;
-import com.orderingsystem.payment.domain.service.PaymentValidateAndInitiateService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,31 +29,10 @@ public class PaymentRequestHelper {
 
     private final CreditEntryRepository creditEntryRepository;
     private final CreditHistoryRepository creditHistoryRepository;
-    private final PaymentValidateAndInitiateService paymentValidateAndInitiateService;
-    private final PaymentCompleteMessagePublisher paymentCompleteMessagePublisher;
     private final PaymentFailedMessagePublisher paymentFailedMessagePublisher;
     private final PaymentRepository paymentRepository;
     private final PaymentValidateAndCancelService paymentValidateAndCancelService;
     private final PaymentCancelledMessagePublisher paymentCancelledMessagePublisher;
-
-    @Transactional
-    public PaymentEvent persistPayment(PaymentRequest paymentRequest) {
-        log.info("결제 이벤트 수신. Order Id : {}", paymentRequest.getOrderId());
-
-        Payment payment = paymentRequest.toPayment();
-
-        CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
-        List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
-        List<String> failureMassages = new ArrayList<>();
-
-        PaymentEvent paymentEvent = paymentValidateAndInitiateService.validateAndInitiate(payment, creditEntry,
-                creditHistories, failureMassages,
-                paymentCompleteMessagePublisher, paymentFailedMessagePublisher);
-
-        persistDataBase(payment, creditEntry, creditHistories, failureMassages, payment.getPrice());
-
-        return paymentEvent;
-    }
 
     @Transactional
     public PaymentEvent persistCancelPayment(PaymentRequest paymentRequest) {
