@@ -6,6 +6,6 @@ import java.util.function.BiConsumer;
 
 public interface PaymentRequestMessagePublisher {
 
-    void publisher(PaymentOutbox paymentOutbox, BiConsumer<PaymentOutbox, OutboxStatus> outboxCallBack);
+    void publish(PaymentOutbox paymentOutbox, BiConsumer<PaymentOutbox, OutboxStatus> outboxCallBack);
 
 }

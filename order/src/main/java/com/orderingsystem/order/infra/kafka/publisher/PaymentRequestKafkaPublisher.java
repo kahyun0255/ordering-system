@@ -30,8 +30,8 @@ public class PaymentRequestKafkaPublisher implements PaymentRequestMessagePublis
     private final KafkaMessageHelper kafkaMessageHelper;
 
     @Override
-    public void publisher(PaymentOutbox paymentOutbox, BiConsumer<PaymentOutbox, OutboxStatus> outboxCallBack) {
-        OrderPaymentEventPayload orderPaymentEventPayload = orderMessagingDataMapper.getOrderPaymentEventPayload(
+    public void publish(PaymentOutbox paymentOutbox, BiConsumer<PaymentOutbox, OutboxStatus> outboxCallBack) {
+        OrderPaymentEventPayload orderPaymentEventPayload = orderMessagingDataMapper.getEventPayload(
                 paymentOutbox.getPayload(), OrderPaymentEventPayload.class);
         UUID sagaId = paymentOutbox.getSagaId();
 

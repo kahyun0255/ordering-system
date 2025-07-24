@@ -1,6 +1,5 @@
 package com.orderingsystem.order.application;
 
-import com.orderingsystem.common.saga.EmptyEvent;
 import com.orderingsystem.common.saga.SagaStep;
 import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
 import com.orderingsystem.order.application.publisher.OrderCancelledPaymentRequestMessagePublisher;
@@ -19,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class OrderApprovalService implements SagaStep<RestaurantApprovalResponse, EmptyEvent, OrderCancelledEvent> {
+public class OrderApprovalService implements SagaStep<RestaurantApprovalResponse> {
 
     private final OrderRepository orderRepository;
     private final OrderPaymentCancelService orderPaymentCancelService;
@@ -27,19 +26,17 @@ public class OrderApprovalService implements SagaStep<RestaurantApprovalResponse
 
     @Override
     @Transactional
-    public EmptyEvent process(RestaurantApprovalResponse restaurantApprovalResponse) {
+    public void process(RestaurantApprovalResponse restaurantApprovalResponse) {
         log.info("주문 승인 처리 중. Order Id : {}", restaurantApprovalResponse.getOrderId());
 
         Order order = findOrder(restaurantApprovalResponse.getOrderId());
         order.approve();
         orderRepository.save(order);
-
-        return EmptyEvent.INSTANCE;
     }
 
     @Override
     @Transactional
-    public OrderCancelledEvent rollback(RestaurantApprovalResponse restaurantApprovalResponse) {
+    public void rollback(RestaurantApprovalResponse restaurantApprovalResponse) {
         log.info("주문 취소 처리 중. Order Id : {}", restaurantApprovalResponse.getOrderId());
 
         Order order = findOrder(restaurantApprovalResponse.getOrderId());
@@ -47,8 +44,6 @@ public class OrderApprovalService implements SagaStep<RestaurantApprovalResponse
                 restaurantApprovalResponse.getFailureMessages(),
                 orderCancelledPaymentRequestMessagePublisher);
         log.info("레스토랑 승인 거절로 인해 주문 ID: {} 의 주문을 취소 처리합니다", order.getId());
-
-        return orderCancelledEvent;
     }
 
     private Order findOrder(UUID orderId) {

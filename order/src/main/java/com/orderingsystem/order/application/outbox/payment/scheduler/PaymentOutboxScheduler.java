@@ -6,7 +6,6 @@ import com.orderingsystem.order.application.publisher.PaymentRequestMessagePubli
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.outbox.OutboxScheduler;
 import com.orderingsystem.outbox.OutboxStatus;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -40,7 +39,7 @@ public class PaymentOutboxScheduler implements OutboxScheduler {
                             outboxMessage.getId().toString()).collect(Collectors.joining(", ")));
 
             outboxMessages.forEach(outboxMessage ->
-                    paymentRequestMessagePublisher.publisher(outboxMessage, this::updateOutboxStatus));
+                    paymentRequestMessagePublisher.publish(outboxMessage, this::updateOutboxStatus));
 
             log.info("{}개의 Order PaymentOutbox Message를 메시지 버스로 전송했습니다.", outboxMessages.size());
         }

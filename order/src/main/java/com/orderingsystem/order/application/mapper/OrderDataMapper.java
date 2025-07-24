@@ -2,12 +2,16 @@ package com.orderingsystem.order.application.mapper;
 
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
+import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
+import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventPayload;
+import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventProduct;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
+import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderAddress;
 import com.orderingsystem.order.domain.model.OrderItem;
@@ -75,6 +79,21 @@ public class OrderDataMapper {
                 .price(orderCreateEvent.getOrder().getPrice().getAmount())
                 .createdAt(orderCreateEvent.getCreatedAt())
                 .paymentOrderStatus(PaymentOrderStatus.PENDING.name())
+                .build();
+    }
+
+    public RestaurantApprovalEventPayload orderPaidEventToRestaurantApprovalEventPayload(OrderPaidEvent orderPaidEvent) {
+        return RestaurantApprovalEventPayload.builder()
+                .orderId(orderPaidEvent.getOrder().getId().toString())
+                .restaurantId(orderPaidEvent.getOrder().getRestaurantId().toString())
+                .restaurantOrderStatus(RestaurantOrderStatus.PAID.name())
+                .products(orderPaidEvent.getOrder().getItems().stream().map(orderItem->
+                        RestaurantApprovalEventProduct.builder()
+                                .id(orderItem.getProductId().toString())
+                                .quantity(orderItem.getQuantity())
+                                .build()).toList())
+                .price(orderPaidEvent.getOrder().getPrice().getAmount())
+                .createdAt(orderPaidEvent.getCreatedAt())
                 .build();
     }
 }

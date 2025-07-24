@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
+import com.orderingsystem.order.application.OrderPaymentService;
 import com.orderingsystem.order.application.OrderService;
 import com.orderingsystem.order.infra.kafka.message.PaymentResponseMessage;
 import java.util.List;
@@ -22,6 +23,7 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
     private final OrderService orderService;
+    private final OrderPaymentService orderPaymentService;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.payment-response-consumer-group-id}",
@@ -43,7 +45,7 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
 
                 if (PaymentStatus.COMPLETED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                     log.info("결제 완료. order Id : {}", paymentResponseMessage.getOrderId());
-                    orderService.completePayment(paymentResponseMessage.toPaymentResponse());
+                    orderPaymentService.process(paymentResponseMessage.toPaymentResponse());
                 } else if (PaymentStatus.CANCELLED.name().equals(paymentResponseMessage.getPaymentStatus())){
                     log.info("결제 취소. order Id : {}", paymentResponseMessage.getOrderId());
                     orderService.paymentCancelled(paymentResponseMessage.toPaymentResponse());

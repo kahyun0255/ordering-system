@@ -3,12 +3,12 @@ package com.orderingsystem.order.domain.model.outbox;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.outbox.OutboxStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -33,6 +33,8 @@ public class PaymentOutbox {
     private ZonedDateTime createAt;
     private ZonedDateTime processedAt;
     private String type;
+
+    @Column(name = "payload", columnDefinition = "TEXT", nullable = false)
     private String payload;
 
     @Enumerated(EnumType.STRING)
@@ -64,5 +66,13 @@ public class PaymentOutbox {
 
     public void updateProcessedAt(ZonedDateTime processedAt) {
         this.processedAt = processedAt;
+    }
+
+    public void updateOrderStatus(OrderStatus orderStatus){
+        this.orderStatus = orderStatus;
+    }
+
+    public void updateSagaStatus(SagaStatus sagaStatus){
+        this.sagaStatus = sagaStatus;
     }
 }

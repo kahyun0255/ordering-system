@@ -19,7 +19,7 @@ public class OrderRestaurantApprovalService {
     }
 
     public void orderReject(RestaurantApprovalResponse restaurantApprovalResponse) {
-        OrderCancelledEvent orderCancelledEvent = orderApprovalService.rollback(restaurantApprovalResponse);
+        orderApprovalService.rollback(restaurantApprovalResponse);
 
         log.info("레스토랑 승인 거절로 인해 주문 ID: {} 의 주문을 취소 처리했습니다. failureMessages : {}",
                 restaurantApprovalResponse.getOrderId(),

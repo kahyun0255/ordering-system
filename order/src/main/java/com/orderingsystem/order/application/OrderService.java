@@ -8,7 +8,6 @@ import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
-import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.repository.OrderRepository;
@@ -31,7 +30,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final RestaurantApi restaurantApi;
     private final PaymentOutboxHelper paymentOutboxHelper;
-    private final OrderStatusToSagaStatus orderStatusToSagaStatus;
 
     @Transactional
     public CreateOrderResponse createOrder(CreateOrderApplicationRequest createOrderRequest) {
@@ -44,18 +42,12 @@ public class OrderService {
         paymentOutboxHelper.savePaymentOutboxMessage(
                 orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent),
                 orderCreateEvent.getOrder().getOrderStatus(),
-                orderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
+                OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
                 OutboxStatus.STARTED,
                 UUID.randomUUID()
         );
 
         return orderDataMapper.orderToCreateOrderResponse(orderCreateEvent.getOrder(), "주문이 성공적으로 생성되었습니다.");
-    }
-
-    public void completePayment(PaymentResponse paymentResponse) {
-        OrderPaidEvent orderPaidEvent = orderPaymentService.process(paymentResponse);
-        log.info("OrderPaidEvent 발행. order Id : {}", orderPaidEvent.getOrder().getId());
-        orderPaidEvent.fire();
     }
 
     public void paymentCancelled(PaymentResponse paymentResponse) {

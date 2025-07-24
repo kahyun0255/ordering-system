@@ -6,11 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
+import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventPayload;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
-import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
-import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.infra.kafka.message.PaymentRequestMessage;
 import com.orderingsystem.order.infra.kafka.message.RestaurantApprovalOrderItem;
 import com.orderingsystem.order.infra.kafka.message.RestaurantApprovalRequestMessage;
@@ -57,7 +56,7 @@ public class OrderMessagingDataMapper {
                 .build();
     }
 
-    public <T> T getOrderPaymentEventPayload(String payload, Class<T> outputType) {
+    public <T> T getEventPayload(String payload, Class<T> outputType) {
         try {
             return objectMapper.readValue(payload, outputType);
         } catch (JsonMappingException e) {
@@ -79,6 +78,24 @@ public class OrderMessagingDataMapper {
                 .price(orderPaymentEventPayload.getPrice())
                 .createdAt(orderPaymentEventPayload.getCreatedAt().toInstant())
                 .paymentOrderStatus(PaymentOrderStatus.valueOf(orderPaymentEventPayload.getPaymentOrderStatus()))
+                .build();
+    }
+
+    public RestaurantApprovalRequestMessage restaurantApprovalEventToRestaurantApprovalRequestMessage
+            (UUID sagaId, RestaurantApprovalEventPayload restaurantApprovalEventPayload) {
+        return RestaurantApprovalRequestMessage.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .orderId(UUID.fromString(restaurantApprovalEventPayload.getOrderId()))
+                .restaurantId(UUID.fromString(restaurantApprovalEventPayload.getRestaurantId()))
+                .restaurantOrderStatus(RestaurantOrderStatus.valueOf(restaurantApprovalEventPayload.getRestaurantOrderStatus()))
+                .products(restaurantApprovalEventPayload.getProducts().stream().map(product ->
+                        RestaurantApprovalOrderItem.builder()
+                                .productId(UUID.fromString(product.getId()))
+                                .quantity(product.getQuantity())
+                                .build()).toList())
+                .price(restaurantApprovalEventPayload.getPrice())
+                .createdAt(restaurantApprovalEventPayload.getCreatedAt().toInstant())
                 .build();
     }
 }

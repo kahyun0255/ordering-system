@@ -2,6 +2,7 @@ package com.orderingsystem.payment.domain.model.outbox;
 
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.outbox.OutboxStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -31,6 +32,8 @@ public class OrderOutbox {
     private ZonedDateTime createdAt;
     private ZonedDateTime processedAt;
     private String type;
+
+    @Column(name = "payload", columnDefinition = "TEXT", nullable = false)
     private String payload;
 
     @Enumerated(EnumType.STRING)

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderStatusToSagaStatus {
 
-    SagaStatus orderStatusToSagaStatus(OrderStatus orderStatus){
+    static SagaStatus orderStatusToSagaStatus(OrderStatus orderStatus){
         return switch (orderStatus) {
             case PAID -> SagaStatus.PROCESSING;
             case APPROVED -> SagaStatus.SUCCEEDED;
