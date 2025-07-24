@@ -19,6 +19,7 @@ import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
 import com.orderingsystem.payment.domain.repository.outbox.OrderOutboxRepository;
 import com.orderingsystem.payment.domain.repository.PaymentRepository;
+import com.orderingsystem.payment.domain.service.PaymentValidateAndCancelService;
 import com.orderingsystem.payment.domain.service.PaymentValidateAndInitiateService;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PaymentService {
 
-    private final PaymentRequestHelper paymentRequestHelper;
     private final PaymentRepository paymentRepository;
     private final PaymentValidateAndInitiateService paymentValidateAndInitiateService;
     private final CreditEntryRepository creditEntryRepository;
@@ -43,6 +43,7 @@ public class PaymentService {
     private final PaymentResponseMessagePublisher paymentResponseMessagePublisher;
     private final OrderOutboxHelper orderOutboxHelper;
     private final PaymentDataMapper paymentDataMapper;
+    private final PaymentValidateAndCancelService paymentValidateAndCancelService;
 
     @Transactional
     public void completePayment(PaymentRequest paymentRequest) {
@@ -58,12 +59,12 @@ public class PaymentService {
 
         CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
         List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
-        List<String> failureMassages = new ArrayList<>();
+        List<String> failureMessages = new ArrayList<>();
 
         PaymentEvent paymentEvent = paymentValidateAndInitiateService.validateAndInitiate(payment, creditEntry,
-                creditHistories, failureMassages);
+                creditHistories, failureMessages);
 
-        persistDataBase(payment, creditEntry, creditHistories, failureMassages, payment.getPrice());
+        persistDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
                 paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent),
@@ -72,12 +73,35 @@ public class PaymentService {
                 paymentRequest.getSagaId());
     }
 
+    @Transactional
     public void cancelPayment(PaymentRequest paymentRequest) {
-        PaymentEvent paymentEvent = paymentRequestHelper.persistCancelPayment(paymentRequest);
+        log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
 
-        log.info("결제 이벤트 발행. Payment Id : {}, Order Id : {}", paymentEvent.getPayment().getId(),
-                paymentEvent.getPayment().getOrderId());
-        paymentEvent.fire();
+        if (publishIfOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
+            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 취소 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
+                    paymentRequest.getSagaId());
+            return;
+        }
+
+        Payment payment = getPayment(paymentRequest.getOrderId());
+        CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
+        List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
+        List<String> failureMessages = new ArrayList<>();
+
+        PaymentEvent paymentEvent = paymentValidateAndCancelService.validateAndCancel(
+                payment, creditEntry, creditHistories, failureMessages);
+
+        if (failureMessages.isEmpty()) {
+            creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
+        }
+
+        persistDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
+
+        orderOutboxHelper.saveOrderOutboxMessage(
+                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent),
+                paymentEvent.getPayment().getStatus(),
+                OutboxStatus.STARTED,
+                paymentRequest.getSagaId());
     }
 
     private boolean publishIfOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,

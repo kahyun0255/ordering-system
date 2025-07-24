@@ -20,9 +20,7 @@ import org.springframework.stereotype.Component;
 public class PaymentValidateAndCancelService {
 
     public PaymentEvent validateAndCancel(Payment payment, CreditEntry creditEntry,
-                                          List<CreditHistory> creditHistories, List<String> failureMessages,
-                                          DomainEventPublisher<PaymentCancelledEvent> paymentCancelledEventDomainEventPublisher,
-                                          DomainEventPublisher<PaymentFailedEvent> paymentFailedEventDomainEventPublisher) {
+                                          List<CreditHistory> creditHistories, List<String> failureMessages) {
         payment.validatePayment(failureMessages);
         addCreditEntry(payment, creditEntry);
         updateCreditHistory(payment, creditHistories, TransactionType.CREDIT);
@@ -30,7 +28,7 @@ public class PaymentValidateAndCancelService {
         if (failureMessages.isEmpty()) {
             payment.updateStatus(PaymentStatus.CANCELLED);
             log.info("결제가 취소되었습니다. Order Id : {}", payment.getOrderId());
-            return new PaymentCancelledEvent(payment, ZonedDateTime.now(), paymentCancelledEventDomainEventPublisher);
+            return new PaymentCancelledEvent(payment, ZonedDateTime.now());
         } else {
             payment.updateStatus(PaymentStatus.FAILED);
             log.error("결제 취소에 실패했습니다. Order Id : {}", payment.getOrderId());
