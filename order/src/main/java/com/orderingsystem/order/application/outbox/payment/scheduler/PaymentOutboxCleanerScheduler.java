@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PaymentOutboxCleanerScheduler implements OutboxScheduler {
 
-
     private final PaymentOutboxHelper paymentOutboxHelper;
 
     @Override
@@ -34,7 +33,7 @@ public class PaymentOutboxCleanerScheduler implements OutboxScheduler {
         if (outboxMessageResponse.isPresent()) {
             List<PaymentOutbox> outboxMessages = outboxMessageResponse.get();
 
-            paymentOutboxHelper.deletePaymentOutboxMessageByOutboxStatusAndSagaStatus(
+            paymentOutboxHelper.deleteAllPaymentOutboxMessageByOutboxStatusAndSagaStatus(
                     OutboxStatus.COMPLETED,
                     SagaStatus.SUCCEEDED,
                     SagaStatus.FAILED,

@@ -30,7 +30,7 @@ public class OrderOutboxCleanerScheduler implements OutboxScheduler {
         if (outboxMessageResponse.isPresent() && !outboxMessageResponse.get().isEmpty()) {
             List<OrderOutbox> outboxMessages = outboxMessageResponse.get();
 
-            orderOutboxHelper.deleteOrderOutboxByOutboxStatus(OutboxStatus.COMPLETED);
+            orderOutboxHelper.deleteAllOrderOutboxByOutboxStatus(OutboxStatus.COMPLETED);
 
             log.info("{}개의 Order RestaurantApprovalOutbox Message를 삭제했습니다. payloads : {}", outboxMessages.size(),
                     outboxMessages.stream().map(OrderOutbox::getPayload).collect(Collectors.joining("\n")));

@@ -84,9 +84,9 @@ public class RestaurantApprovalOutboxHelper {
                 Arrays.asList(sagaStatus));
     }
 
-    public void deleteRestaurantApprovalOutboxMessageByOutboxStatusAndSagaStatus(OutboxStatus outboxStatus,
-                                                                                 SagaStatus... sagaStatus) {
-        restaurantApprovalOutboxRepository.deleteByTypeAndOutboxStatusAndSagaStatusIn(
+    public void deleteAllRestaurantApprovalOutboxMessageByOutboxStatusAndSagaStatus(OutboxStatus outboxStatus,
+                                                                                    SagaStatus... sagaStatus) {
+        restaurantApprovalOutboxRepository.deleteAllByTypeAndOutboxStatusAndSagaStatusIn(
                 ORDER_SAGA_NAME, outboxStatus, Arrays.asList(sagaStatus));
     }
 }

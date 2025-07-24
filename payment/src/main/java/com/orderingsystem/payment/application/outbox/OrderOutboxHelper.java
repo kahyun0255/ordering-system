@@ -77,7 +77,7 @@ public class OrderOutboxHelper {
     }
 
     @Transactional
-    public void deleteOrderOutboxByOutboxStatus(OutboxStatus outboxStatus) {
+    public void deleteAllOrderOutboxByOutboxStatus(OutboxStatus outboxStatus) {
         orderOutboxRepository.deleteAllByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
     }
 }

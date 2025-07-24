@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RestaurantApprovalOutboxCleanerScheduler implements OutboxScheduler {
 
-
     private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
 
     @Override
@@ -34,14 +33,15 @@ public class RestaurantApprovalOutboxCleanerScheduler implements OutboxScheduler
         if (outboxMessageResponse.isPresent()) {
             List<RestaurantApprovalOutbox> outboxMessages = outboxMessageResponse.get();
 
-            restaurantApprovalOutboxHelper.deleteRestaurantApprovalOutboxMessageByOutboxStatusAndSagaStatus(
+            restaurantApprovalOutboxHelper.deleteAllRestaurantApprovalOutboxMessageByOutboxStatusAndSagaStatus(
                     OutboxStatus.COMPLETED,
                     SagaStatus.SUCCEEDED,
                     SagaStatus.FAILED,
                     SagaStatus.COMPENSATED);
 
             log.info("{}개의 Order RestaurantApprovalOutbox Message를 삭제했습니다. payloads : {}", outboxMessages.size(),
-                    outboxMessages.stream().map(RestaurantApprovalOutbox::getPayload).collect(Collectors.joining("\n")));
+                    outboxMessages.stream().map(RestaurantApprovalOutbox::getPayload)
+                            .collect(Collectors.joining("\n")));
         }
     }
 }

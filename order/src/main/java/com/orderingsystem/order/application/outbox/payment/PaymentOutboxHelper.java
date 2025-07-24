@@ -76,9 +76,9 @@ public class PaymentOutboxHelper {
     }
 
     @Transactional
-    public void deletePaymentOutboxMessageByOutboxStatusAndSagaStatus(OutboxStatus outboxStatus,
-                                                                      SagaStatus... sagaStatus) {
-        paymentOutboxRepository.deleteByTypeAndOutboxStatusAndSagaStatusIn(
+    public void deleteAllPaymentOutboxMessageByOutboxStatusAndSagaStatus(OutboxStatus outboxStatus,
+                                                                         SagaStatus... sagaStatus) {
+        paymentOutboxRepository.deleteAllByTypeAndOutboxStatusAndSagaStatusIn(
                 ORDER_SAGA_NAME, outboxStatus, Arrays.asList(sagaStatus));
     }
 }
