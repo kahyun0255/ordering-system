@@ -75,4 +75,9 @@ public class OrderOutboxHelper {
     public Optional<List<OrderOutbox>> getOrderOutboxMessageByOutboxStatus(OutboxStatus outboxStatus) {
         return orderOutboxRepository.findByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
     }
+
+    @Transactional
+    public void deleteOrderOutboxByOutboxStatus(OutboxStatus outboxStatus) {
+        orderOutboxRepository.deleteAllByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
+    }
 }

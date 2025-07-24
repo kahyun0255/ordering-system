@@ -16,4 +16,6 @@ public interface OrderOutboxRepository extends JpaRepository<OrderOutbox, UUID> 
                                                                              OutboxStatus outboxStatus);
 
     Optional<List<OrderOutbox>> findByTypeAndOutboxStatus(String orderSagaName, OutboxStatus outboxStatus);
+
+    void deleteAllByTypeAndOutboxStatus(String orderSagaName, OutboxStatus outboxStatus);
 }
