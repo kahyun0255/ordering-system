@@ -94,4 +94,5 @@ public class RestaurantApprovalOutboxHelper {
                                                                                                SagaStatus sagaStatus) {
         return restaurantApprovalOutboxRepository.findByTypeAndSagaIdAndSagaStatus(ORDER_SAGA_NAME, sagaId, sagaStatus);
     }
+
 }
