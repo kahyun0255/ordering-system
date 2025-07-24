@@ -17,19 +17,6 @@ public class PaymentMessageDataMapper {
 
     private final ObjectMapper objectMapper;
 
-    public PaymentResponseMessage paymentEventToPaymentResponseMessage(PaymentEvent domainEvent) {
-        return PaymentResponseMessage.builder()
-                .id(UUID.randomUUID())
-                .paymentId(domainEvent.getPayment().getId())
-                .orderId(domainEvent.getPayment().getOrderId())
-                .customerId(domainEvent.getPayment().getCustomerId())
-                .price(domainEvent.getPayment().getPrice().getAmount())
-                .createdAt(domainEvent.getCreatedAt().toInstant())
-                .paymentStatus(domainEvent.getPayment().getStatus().name())
-                .failureMessages(domainEvent.getFailureMessages())
-                .build();
-    }
-
     public <T> T getOrderPaymentEventPayload(String payload, Class<T> outputType) {
         try {
             return objectMapper.readValue(payload, outputType);

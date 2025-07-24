@@ -14,47 +14,16 @@ import com.orderingsystem.order.infra.kafka.message.PaymentRequestMessage;
 import com.orderingsystem.order.infra.kafka.message.RestaurantApprovalOrderItem;
 import com.orderingsystem.order.infra.kafka.message.RestaurantApprovalRequestMessage;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class OrderMessagingDataMapper {
 
     private final ObjectMapper objectMapper;
-
-    public OrderMessagingDataMapper(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
-    public PaymentRequestMessage orderCancelledEventToPaymentRequestMessage(OrderCancelledEvent domainEvent) {
-        return PaymentRequestMessage.builder()
-                .id(UUID.randomUUID())
-                .customerId(domainEvent.getOrder().getCustomerId())
-                .orderId(domainEvent.getOrder().getId())
-                .price(domainEvent.getOrder().getPrice().getAmount())
-                .createdAt(domainEvent.getCreatedAt().toInstant())
-                .paymentOrderStatus(PaymentOrderStatus.CANCELLED)
-                .build();
-    }
-
-    public RestaurantApprovalRequestMessage orderPaidEventToRestaurantApprovalRequestMessage(
-            OrderPaidEvent domainEvent) {
-        return RestaurantApprovalRequestMessage.builder()
-                .id(UUID.randomUUID())
-                .orderId(domainEvent.getOrder().getId())
-                .restaurantId(domainEvent.getOrder().getRestaurantId())
-                .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(domainEvent.getOrder().getItems().stream().map(item ->
-                                RestaurantApprovalOrderItem.builder()
-                                        .productId(item.getProductId())
-                                        .quantity(item.getQuantity())
-                                        .build())
-                        .toList())
-                .price(domainEvent.getOrder().getPrice().getAmount())
-                .createdAt(domainEvent.getCreatedAt().toInstant())
-                .build();
-    }
 
     public <T> T getEventPayload(String payload, Class<T> outputType) {
         try {

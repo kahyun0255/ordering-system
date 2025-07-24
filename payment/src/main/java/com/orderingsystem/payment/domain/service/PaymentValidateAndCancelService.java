@@ -1,6 +1,5 @@
 package com.orderingsystem.payment.domain.service;
 
-import com.orderingsystem.common.domain.publisher.DomainEventPublisher;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.payment.domain.event.PaymentCancelledEvent;
 import com.orderingsystem.payment.domain.event.PaymentEvent;

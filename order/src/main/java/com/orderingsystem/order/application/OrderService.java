@@ -26,7 +26,6 @@ public class OrderService {
 
     private final OrderCreateHelper orderCreateHelper;
     private final OrderDataMapper orderDataMapper;
-    private final OrderPaymentService orderPaymentService;
     private final OrderRepository orderRepository;
     private final RestaurantApi restaurantApi;
     private final PaymentOutboxHelper paymentOutboxHelper;
@@ -48,12 +47,6 @@ public class OrderService {
         );
 
         return orderDataMapper.orderToCreateOrderResponse(orderCreateEvent.getOrder(), "주문이 성공적으로 생성되었습니다.");
-    }
-
-    public void paymentCancelled(PaymentResponse paymentResponse) {
-        orderPaymentService.rollback(paymentResponse);
-        log.info("주문 rollback. Order Id : {}, failureMassages : {} ",
-                paymentResponse.getOrderId(), String.join(",", paymentResponse.getFailureMessages()));
     }
 
     @Transactional(readOnly = true)

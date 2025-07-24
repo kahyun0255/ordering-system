@@ -41,7 +41,6 @@ public class RestaurantService {
     private final OrderOutboxHelper orderOutboxHelper;
     private final RestaurantDataMapper restaurantDataMapper;
 
-
     @Transactional
     public void approveOrder(ApprovalRequest approvalRequest) {
         if (isOutboxMessageProcessedForApproval(approvalRequest)) {

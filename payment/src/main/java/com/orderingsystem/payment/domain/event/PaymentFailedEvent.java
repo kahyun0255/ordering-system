@@ -10,8 +10,4 @@ public class PaymentFailedEvent extends PaymentEvent {
         super(payment, createdAt, failureMessages);
     }
 
-    @Override
-    public void fire() {
-
-    }
 }

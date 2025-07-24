@@ -10,7 +10,4 @@ public class PaymentCancelledEvent extends PaymentEvent {
         super(payment, createdAt, Collections.emptyList());
     }
 
-    @Override
-    public void fire() {
-    }
 }

@@ -15,7 +15,6 @@ import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
-import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
 import com.orderingsystem.order.domain.service.PayOrderService;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
@@ -33,7 +32,6 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
 
     private final OrderRepository orderRepository;
     private final PayOrderService payOrderService;
-    private final PaymentOutboxRepository paymentOutboxRepository;
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
     private final OrderDataMapper orderDataMapper;

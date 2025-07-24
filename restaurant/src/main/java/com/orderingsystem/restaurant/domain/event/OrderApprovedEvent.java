@@ -12,8 +12,4 @@ public class OrderApprovedEvent extends OrderApprovalEvent {
         super(orderApproval, restaurantId, failureMessages, createdAt);
     }
 
-    @Override
-    public void fire() {
-
-    }
 }
