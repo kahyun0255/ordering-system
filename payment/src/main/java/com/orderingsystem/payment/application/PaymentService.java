@@ -13,6 +13,7 @@ import com.orderingsystem.payment.application.publisher.PaymentResponseMessagePu
 import com.orderingsystem.payment.domain.event.PaymentEvent;
 import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
+import com.orderingsystem.payment.domain.model.CreditInfo;
 import com.orderingsystem.payment.domain.model.Payment;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
@@ -60,11 +61,16 @@ public class PaymentService {
         CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
         List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
         List<String> failureMessages = new ArrayList<>();
+        CreditInfo creditInfo = CreditInfo.builder()
+                .id(creditEntry.getId())
+                .customerId(creditEntry.getCustomerId())
+                .totalCreditAmount(creditEntry.getTotalCreditAmount())
+                .build();
 
-        PaymentEvent paymentEvent = paymentValidateAndInitiateService.validateAndInitiate(payment, creditEntry,
+        PaymentEvent paymentEvent = paymentValidateAndInitiateService.validateAndInitiate(payment, creditInfo,
                 creditHistories, failureMessages);
 
-        persistDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
+        persistCompleteDataBase(payment, creditEntry, creditInfo, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
                 paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent),
@@ -95,7 +101,7 @@ public class PaymentService {
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
         }
 
-        persistDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
+        persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
                 paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent),
@@ -149,11 +155,22 @@ public class PaymentService {
         return creditHistories.get();
     }
 
-    private void persistDataBase(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
+    private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry, CreditInfo creditInfo, List<CreditHistory> creditHistories,
                                  List<String> failureMassages, Money price) {
         paymentRepository.save(payment);
         if (failureMassages.isEmpty()) {
-            creditEntry.subtractCreditAmount(price);
+            if (creditInfo.getTotalCreditAmount().equals(creditEntry.getTotalCreditAmount().subtract(price))){
+                creditEntry.subtractCreditAmount(price);
+                creditEntryRepository.save(creditEntry);
+            }
+            creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
+        }
+    }
+
+    private void persistCancelDataBase(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
+                                         List<String> failureMassages, Money price) {
+        paymentRepository.save(payment);
+        if (failureMassages.isEmpty()) {
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
         }
     }

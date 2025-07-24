@@ -23,18 +23,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PaymentValidateAndInitiateService {
 
-    public PaymentEvent validateAndInitiate(Payment payment, CreditEntry creditEntry,
+    public PaymentEvent validateAndInitiate(Payment payment, CreditInfo creditInfo,
                                             List<CreditHistory> creditHistories,
                                             List<String> failureMessages) {
 
         payment.validatePayment(failureMessages);
         payment.initializePayment();
-
-        CreditInfo creditInfo = CreditInfo.builder()
-                .id(creditEntry.getId())
-                .customerId(creditEntry.getCustomerId())
-                .totalCreditAmount(creditEntry.getTotalCreditAmount())
-                .build();
 
         validateCreditEntry(payment, creditInfo, failureMessages);
         subtractCreditEntry(payment, creditInfo);

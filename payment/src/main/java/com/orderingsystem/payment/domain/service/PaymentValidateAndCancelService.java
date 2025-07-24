@@ -13,11 +13,13 @@ import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @Slf4j
 public class PaymentValidateAndCancelService {
 
+    @Transactional
     public PaymentEvent validateAndCancel(Payment payment, CreditEntry creditEntry,
                                           List<CreditHistory> creditHistories, List<String> failureMessages) {
         payment.validatePayment(failureMessages);
@@ -46,6 +48,7 @@ public class PaymentValidateAndCancelService {
                 .customerId(payment.getCustomerId())
                 .amount(payment.getPrice())
                 .type(transactionType)
+                .paidAt(ZonedDateTime.now())
                 .build());
     }
 }
