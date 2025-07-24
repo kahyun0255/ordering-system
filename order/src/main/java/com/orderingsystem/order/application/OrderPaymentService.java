@@ -120,13 +120,14 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
     }
 
     private void updateApprovalOutboxMessage(UUID sagaId, OrderStatus orderStatus,
-                                                                 SagaStatus sagaStatus) {
+                                             SagaStatus sagaStatus) {
         Optional<RestaurantApprovalOutbox> restaurantApprovalOutboxResponse =
-                restaurantApprovalOutboxHelper.getRestaurantApprovalOutboxBySagaIdAndSagaStatus(sagaId, sagaStatus);
+                restaurantApprovalOutboxHelper.getRestaurantApprovalOutboxBySagaIdAndSagaStatus(sagaId,
+                        SagaStatus.COMPENSATING);
 
         if (restaurantApprovalOutboxResponse.isEmpty()) {
             throw new OrderApplicationException(
-                    "SagaStatus " + SagaStatus.COMPENSATING.name() + "  상태의 RestaurantApprovalOutbox를 찾지 못했습니다.");
+                    "SagaStatus " + SagaStatus.COMPENSATING.name() + " 상태의 RestaurantApprovalOutbox를 찾지 못했습니다.");
         }
 
         RestaurantApprovalOutbox restaurantApprovalOutbox = restaurantApprovalOutboxResponse.get();
@@ -136,7 +137,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
     }
 
     private void updatePaymentOutboxMessage(PaymentOutbox paymentOutboxMessage, OrderStatus orderStatus,
-                                                     SagaStatus sagaStatus) {
+                                            SagaStatus sagaStatus) {
         paymentOutboxMessage.updateProcessedAt(ZonedDateTime.now());
         paymentOutboxMessage.updateOrderStatus(orderStatus);
         paymentOutboxMessage.updateSagaStatus(sagaStatus);
