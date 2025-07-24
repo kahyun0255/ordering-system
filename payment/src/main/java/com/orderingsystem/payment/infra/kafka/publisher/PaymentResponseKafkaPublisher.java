@@ -7,7 +7,6 @@ import com.orderingsystem.kafka.KafkaProducer;
 import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.payment.application.outbox.model.OrderEventPayload;
 import com.orderingsystem.payment.application.publisher.PaymentResponseMessagePublisher;
-import com.orderingsystem.payment.domain.exception.PaymentDomainException;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.payment.infra.kafka.PaymentMessageConfigData;
 import com.orderingsystem.payment.infra.kafka.PaymentMessageDataMapper;

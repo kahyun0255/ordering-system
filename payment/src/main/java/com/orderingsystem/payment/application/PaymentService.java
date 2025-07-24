@@ -3,7 +3,6 @@ package com.orderingsystem.payment.application;
 import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 
 import com.orderingsystem.common.domain.Money;
-import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
@@ -18,7 +17,7 @@ import com.orderingsystem.payment.domain.model.Payment;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
-import com.orderingsystem.payment.domain.repository.OrderOutboxRepository;
+import com.orderingsystem.payment.domain.repository.outbox.OrderOutboxRepository;
 import com.orderingsystem.payment.domain.repository.PaymentRepository;
 import com.orderingsystem.payment.domain.service.PaymentValidateAndInitiateService;
 import java.util.ArrayList;

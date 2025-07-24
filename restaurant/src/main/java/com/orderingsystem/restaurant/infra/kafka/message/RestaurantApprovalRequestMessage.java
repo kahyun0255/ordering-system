@@ -15,6 +15,7 @@ import lombok.Getter;
 public class RestaurantApprovalRequestMessage {
 
     private UUID id;
+    private UUID sagaId;
     private UUID orderId;
     private UUID restaurantId;
     private RestaurantOrderStatus restaurantOrderStatus;
@@ -25,6 +26,7 @@ public class RestaurantApprovalRequestMessage {
     public ApprovalRequest toApprovalRequest() {
         return ApprovalRequest.builder()
                 .id(this.id)
+                .sagaId(this.sagaId)
                 .orderId(this.orderId)
                 .restaurantId(this.restaurantId)
                 .restaurantOrderStatus(this.restaurantOrderStatus)

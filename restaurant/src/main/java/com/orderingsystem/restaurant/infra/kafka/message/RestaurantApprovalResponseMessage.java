@@ -12,6 +12,7 @@ import lombok.Getter;
 public class RestaurantApprovalResponseMessage {
 
     private UUID id;
+    private UUID sagaId;
     private UUID orderId;
     private UUID restaurantId;
     private Instant createdAt;

@@ -13,6 +13,7 @@ import lombok.Getter;
 public class ApprovalRequest {
 
     private UUID id;
+    private UUID sagaId;
     private UUID orderId;
     private UUID restaurantId;
     private RestaurantOrderStatus restaurantOrderStatus;

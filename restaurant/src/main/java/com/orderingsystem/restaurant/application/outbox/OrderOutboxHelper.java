@@ -1,15 +1,16 @@
-package com.orderingsystem.payment.application.outbox;
+package com.orderingsystem.restaurant.application.outbox;
 
 import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orderingsystem.common.domain.status.PaymentStatus;
+import com.orderingsystem.common.domain.status.OrderApprovalStatus;
+import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.outbox.OutboxStatus;
-import com.orderingsystem.payment.application.outbox.model.OrderEventPayload;
-import com.orderingsystem.payment.domain.exception.PaymentDomainException;
-import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
-import com.orderingsystem.payment.domain.repository.outbox.OrderOutboxRepository;
+import com.orderingsystem.restaurant.application.outbox.model.OrderEventPayload;
+import com.orderingsystem.restaurant.domain.exception.RestaurantDomainException;
+import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
+import com.orderingsystem.restaurant.domain.repository.outbox.OrderOutboxRepository;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -20,44 +21,39 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class OrderOutboxHelper {
+
     private final OrderOutboxRepository orderOutboxRepository;
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public void updateOutboxMessage(OrderOutbox orderOutbox, OutboxStatus outboxStatus){
-        orderOutbox.updateOutboxStatus(outboxStatus);
-        log.info("Payment OrderOutbox Status 업데이트 : {}", outboxStatus);
-    }
-
-    @Transactional
-    public void save(OrderOutbox orderOutbox){
+    public void save(OrderOutbox orderOutbox) {
         try {
             orderOutboxRepository.save(orderOutbox);
-            log.info("Payment OrderOutbox 저장했습니다. Outbox Id : {}", orderOutbox.getId());
+            log.info("Restaurant OrderOutbox 저장했습니다. Outbox Id : {}", orderOutbox.getId());
         } catch (Exception e) {
-            log.error("payment OrderOutbox 저장에 실패했습니다. Outbox Id : {}, Message : {}",
+            log.error("Restaurant OrderOutbox 저장에 실패했습니다. Outbox Id : {}, Message : {}",
                     orderOutbox.getId(), e.getMessage());
-            throw new PaymentDomainException(
-                    "payment OrderOutbox 저장에 실패했습니다. Outbox Id : " + orderOutbox.getId() +
+            throw new RestaurantDomainException(
+                    "Restaurant OrderOutbox 저장에 실패했습니다. Outbox Id : " + orderOutbox.getId() +
                             " Message : " + e.getMessage());
         }
     }
 
     @Transactional
-    public void saveOrderOutboxMessage(OrderEventPayload orderEventPayload, PaymentStatus paymentStatus,
+    public void saveOrderOutboxMessage(OrderEventPayload orderEventPayload, OrderApprovalStatus status,
                                        OutboxStatus outboxStatus, UUID sagaId) {
         save(OrderOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
-                .processedAt(ZonedDateTime.now())
                 .createdAt(orderEventPayload.getCreatedAt())
+                .processedAt(ZonedDateTime.now())
                 .type(ORDER_SAGA_NAME)
                 .payload(createPayload(orderEventPayload))
                 .outboxStatus(outboxStatus)
-                .paymentStatus(paymentStatus)
+                .orderApprovalStatus(status)
                 .build());
     }
 
@@ -66,7 +62,7 @@ public class OrderOutboxHelper {
             return objectMapper.writeValueAsString(orderEventPayload);
         } catch (JsonProcessingException e) {
             log.error("OrderEventPayload 생성에 실패했습니다. Order Id : {}", orderEventPayload.getOrderId());
-            throw new PaymentDomainException(
+            throw new RestaurantDomainException(
                     "OrderEventPayload 생성에 실패했습니다. Order Id : " + orderEventPayload.getOrderId());
         }
     }
@@ -74,5 +70,10 @@ public class OrderOutboxHelper {
     @Transactional(readOnly = true)
     public Optional<List<OrderOutbox>> getOrderOutboxMessageByOutboxStatus(OutboxStatus outboxStatus) {
         return orderOutboxRepository.findByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
+    }
+
+    @Transactional
+    public void deleteOrderOutboxByOutboxStatus(OutboxStatus outboxStatus) {
+        orderOutboxRepository.deleteByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
     }
 }

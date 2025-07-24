@@ -1,4 +1,4 @@
-package com.orderingsystem.payment.domain.repository;
+package com.orderingsystem.payment.domain.repository.outbox;
 
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.outbox.OutboxStatus;

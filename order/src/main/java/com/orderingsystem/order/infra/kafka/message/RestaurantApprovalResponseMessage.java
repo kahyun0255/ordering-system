@@ -13,6 +13,7 @@ import lombok.Getter;
 public class RestaurantApprovalResponseMessage {
 
     private UUID id;
+    private UUID sagaId;
     private UUID orderId;
     private UUID restaurantId;
     private Instant createdAt;
@@ -22,6 +23,7 @@ public class RestaurantApprovalResponseMessage {
     public RestaurantApprovalResponse toRestaurantApprovalResponse(){
         return RestaurantApprovalResponse.builder()
                 .id(this.id)
+                .sagaId(this.sagaId)
                 .orderId(this.orderId)
                 .restaurantId(this.restaurantId)
                 .createdAt(this.createdAt)
