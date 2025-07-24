@@ -14,6 +14,7 @@ import lombok.Getter;
 public class PaymentRequestMessage {
 
     private UUID id;
+    private UUID sagaId;
     private UUID orderId;
     private UUID customerId;
     private BigDecimal price;

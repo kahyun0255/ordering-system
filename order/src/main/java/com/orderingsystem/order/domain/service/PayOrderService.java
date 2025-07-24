@@ -11,9 +11,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class PayOrderService {
 
-    public OrderPaidEvent payOrder(Order order, DomainEventPublisher<OrderPaidEvent> orderPaidEventPublisher){
+    public OrderPaidEvent payOrder(Order order){
         order.pay();
         log.info("주문 결제가 완료되었습니다. Order Id : {}", order.getId());
-        return new OrderPaidEvent(order, ZonedDateTime.now(), orderPaidEventPublisher);
+        return new OrderPaidEvent(order, ZonedDateTime.now());
     }
 }

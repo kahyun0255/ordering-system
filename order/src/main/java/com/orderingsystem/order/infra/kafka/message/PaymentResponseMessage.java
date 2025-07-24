@@ -13,6 +13,7 @@ import lombok.Getter;
 public class PaymentResponseMessage {
 
     private UUID id;
+    private UUID sagaId;
     private UUID paymentId;
     private UUID orderId;
     private UUID customerId;
@@ -24,6 +25,7 @@ public class PaymentResponseMessage {
     public PaymentResponse toPaymentResponse() {
         return PaymentResponse.builder()
                 .id(this.id)
+                .sagaId(this.sagaId)
                 .paymentId(this.paymentId)
                 .orderId(this.orderId)
                 .customerId(this.customerId)

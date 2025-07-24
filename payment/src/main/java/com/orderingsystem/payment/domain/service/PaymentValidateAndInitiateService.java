@@ -23,20 +23,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PaymentValidateAndInitiateService {
 
-    public PaymentEvent validateAndInitiate(Payment payment, CreditEntry creditEntry,
+    public PaymentEvent validateAndInitiate(Payment payment, CreditInfo creditInfo,
                                             List<CreditHistory> creditHistories,
-                                            List<String> failureMessages,
-                                            DomainEventPublisher<PaymentCompletedEvent> paymentCompletedEventDomainEventPublisher,
-                                            DomainEventPublisher<PaymentFailedEvent> paymentFailedEventDomainEventPublisher) {
+                                            List<String> failureMessages) {
 
         payment.validatePayment(failureMessages);
         payment.initializePayment();
-
-        CreditInfo creditInfo = CreditInfo.builder()
-                .id(creditEntry.getId())
-                .customerId(creditEntry.getCustomerId())
-                .totalCreditAmount(creditEntry.getTotalCreditAmount())
-                .build();
 
         validateCreditEntry(payment, creditInfo, failureMessages);
         subtractCreditEntry(payment, creditInfo);
@@ -46,12 +38,11 @@ public class PaymentValidateAndInitiateService {
         if (failureMessages.isEmpty()) {
             log.info("Order Id에 대한 결제가 준비되었습니다. Order Id : {}", payment.getOrderId());
             payment.updateStatus(PaymentStatus.COMPLETED);
-            return new PaymentCompletedEvent(payment, ZonedDateTime.now(), paymentCompletedEventDomainEventPublisher);
+            return new PaymentCompletedEvent(payment, ZonedDateTime.now());
         } else {
             log.info("Order Id에 대한 결제 준비가 실패했습니다. Order Id : {}", payment.getOrderId());
             payment.updateStatus(PaymentStatus.FAILED);
-            return new PaymentFailedEvent(payment, ZonedDateTime.now(), failureMessages,
-                    paymentFailedEventDomainEventPublisher);
+            return new PaymentFailedEvent(payment, ZonedDateTime.now(), failureMessages);
         }
     }
 

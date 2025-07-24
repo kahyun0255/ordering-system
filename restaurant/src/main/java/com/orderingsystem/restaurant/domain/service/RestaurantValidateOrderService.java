@@ -16,9 +16,7 @@ import org.springframework.stereotype.Service;
 public class RestaurantValidateOrderService {
 
     public OrderApprovalEvent validateOrder(RestaurantInfo restaurant,
-                                            List<String> failureMessages,
-                                            DomainEventPublisher<OrderApprovedEvent> orderApprovedEventDomainEventPublisher,
-                                            DomainEventPublisher<OrderRejectedEvent> orderRejectedEventDomainEventPublisher) {
+                                            List<String> failureMessages) {
         log.info("주문 검증 시작. Order Id : {}", restaurant.getOrderDetail().getOrderId());
         restaurant.validateOrder(failureMessages);
 
@@ -27,13 +25,13 @@ public class RestaurantValidateOrderService {
             restaurant.constructOrderApproval(OrderApprovalStatus.APPROVED);
 
             return new OrderApprovedEvent(restaurant.getOrderApproval(), restaurant.getRestaurantId(), failureMessages,
-                    ZonedDateTime.now(), orderApprovedEventDomainEventPublisher);
+                    ZonedDateTime.now());
         } else {
             log.info("주문이 거절되었습니다. Order Id : {}", restaurant.getOrderDetail().getOrderId());
             restaurant.constructOrderApproval(OrderApprovalStatus.REJECTED);
 
             return new OrderRejectedEvent(restaurant.getOrderApproval(), restaurant.getRestaurantId(), failureMessages,
-                    ZonedDateTime.now(), orderRejectedEventDomainEventPublisher);
+                    ZonedDateTime.now());
         }
     }
 }

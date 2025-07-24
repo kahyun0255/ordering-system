@@ -1,5 +1,6 @@
 package com.orderingsystem.payment.infra.kafka.message;
 
+import com.orderingsystem.common.domain.status.PaymentStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -12,6 +13,7 @@ import lombok.Getter;
 public class PaymentResponseMessage {
 
     private UUID id;
+    private UUID sagaId;
     private UUID paymentId;
     private UUID orderId;
     private UUID customerId;

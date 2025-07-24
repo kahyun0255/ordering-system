@@ -12,6 +12,7 @@ import lombok.Getter;
 public class PaymentResponse {
 
     private UUID id;
+    private UUID sagaId;
     private UUID paymentId;
     private UUID orderId;
     private UUID customerId;

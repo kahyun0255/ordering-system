@@ -1,6 +1,5 @@
 package com.orderingsystem.order.application;
 
-import com.orderingsystem.common.domain.publisher.DomainEventPublisher;
 import com.orderingsystem.order.application.dto.RestaurantInfo;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
@@ -27,7 +26,6 @@ public class OrderCreateHelper {
 
     private final OrderDataMapper orderDataMapper;
     private final OrderValidateAndInitiateService orderValidateAndInitiateService;
-    private final DomainEventPublisher<OrderCreateEvent> orderCreateEventDomainEventPublisher;
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final OrderAddressRepository orderAddressRepository;
@@ -40,7 +38,7 @@ public class OrderCreateHelper {
         Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest, orderAddress.getId());
 
         OrderCreateEvent orderCreateEvent =
-                orderValidateAndInitiateService.validateAndInitiate(order, restaurantInfo.toRestaurant(), orderCreateEventDomainEventPublisher);
+                orderValidateAndInitiateService.validateAndInitiate(order, restaurantInfo.toRestaurant());
 
         Order savedOrder = saveOrder(order);
         saveOrderAddress(orderAddress, order);

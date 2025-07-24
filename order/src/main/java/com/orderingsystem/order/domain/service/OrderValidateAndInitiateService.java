@@ -16,14 +16,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderValidateAndInitiateService {
 
-    public OrderCreateEvent validateAndInitiate(Order order, Restaurant restaurant,
-                                                DomainEventPublisher<OrderCreateEvent> orderCreateEventDomainEventPublisher) {
+    public OrderCreateEvent validateAndInitiate(Order order, Restaurant restaurant) {
         validateRestaurant(restaurant);
         setOrderProductInformation(order, restaurant);
         order.validateOrder();
         order.initializeOrder();
         log.info("주문 생성. Order ID : {}", order.getId());
-        return new OrderCreateEvent(order, ZonedDateTime.now(), orderCreateEventDomainEventPublisher);
+        return new OrderCreateEvent(order, ZonedDateTime.now());
     }
 
     private void validateRestaurant(Restaurant restaurant) {

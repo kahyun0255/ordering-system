@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -38,11 +39,11 @@ public class CreditHistory {
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 
-    private LocalDateTime paidAt;
+    private ZonedDateTime paidAt;
 
     @PrePersist
     protected void onCreate() {
-        this.paidAt = LocalDateTime.now();
+        this.paidAt = ZonedDateTime.now();
     }
 
     @Override
