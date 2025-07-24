@@ -12,10 +12,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OrderPaymentCancelService {
 
-    public OrderCancelledEvent cancelOrderPayment(Order order, List<String> failureMessages,
-                                                  DomainEventPublisher<OrderCancelledEvent> orderCancelledEventDomainEventPublisher) {
+    public OrderCancelledEvent cancelOrderPayment(Order order, List<String> failureMessages) {
         order.initCancel(failureMessages);
         log.info("주문 결제 취소 진행 중. Order Id : {}", order.getId());
-        return new OrderCancelledEvent(order, ZonedDateTime.now(), orderCancelledEventDomainEventPublisher);
+        return new OrderCancelledEvent(order, ZonedDateTime.now());
     }
 }

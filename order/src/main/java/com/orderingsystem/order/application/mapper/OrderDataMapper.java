@@ -10,6 +10,7 @@ import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventPayload;
 import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventProduct;
+import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.model.Order;
@@ -94,6 +95,16 @@ public class OrderDataMapper {
                                 .build()).toList())
                 .price(orderPaidEvent.getOrder().getPrice().getAmount())
                 .createdAt(orderPaidEvent.getCreatedAt())
+                .build();
+    }
+
+    public OrderPaymentEventPayload orderCancelledEventToOrderPaymentEventPayload(OrderCancelledEvent orderCancelledEvent) {
+        return OrderPaymentEventPayload.builder()
+                .orderId(orderCancelledEvent.getOrder().getId().toString())
+                .customerId(orderCancelledEvent.getOrder().getCustomerId().toString())
+                .price(orderCancelledEvent.getOrder().getPrice().getAmount())
+                .createdAt(orderCancelledEvent.getCreatedAt())
+                .paymentOrderStatus(PaymentOrderStatus.CANCELLED.name())
                 .build();
     }
 }

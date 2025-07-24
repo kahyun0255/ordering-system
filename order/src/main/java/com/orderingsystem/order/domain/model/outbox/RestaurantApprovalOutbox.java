@@ -68,4 +68,11 @@ public class RestaurantApprovalOutbox {
         this.processedAt = processedAt;
     }
 
+    public void updateOrderStatus(OrderStatus orderStatus) {
+        this.orderStatus = orderStatus;
+    }
+
+    public void updateSagaStatus(SagaStatus sagaStatus) {
+        this.sagaStatus = sagaStatus;
+    }
 }

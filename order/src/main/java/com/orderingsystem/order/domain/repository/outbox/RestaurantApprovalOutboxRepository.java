@@ -22,4 +22,6 @@ public interface RestaurantApprovalOutboxRepository extends JpaRepository<Restau
 
     void deleteAllByTypeAndOutboxStatusAndSagaStatusIn(String orderSagaName, OutboxStatus outboxStatus,
                                                        List<SagaStatus> list);
+
+    Optional<RestaurantApprovalOutbox> findByTypeAndSagaIdAndSagaStatus(String type, UUID sagaId, SagaStatus sagaStatus);
 }

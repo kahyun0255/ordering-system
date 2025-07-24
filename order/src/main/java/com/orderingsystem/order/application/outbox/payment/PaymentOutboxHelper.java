@@ -81,4 +81,8 @@ public class PaymentOutboxHelper {
         paymentOutboxRepository.deleteAllByTypeAndOutboxStatusAndSagaStatusIn(
                 ORDER_SAGA_NAME, outboxStatus, Arrays.asList(sagaStatus));
     }
+
+    public Optional<PaymentOutbox> getPaymentOutboxBySagaIdAndSagaStatus(UUID sagaId, SagaStatus sagaStatus) {
+        return paymentOutboxRepository.findByTypeAndSagaIdAndSagaStatus(ORDER_SAGA_NAME, sagaId, sagaStatus);
+    }
 }

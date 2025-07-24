@@ -89,4 +89,9 @@ public class RestaurantApprovalOutboxHelper {
         restaurantApprovalOutboxRepository.deleteAllByTypeAndOutboxStatusAndSagaStatusIn(
                 ORDER_SAGA_NAME, outboxStatus, Arrays.asList(sagaStatus));
     }
+
+    public Optional<RestaurantApprovalOutbox> getRestaurantApprovalOutboxBySagaIdAndSagaStatus(UUID sagaId,
+                                                                                               SagaStatus sagaStatus) {
+        return restaurantApprovalOutboxRepository.findByTypeAndSagaIdAndSagaStatus(ORDER_SAGA_NAME, sagaId, sagaStatus);
+    }
 }
