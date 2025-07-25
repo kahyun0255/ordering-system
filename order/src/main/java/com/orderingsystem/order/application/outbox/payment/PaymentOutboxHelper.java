@@ -86,4 +86,8 @@ public class PaymentOutboxHelper {
     public Optional<PaymentOutbox> getPaymentOutboxBySagaIdAndSagaStatus(UUID sagaId, SagaStatus... sagaStatus) {
         return paymentOutboxRepository.findByTypeAndSagaIdAndSagaStatusIn(ORDER_SAGA_NAME, sagaId, Arrays.asList(sagaStatus));
     }
+
+    public Optional<PaymentOutbox> getPaymentOutboxBySagaIdAndSagaStatusIn(UUID sagaId, List<SagaStatus> started) {
+        return null;
+    }
 }

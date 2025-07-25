@@ -68,10 +68,10 @@ public class RestaurantService {
     }
 
     private boolean isOutboxMessageProcessedForApproval(ApprovalRequest approvalRequest) {
-        Optional<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndOutboxStatus(
+        List<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndOutboxStatus(
                 ORDER_SAGA_NAME, approvalRequest.getSagaId(), OutboxStatus.COMPLETED);
 
-        return orderOutboxMessage.isPresent();
+        return !orderOutboxMessage.isEmpty();
     }
 
     private Restaurant findRestaurant(UUID restaurantId) {

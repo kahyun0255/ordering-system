@@ -18,6 +18,7 @@ import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.service.PayOrderService;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,16 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         }
         PaymentOutbox paymentOutboxMessage = paymentOutboxMessageResponse.get();
 
-        OrderPaidEvent orderPaidEvent = completedPaymentForOrder(paymentResponse);
+        Order order = findOrder(paymentResponse.getOrderId());
+
+        if (order.getOrderStatus() == OrderStatus.APPROVED
+                || order.getOrderStatus() == OrderStatus.CANCELLED
+                || order.getOrderStatus() == OrderStatus.CANCELLING) {
+            log.info("주문이 이미 승인/취소 처리된 상태입니다. 결제 처리를 생략합니다. Order Id : {}", paymentResponse.getOrderId());
+            return;
+        }
+
+        OrderPaidEvent orderPaidEvent = completedPaymentForOrder(order);
 
         SagaStatus sagaStatus =
                 OrderStatusToSagaStatus.orderStatusToSagaStatus(orderPaidEvent.getOrder().getOrderStatus());
@@ -86,7 +96,16 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         }
         PaymentOutbox paymentOutbox = paymentOutboxMessageResponse.get();
 
-        Order order = rollbackPaymentForOrder(paymentResponse);
+        Order order = findOrder(paymentResponse.getOrderId());
+
+        if (order.getOrderStatus() == OrderStatus.APPROVED
+                || order.getOrderStatus() == OrderStatus.CANCELLED
+                || order.getOrderStatus() == OrderStatus.CANCELLING) {
+            log.info("주문이 이미 승인/취소 처리된 상태입니다. 결제 처리를 생략합니다. Order Id : {}", paymentResponse.getOrderId());
+            return;
+        }
+
+        rollbackPaymentForOrder(order, paymentResponse);
 
         SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
         updatePaymentOutboxMessage(paymentOutbox, order.getOrderStatus(), sagaStatus);
@@ -98,10 +117,8 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", paymentResponse.getOrderId());
     }
 
-    private OrderPaidEvent completedPaymentForOrder(PaymentResponse paymentResponse) {
-        log.info("결제 처리 시작. Order Id : {}", paymentResponse.getOrderId());
-
-        Order order = findOrder(paymentResponse.getOrderId());
+    private OrderPaidEvent completedPaymentForOrder(Order order) {
+        log.info("결제 처리 시작. Order Id : {}", order.getId());
         return payOrderService.payOrder(order);
     }
 
@@ -113,10 +130,8 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         };
     }
 
-    private Order rollbackPaymentForOrder(PaymentResponse paymentResponse) {
-        Order order = findOrder(paymentResponse.getOrderId());
+    private void rollbackPaymentForOrder(Order order, PaymentResponse paymentResponse) {
         order.cancel(paymentResponse.getFailureMessages());
-        return order;
     }
 
     private void updateApprovalOutboxMessage(UUID sagaId, OrderStatus orderStatus,

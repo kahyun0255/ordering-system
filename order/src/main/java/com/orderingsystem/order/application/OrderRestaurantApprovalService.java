@@ -53,7 +53,19 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
 
         RestaurantApprovalOutbox restaurantApprovalOutbox = restaurantApprovalOutboxResponse.get();
 
-        Order order = approvalOrder(restaurantApprovalResponse);
+        Order order = findOrder(restaurantApprovalResponse.getOrderId());
+
+        if (order.getOrderStatus() == OrderStatus.APPROVED
+                || order.getOrderStatus() == OrderStatus.CANCELLED
+                || order.getOrderStatus() == OrderStatus.CANCELLING) {
+            log.info("주문이 이미 승인/취소 처리된 상태입니다. Outbox 업데이트를 생략합니다. Order Id : {}",
+                    restaurantApprovalResponse.getOrderId());
+
+            return;
+        }
+
+        approvalOrder(order);
+
         SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
 
         updateApprovalOutbox(restaurantApprovalOutbox, order.getOrderStatus(), sagaStatus);
@@ -99,11 +111,9 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
                 String.join(",", restaurantApprovalResponse.getFailureMessages()));
     }
 
-    private Order approvalOrder(RestaurantApprovalResponse restaurantApprovalResponse) {
-        Order order = findOrder(restaurantApprovalResponse.getOrderId());
+    private void approvalOrder(Order order) {
         order.approve();
-        log.info("주문 승인 완료. Order Id : {}", restaurantApprovalResponse.getOrderId());
-        return order;
+        log.info("주문 승인 완료. Order Id : {}", order.getId());
     }
 
     private OrderCancelledEvent rollbackOrder(RestaurantApprovalResponse restaurantApprovalResponse) {

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OrderOutboxRepository extends JpaRepository<OrderOutbox, UUID> {
 
-    Optional<OrderOutbox> findByTypeAndSagaIdAndOutboxStatus(String type, UUID sagaId, OutboxStatus outboxStatus);
+    List<OrderOutbox> findByTypeAndSagaIdAndOutboxStatus(String type, UUID sagaId, OutboxStatus outboxStatus);
 
     Optional<List<OrderOutbox>> findByTypeAndOutboxStatus(String orderSagaName, OutboxStatus outboxStatus);
 
