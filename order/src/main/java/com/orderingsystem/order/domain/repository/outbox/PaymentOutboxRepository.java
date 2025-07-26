@@ -1,6 +1,5 @@
 package com.orderingsystem.order.domain.repository.outbox;
 
-import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.outbox.OutboxStatus;
