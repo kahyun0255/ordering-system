@@ -68,7 +68,7 @@ public class PaymentService {
                 .build();
 
         PaymentEvent paymentEvent = paymentValidateAndInitiateService.validateAndInitiate(payment, creditInfo,
-                creditHistories, failureMessages);
+                creditHistories, failureMessages, paymentRequest);
 
         persistCompleteDataBase(payment, creditEntry, creditInfo, creditHistories, failureMessages, payment.getPrice());
 

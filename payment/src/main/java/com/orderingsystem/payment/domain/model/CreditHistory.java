@@ -41,6 +41,8 @@ public class CreditHistory {
 
     private ZonedDateTime paidAt;
 
+    private UUID orderId;
+
     @PrePersist
     protected void onCreate() {
         this.paidAt = ZonedDateTime.now();
