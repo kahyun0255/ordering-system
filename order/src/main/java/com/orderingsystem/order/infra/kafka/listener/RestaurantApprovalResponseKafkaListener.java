@@ -6,10 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.OrderRestaurantApprovalService;
+import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.infra.kafka.message.RestaurantApprovalResponseMessage;
+import java.sql.SQLException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -55,6 +59,9 @@ public class RestaurantApprovalResponseKafkaListener implements KafkaConsumer<St
             } catch (JsonProcessingException e) {
                 log.error("RestaurantApprovalResponseMessage Json 프로세싱에 실패했습니다. error : {}", e.getMessage());
                 throw new RuntimeException(e);
+            } catch (OptimisticLockingFailureException e) {
+                //NO-OP
+                log.error("Caught optimistic locking exception in RestaurantApprovalResponseKafkaListener");
             }
         });
     }

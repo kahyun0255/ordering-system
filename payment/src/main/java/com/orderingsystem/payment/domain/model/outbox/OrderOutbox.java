@@ -8,6 +8,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -41,6 +42,9 @@ public class OrderOutbox {
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
+
+    @Version
+    private Long version;
 
     @Override
     public boolean equals(Object o) {

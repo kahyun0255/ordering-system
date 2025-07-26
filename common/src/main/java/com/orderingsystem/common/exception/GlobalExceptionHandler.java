@@ -1,7 +1,10 @@
 package com.orderingsystem.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -22,4 +25,13 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ErrorDTO handleDataIntegrityViolation(DataIntegrityViolationException e) {
+        log.error("유니크 키 중복 오류 발생", e);
+
+        return ErrorDTO.builder()
+                .code(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                .message("Unexpected error")
+                .build();
+    }
 }

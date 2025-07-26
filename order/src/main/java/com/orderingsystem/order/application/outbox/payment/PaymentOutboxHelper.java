@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
+import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
@@ -30,15 +31,14 @@ public class PaymentOutboxHelper {
 
     @Transactional
     public void save(PaymentOutbox paymentOutbox) {
-        try {
+        if (!paymentOutboxRepository.existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus(ORDER_SAGA_NAME,
+                paymentOutbox.getSagaId(),
+                paymentOutbox.getSagaStatus(), paymentOutbox.getOutboxStatus())) {
             paymentOutboxRepository.save(paymentOutbox);
             log.info("Order PaymentOutbox 저장했습니다. Outbox Id : {}", paymentOutbox.getId());
-        } catch (Exception e) {
-            log.error("Order PaymentOutbox 저장에 실패했습니다. Outbox Id : {}, Message : {}",
-                    paymentOutbox.getId(), e.getMessage());
-            throw new OrderDomainException(
-                    "Order PaymentOutbox 저장에 실패했습니다. Outbox Id : " + paymentOutbox.getId() +
-                            " Message : " + e.getMessage());
+        } else {
+            log.warn("이미 저장된 Order PaymentOutbox가 존재합니다. Saga Id : {}, Type : {} OrderStatus : {}",
+                    paymentOutbox.getSagaId(), paymentOutbox.getType(), paymentOutbox.getOrderStatus());
         }
     }
 
@@ -84,7 +84,8 @@ public class PaymentOutboxHelper {
 
     @Transactional
     public Optional<PaymentOutbox> getPaymentOutboxBySagaIdAndSagaStatus(UUID sagaId, SagaStatus... sagaStatus) {
-        return paymentOutboxRepository.findByTypeAndSagaIdAndSagaStatusIn(ORDER_SAGA_NAME, sagaId, Arrays.asList(sagaStatus));
+        return paymentOutboxRepository.findByTypeAndSagaIdAndSagaStatusIn(ORDER_SAGA_NAME, sagaId,
+                Arrays.asList(sagaStatus));
     }
 
     public Optional<PaymentOutbox> getPaymentOutboxBySagaIdAndSagaStatusIn(UUID sagaId, List<SagaStatus> started) {

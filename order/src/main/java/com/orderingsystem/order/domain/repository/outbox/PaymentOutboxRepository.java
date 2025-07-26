@@ -1,5 +1,6 @@
 package com.orderingsystem.order.domain.repository.outbox;
 
+import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.outbox.OutboxStatus;
@@ -19,4 +20,7 @@ public interface PaymentOutboxRepository extends JpaRepository<PaymentOutbox, UU
                                                        List<SagaStatus> list);
 
     Optional<PaymentOutbox> findByTypeAndSagaIdAndSagaStatusIn(String type, UUID sagaId, Collection<SagaStatus> sagaStatuses);
+
+    boolean existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus(String type, UUID sagaId, SagaStatus sagaStatus, OutboxStatus outboxStatus);
+
 }

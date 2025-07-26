@@ -1,5 +1,6 @@
 package com.orderingsystem.restaurant.domain.repository.outbox;
 
+import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
 import java.util.List;
@@ -16,4 +17,6 @@ public interface OrderOutboxRepository extends JpaRepository<OrderOutbox, UUID> 
     Optional<List<OrderOutbox>> findByTypeAndOutboxStatus(String orderSagaName, OutboxStatus outboxStatus);
 
     void deleteAllByTypeAndOutboxStatus(String orderSagaName, OutboxStatus outboxStatus);
+
+    boolean existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus(String type, UUID sagaId, OrderApprovalStatus orderApprovalStatus, OutboxStatus outboxStatus);
 }
