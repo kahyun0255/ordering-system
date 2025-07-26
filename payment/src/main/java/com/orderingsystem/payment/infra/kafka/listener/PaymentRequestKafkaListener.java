@@ -5,10 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.payment.application.PaymentService;
+import com.orderingsystem.payment.application.exception.PaymentApplicationException;
 import com.orderingsystem.payment.infra.kafka.message.PaymentRequestMessage;
+import java.sql.SQLException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -43,15 +47,25 @@ public class PaymentRequestKafkaListener implements KafkaConsumer<String> {
                 if (PaymentOrderStatus.PENDING.equals(paymentRequestMessage.getPaymentOrderStatus())) {
                     log.info("결제 진행. order Id : {}", paymentRequestMessage.getOrderId());
                     paymentService.completePayment(paymentRequestMessage.toPaymentRequest());
-                } else if (PaymentOrderStatus.CANCELLED.equals(paymentRequestMessage.getPaymentOrderStatus())){
+                } else if (PaymentOrderStatus.CANCELLED.equals(paymentRequestMessage.getPaymentOrderStatus())) {
                     log.info("결제 취소 진행. order Id : {}", paymentRequestMessage.getOrderId());
                     paymentService.cancelPayment(paymentRequestMessage.toPaymentRequest());
                 }
 
             } catch (JsonProcessingException e) {
                 log.error("PaymentRequestMessage Json 파싱에 실패했습니다.");
-            } catch (Exception e) {
-                log.error("결제 요청 메시지 처리 중 오류 발생. message : {}, error : {}", message, e.getMessage());
+            } catch (OptimisticLockingFailureException e) {
+                //NO-OP
+                log.error("Caught optimistic locking exception in RestaurantApprovalResponseKafkaListener");
+            } catch (DataAccessException e) {
+                Throwable root = e.getRootCause();
+                if (root instanceof SQLException sqlEx && "23000".equals(sqlEx.getSQLState())
+                        && sqlEx.getErrorCode() == 1062) {
+                    //NO-OP
+                    log.warn("유니크 제약 위반 발생. Sql Status : {}", sqlEx.getSQLState());
+                } else {
+                    throw new PaymentApplicationException("DB 예외 발생", e);
+                }
             }
         });
     }

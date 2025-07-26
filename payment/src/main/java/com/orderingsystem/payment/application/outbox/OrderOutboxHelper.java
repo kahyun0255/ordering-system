@@ -16,6 +16,8 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,22 +29,20 @@ public class OrderOutboxHelper {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public void updateOutboxMessage(OrderOutbox orderOutbox, OutboxStatus outboxStatus){
+    public void updateOutboxMessage(OrderOutbox orderOutbox, OutboxStatus outboxStatus) {
         orderOutbox.updateOutboxStatus(outboxStatus);
         log.info("Payment OrderOutbox Status 업데이트 : {}", outboxStatus);
     }
 
     @Transactional
-    public void save(OrderOutbox orderOutbox){
-        try {
+    public void save(OrderOutbox orderOutbox) {
+        if (!orderOutboxRepository.existsByTypeAndSagaIdAndPaymentStatusAndOutboxStatus(ORDER_SAGA_NAME,
+                orderOutbox.getSagaId(), orderOutbox.getPaymentStatus(), orderOutbox.getOutboxStatus())) {
             orderOutboxRepository.save(orderOutbox);
             log.info("Payment OrderOutbox 저장했습니다. Outbox Id : {}", orderOutbox.getId());
-        } catch (Exception e) {
-            log.error("payment OrderOutbox 저장에 실패했습니다. Outbox Id : {}, Message : {}",
-                    orderOutbox.getId(), e.getMessage());
-            throw new PaymentDomainException(
-                    "payment OrderOutbox 저장에 실패했습니다. Outbox Id : " + orderOutbox.getId() +
-                            " Message : " + e.getMessage());
+        } else {
+            log.warn("이미 저장된 Payment OrderOutbox가 존재합니다. Saga Id : {}, Type : {}, PaymentStatus : {}",
+                    orderOutbox.getSagaId(), orderOutbox.getType(), orderOutbox.getPaymentStatus());
         }
     }
 

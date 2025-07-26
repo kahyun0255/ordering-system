@@ -10,6 +10,7 @@ import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
 import com.orderingsystem.restaurant.application.outbox.OrderOutboxHelper;
 import com.orderingsystem.restaurant.domain.event.OrderApprovalEvent;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
+import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.model.OrderDetail;
 import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
@@ -58,7 +59,7 @@ public class RestaurantService {
         OrderApprovalEvent orderApprovalEvent =
                 restaurantValidateOrderService.validateOrder(restaurantInfo, failureMessage);
 
-        orderApprovalRepository.save(restaurantInfo.getOrderApproval());
+        orderApprovalSave(restaurantInfo.getOrderApproval());
 
         orderOutboxHelper.saveOrderOutboxMessage(
                 restaurantDataMapper.restaurantApprovalEventToOrderEventPayload(orderApprovalEvent),
@@ -130,5 +131,12 @@ public class RestaurantService {
         });
 
         return restaurant;
+    }
+
+    private void orderApprovalSave(OrderApproval orderApproval) {
+        if (!orderApprovalRepository.existsByOrderIdAndRestaurantIdAndStatus(orderApproval.getOrderId(),
+                orderApproval.getRestaurantId(), orderApproval.getStatus())){
+            orderApprovalRepository.save(orderApproval);
+        }
     }
 }

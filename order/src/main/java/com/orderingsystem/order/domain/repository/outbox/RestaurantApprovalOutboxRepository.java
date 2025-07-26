@@ -1,5 +1,6 @@
 package com.orderingsystem.order.domain.repository.outbox;
 
+import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.outbox.OutboxStatus;
@@ -24,4 +25,6 @@ public interface RestaurantApprovalOutboxRepository extends JpaRepository<Restau
                                                        List<SagaStatus> list);
 
     Optional<RestaurantApprovalOutbox> findByTypeAndSagaIdAndSagaStatus(String type, UUID sagaId, SagaStatus sagaStatus);
+
+    boolean existsByTypeAndSagaIdAndOrderStatusAndSagaStatus(String type, UUID sagaId, OrderStatus orderStatus, SagaStatus sagaStatus);
 }

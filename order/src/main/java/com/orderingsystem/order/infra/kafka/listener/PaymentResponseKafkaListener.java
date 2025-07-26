@@ -5,10 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.OrderPaymentService;
+import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.infra.kafka.message.PaymentResponseMessage;
+import java.sql.SQLException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -44,17 +48,27 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
                 if (PaymentStatus.COMPLETED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                     log.info("결제 완료. order Id : {}", paymentResponseMessage.getOrderId());
                     orderPaymentService.process(paymentResponseMessage.toPaymentResponse());
-                } else if (PaymentStatus.CANCELLED.name().equals(paymentResponseMessage.getPaymentStatus())){
+                } else if (PaymentStatus.CANCELLED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                     log.info("결제 취소. order Id : {}", paymentResponseMessage.getOrderId());
                     orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse());
-                } else if(PaymentStatus.FAILED.name().equals(paymentResponseMessage.getPaymentStatus())){
+                } else if (PaymentStatus.FAILED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                     log.info("결제 실패. order Id : {}", paymentResponseMessage.getOrderId());
                     orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse());
                 }
             } catch (JsonProcessingException e) {
                 log.error("PaymentRequestMessage Json 파싱에 실패했습니다.");
-            } catch (Exception e) {
-                log.error("결제 요청 메시지 처리 중 오류 발생. message : {}, error : {}", message, e.getMessage());
+            } catch (OptimisticLockingFailureException e) {
+                //NO-OP
+                log.error("Caught optimistic locking exception in PaymentResponseKafkaListener");
+            } catch (DataAccessException e) {
+                Throwable root = e.getRootCause();
+                if (root instanceof SQLException sqlEx && "23000".equals(sqlEx.getSQLState())
+                        && sqlEx.getErrorCode() == 1062) {
+                    //NO-OP
+                    log.warn("유니크 제약 위반 발생. Sql Status : {}", sqlEx.getSQLState());
+                } else {
+                    throw new OrderApplicationException("DB 예외 발생", e);
+                }
             }
         });
     }

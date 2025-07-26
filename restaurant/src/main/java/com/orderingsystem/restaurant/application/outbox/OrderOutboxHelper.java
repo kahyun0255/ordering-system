@@ -30,15 +30,13 @@ public class OrderOutboxHelper {
 
     @Transactional
     public void save(OrderOutbox orderOutbox) {
-        try {
+        if (!orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus(ORDER_SAGA_NAME,
+                orderOutbox.getSagaId(), orderOutbox.getOrderApprovalStatus(), orderOutbox.getOutboxStatus())) {
             orderOutboxRepository.save(orderOutbox);
             log.info("Restaurant OrderOutbox 저장했습니다. Outbox Id : {}", orderOutbox.getId());
-        } catch (Exception e) {
-            log.error("Restaurant OrderOutbox 저장에 실패했습니다. Outbox Id : {}, Message : {}",
-                    orderOutbox.getId(), e.getMessage());
-            throw new RestaurantDomainException(
-                    "Restaurant OrderOutbox 저장에 실패했습니다. Outbox Id : " + orderOutbox.getId() +
-                            " Message : " + e.getMessage());
+        } else {
+            log.warn("이미 저장된 Restaurant OrderOutbox가 존재합니다. Saga Id : {}, Type : {}, ApprovalStatus : {}",
+                    orderOutbox.getSagaId(), orderOutbox.getType(), orderOutbox.getOrderApprovalStatus());
         }
     }
 

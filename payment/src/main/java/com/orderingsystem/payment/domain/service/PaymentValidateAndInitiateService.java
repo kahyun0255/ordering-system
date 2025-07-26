@@ -1,12 +1,11 @@
 package com.orderingsystem.payment.domain.service;
 
 import com.orderingsystem.common.domain.Money;
-import com.orderingsystem.common.domain.publisher.DomainEventPublisher;
 import com.orderingsystem.common.domain.status.PaymentStatus;
+import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.domain.event.PaymentCompletedEvent;
 import com.orderingsystem.payment.domain.event.PaymentEvent;
 import com.orderingsystem.payment.domain.event.PaymentFailedEvent;
-import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
 import com.orderingsystem.payment.domain.model.CreditInfo;
 import com.orderingsystem.payment.domain.model.Payment;
@@ -25,14 +24,14 @@ public class PaymentValidateAndInitiateService {
 
     public PaymentEvent validateAndInitiate(Payment payment, CreditInfo creditInfo,
                                             List<CreditHistory> creditHistories,
-                                            List<String> failureMessages) {
+                                            List<String> failureMessages, PaymentRequest paymentRequest) {
 
         payment.validatePayment(failureMessages);
         payment.initializePayment();
 
         validateCreditEntry(payment, creditInfo, failureMessages);
         subtractCreditEntry(payment, creditInfo);
-        updateCreditHistory(payment, creditHistories, TransactionType.DEBIT);
+        updateCreditHistory(payment, creditHistories, TransactionType.DEBIT, paymentRequest);
         validateCreditHistory(creditInfo, creditHistories, failureMessages);
 
         if (failureMessages.isEmpty()) {
@@ -58,12 +57,13 @@ public class PaymentValidateAndInitiateService {
     }
 
     private void updateCreditHistory(Payment payment, List<CreditHistory> creditHistories,
-                                     TransactionType transactionType) {
+                                     TransactionType transactionType, PaymentRequest paymentRequest) {
         creditHistories.add(CreditHistory.builder()
                 .id(UUID.randomUUID())
                 .customerId(payment.getCustomerId())
                 .amount(payment.getPrice())
                 .type(transactionType)
+                .orderId(paymentRequest.getOrderId())
                 .build());
     }
 

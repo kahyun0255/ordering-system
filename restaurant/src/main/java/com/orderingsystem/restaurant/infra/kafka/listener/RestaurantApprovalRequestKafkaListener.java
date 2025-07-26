@@ -5,10 +5,14 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.restaurant.application.RestaurantService;
+import com.orderingsystem.restaurant.application.exception.RestaurantApplicationException;
 import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalRequestMessage;
+import java.sql.SQLException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -24,8 +28,8 @@ public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<Str
     private final RestaurantService restaurantService;
 
     @Override
-    @KafkaListener(id="${kafka-consumer-config.restaurant-consumer-group-id}",
-    topics = "${restaurant-topic.restaurant-approval-request-topic-name}")
+    @KafkaListener(id = "${kafka-consumer-config.restaurant-consumer-group-id}",
+            topics = "${restaurant-topic.restaurant-approval-request-topic-name}")
     public void receive(@Payload List<String> messages,
                         @Header(KafkaHeaders.RECEIVED_KEY) List<String> keys,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) List<Integer> partitions,
@@ -34,7 +38,7 @@ public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<Str
                 messages.size(), keys.toString(), partitions.toString(), offsets.toString());
 
         messages.forEach(message -> {
-            try{
+            try {
                 RestaurantApprovalRequestMessage requestMessage =
                         objectMapper.readValue(message, RestaurantApprovalRequestMessage.class);
 
@@ -47,6 +51,18 @@ public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<Str
             } catch (JsonProcessingException e) {
                 log.info("Json 프로세싱에 실패했습니다. error : {}", e.getMessage());
                 throw new RuntimeException(e);
+            } catch (OptimisticLockingFailureException e) {
+                //NO-OP
+                log.error("Caught optimistic locking exception in RestaurantApprovalResponseKafkaListener");
+            } catch (DataAccessException e) {
+                Throwable root = e.getRootCause();
+                if (root instanceof SQLException sqlEx && "23000".equals(sqlEx.getSQLState())
+                        && sqlEx.getErrorCode() == 1062) {
+                    //NO-OP
+                    log.warn("유니크 제약 위반 발생. Sql Status : {}", sqlEx.getSQLState());
+                } else {
+                    throw new RestaurantApplicationException("DB 예외 발생", e);
+                }
             }
         });
     }

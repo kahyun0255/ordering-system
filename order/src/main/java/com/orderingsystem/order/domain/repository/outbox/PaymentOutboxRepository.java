@@ -19,4 +19,7 @@ public interface PaymentOutboxRepository extends JpaRepository<PaymentOutbox, UU
                                                        List<SagaStatus> list);
 
     Optional<PaymentOutbox> findByTypeAndSagaIdAndSagaStatusIn(String type, UUID sagaId, Collection<SagaStatus> sagaStatuses);
+
+    boolean existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus(String type, UUID sagaId, SagaStatus sagaStatus, OutboxStatus outboxStatus);
+
 }

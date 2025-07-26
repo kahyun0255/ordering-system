@@ -58,12 +58,9 @@ public class RestaurantApprovalResponseKafkaPublisher implements RestaurantAppro
 
         } catch (JsonProcessingException e) {
             log.error("{} 객체 매핑에 실패했습니다. 원인: {}", orderOutbox.getId(), e.getMessage());
-            throw new RuntimeException(orderOutbox.getId() + " 객체 매핑에 실패했습니다.", e);
         } catch (Exception e) {
             log.error("OrderEventPayload Kafka 전송에 실패했습니다. Order Id : {} Saga Id : {}, Error : {}",
                     orderEventPayload.getOrderId(), sagaId, e.getMessage());
-            throw new RuntimeException("OrderEventPayload Kafka 전송에 실패했습니다. Order Id : "
-                    + orderEventPayload.getOrderId() + " Saga Id : " + sagaId + ", Error : " + e.getMessage());
         }
     }
 }
