@@ -58,7 +58,6 @@ public class PaymentRequestKafkaPublisher implements PaymentRequestMessagePublis
                     orderPaymentEventPayload.getOrderId(), sagaId);
         } catch (JsonProcessingException e) {
             log.error("{} 객체 매핑에 실패했습니다. 원인: {}", paymentOutbox.getId(), e.getMessage());
-            throw new OrderDomainException(paymentOutbox.getId() + " 객체 매핑에 실패했습니다.", e);
         } catch (Exception e) {
             log.error("OrderPaymentEventPayload Kafka 전송에 실패했습니다. Order Id : {} Saga Id : {}, Error : {}",
                     orderPaymentEventPayload.getOrderId(), sagaId, e.getMessage());
