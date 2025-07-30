@@ -68,3 +68,30 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
     networks:
       - ${GLOBAL_NETWORK:-kafka}
+
+#debezium connector
+  debezium-connector:
+    image: debezium/connect:${DEBEZIUM_VERSION}
+    platform: linux/amd64
+    ports:
+      - 8083:8083
+    environment:
+      GROUP_ID: "1"
+      CONFIG_STORAGE_TOPIC: "connect-config"
+      OFFSET_STORAGE_TOPIC: "connect-offsets"
+      STATUS_STORAGE_TOPIC: "connect-status"
+      BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      LOGGING_LEVEL: "DEBUG"
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_PLUGIN_PATH: /kafka/connect/debezium-plugins
+    depends_on:
+    - kafka-1
+    - kafka-2
+    - kafka-3
+    volumes:
+      - ${DEBEZIUM_VOLUMES}
+    networks:
+      - ${GLOBAL_NETWORK:-kafka}
