@@ -1,0 +1,19 @@
+services:
+  mysql:
+    image: mysql:${MYSQL_VERSION}
+    container_name: mysql
+    ports:
+      - 3307:3306
+    command:
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --binlog-row-image=FULL
+    volumes:
+      - ./volumes/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DEBEZIUM_MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${DEBEZIUM_MYSQL_USER}
+      MYSQL_PASSWORD: ${DEBEZIUM_MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${DEBEZIUM_MYSQL_DATABASE}
+    networks:
+      - ${GLOBAL_NETWORK:-mysql}
