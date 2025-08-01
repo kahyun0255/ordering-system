@@ -7,7 +7,7 @@ import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.kafka.KafkaSingleConsumer;
 import com.orderingsystem.payment.application.PaymentService;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
-import com.orderingsystem.payment.infra.kafka.message.PaymentDebeziumMessage;
+import com.orderingsystem.payment.infra.kafka.message.PaymentRequestDebeziumMessage;
 import com.orderingsystem.payment.infra.kafka.message.PaymentRequestMessage;
 import java.sql.SQLException;
 import java.util.UUID;
@@ -37,7 +37,7 @@ public class PaymentRequestKafkaListener implements KafkaSingleConsumer<String> 
                         @Header(KafkaHeaders.OFFSET) Long offset) {
 
         try {
-            PaymentDebeziumMessage debeziumMessage = objectMapper.readValue(message, PaymentDebeziumMessage.class);
+            PaymentRequestDebeziumMessage debeziumMessage = objectMapper.readValue(message, PaymentRequestDebeziumMessage.class);
 
             if (debeziumMessage.getBefore() == null && debeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
                 log.info("PaymentRequestKafkaListener에서 메시지를 받았습니다. message : {}, key : {}, partition : {}, offset: {}",
@@ -71,9 +71,9 @@ public class PaymentRequestKafkaListener implements KafkaSingleConsumer<String> 
         }
     }
 
-    private PaymentRequestMessage getPaymentRequestMessage(PaymentDebeziumMessage debeziumMessage)
+    private PaymentRequestMessage getPaymentRequestMessage(PaymentRequestDebeziumMessage debeziumMessage)
             throws JsonProcessingException {
-        PaymentDebeziumMessage.Payload payload = debeziumMessage.getAfter();
+        PaymentRequestDebeziumMessage.Payload payload = debeziumMessage.getAfter();
         PaymentRequestMessage paymentRequestMessage = objectMapper.readValue(payload.getPayload(),
                 PaymentRequestMessage.class);
 

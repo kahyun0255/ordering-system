@@ -11,7 +11,6 @@ import lombok.Getter;
 @Getter
 public class PaymentResponse {
 
-    private UUID id;
     private UUID sagaId;
     private UUID paymentId;
     private UUID orderId;

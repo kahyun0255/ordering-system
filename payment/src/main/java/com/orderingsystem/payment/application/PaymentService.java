@@ -9,7 +9,6 @@ import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
 import com.orderingsystem.payment.application.mapper.PaymentDataMapper;
 import com.orderingsystem.payment.application.outbox.OrderOutboxHelper;
-import com.orderingsystem.payment.application.publisher.PaymentResponseMessagePublisher;
 import com.orderingsystem.payment.domain.event.PaymentEvent;
 import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
@@ -41,14 +40,13 @@ public class PaymentService {
     private final CreditEntryRepository creditEntryRepository;
     private final CreditHistoryRepository creditHistoryRepository;
     private final OrderOutboxRepository orderOutboxRepository;
-    private final PaymentResponseMessagePublisher paymentResponseMessagePublisher;
     private final OrderOutboxHelper orderOutboxHelper;
     private final PaymentDataMapper paymentDataMapper;
     private final PaymentValidateAndCancelService paymentValidateAndCancelService;
 
     @Transactional
     public void completePayment(PaymentRequest paymentRequest) {
-        if (publishIfOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.COMPLETED)) {
+        if (isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.COMPLETED)) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
                     paymentRequest.getSagaId());
             return;
@@ -83,7 +81,7 @@ public class PaymentService {
     public void cancelPayment(PaymentRequest paymentRequest) {
         log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
 
-        if (publishIfOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
+        if (isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 취소 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
                     paymentRequest.getSagaId());
             return;
@@ -110,16 +108,12 @@ public class PaymentService {
                 paymentRequest.getSagaId());
     }
 
-    private boolean publishIfOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,
+    private boolean isOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,
                                                               PaymentStatus paymentStatus) {
         Optional<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatusAndOutboxStatus(
                 ORDER_SAGA_NAME, paymentRequest.getSagaId(), paymentStatus, OutboxStatus.COMPLETED);
 
-        if (orderOutboxMessage.isPresent()){
-            paymentResponseMessagePublisher.publish(orderOutboxMessage.get(), orderOutboxHelper::updateOutboxMessage);
-            return true;
-        }
-        return false;
+        return orderOutboxMessage.isPresent();
     }
 
     private Payment getPayment(UUID orderId) {

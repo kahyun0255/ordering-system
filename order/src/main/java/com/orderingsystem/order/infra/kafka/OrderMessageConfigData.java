@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class OrderMessageConfigData {
 
-    private String paymentRequestTopicName;
     private String paymentResponseTopicName;
     private String restaurantApprovalRequestTopicName;
     private String restaurantApprovalResponseTopicName;

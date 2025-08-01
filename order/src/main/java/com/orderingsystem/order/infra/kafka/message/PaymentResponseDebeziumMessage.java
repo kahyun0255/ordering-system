@@ -1,4 +1,4 @@
-package com.orderingsystem.payment.infra.kafka.message;
+package com.orderingsystem.order.infra.kafka.message;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class PaymentDebeziumMessage {
+public class PaymentResponseDebeziumMessage {
 
     private Payload before;
     private Payload after;
@@ -17,12 +17,11 @@ public class PaymentDebeziumMessage {
     public static class Payload{
         private String id;
         private Long createdAt;
-        private String orderStatus;
         private String outboxStatus;
         private String payload;
+        private String paymentStatus;
         private Long processedAt;
         private String sagaId;
-        private String sagaStatus;
         private String type;
         private Long version;
     }
