@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 public class OrderMessageConfigData {
 
     private String paymentResponseTopicName;
-    private String restaurantApprovalRequestTopicName;
     private String restaurantApprovalResponseTopicName;
 
 }

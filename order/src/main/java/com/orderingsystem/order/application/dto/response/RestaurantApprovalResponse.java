@@ -11,7 +11,6 @@ import lombok.Getter;
 @Getter
 public class RestaurantApprovalResponse {
 
-    private UUID id;
     private UUID sagaId;
     private UUID orderId;
     private UUID restaurantId;
