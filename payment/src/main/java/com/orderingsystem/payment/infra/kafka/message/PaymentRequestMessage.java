@@ -4,6 +4,7 @@ import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +20,7 @@ public class PaymentRequestMessage {
     private UUID orderId;
     private UUID customerId;
     private BigDecimal price;
-    private Instant createdAt;
+    private OffsetDateTime createdAt;
     private PaymentOrderStatus paymentOrderStatus;
 
     public PaymentRequest toPaymentRequest() {
@@ -29,7 +30,7 @@ public class PaymentRequestMessage {
                 .orderId(this.getOrderId())
                 .customerId(this.getCustomerId())
                 .price(this.getPrice())
-                .createdAt(this.getCreatedAt())
+                .createdAt(this.getCreatedAt().toInstant())
                 .paymentOrderStatus(this.getPaymentOrderStatus())
                 .build();
     }

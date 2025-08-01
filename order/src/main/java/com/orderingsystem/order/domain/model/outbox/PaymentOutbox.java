@@ -31,7 +31,7 @@ public class PaymentOutbox {
     private UUID id;
 
     private UUID sagaId;
-    private ZonedDateTime createAt;
+    private ZonedDateTime createdAt;
     private ZonedDateTime processedAt;
     private String type;
 

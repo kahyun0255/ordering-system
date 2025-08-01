@@ -3,7 +3,6 @@ package com.orderingsystem.payment.infra.kafka;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.payment.application.outbox.model.OrderEventPayload;
-import com.orderingsystem.payment.domain.event.PaymentEvent;
 import com.orderingsystem.payment.infra.kafka.message.PaymentResponseMessage;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
