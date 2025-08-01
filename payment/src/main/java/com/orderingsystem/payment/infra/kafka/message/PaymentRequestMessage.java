@@ -3,7 +3,6 @@ package com.orderingsystem.payment.infra.kafka.message;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;

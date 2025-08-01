@@ -60,7 +60,4 @@ public class OrderOutbox {
         return Objects.hashCode(id);
     }
 
-    public void updateOutboxStatus(OutboxStatus outboxStatus) {
-        this.outboxStatus = outboxStatus;
-    }
 }

@@ -70,13 +70,6 @@ public class RestaurantApprovalOutboxHelper {
         }
     }
 
-    @Transactional(readOnly = true)
-    public Optional<List<RestaurantApprovalOutbox>> getApprovalOutboxMessagesByOutboxStatusAndSagaStatus(
-            OutboxStatus outboxStatus, SagaStatus sagaStatus) {
-        return restaurantApprovalOutboxRepository.findByTypeAndOutboxStatusAndSagaStatus(ORDER_SAGA_NAME, outboxStatus,
-                sagaStatus);
-    }
-
     public Optional<List<RestaurantApprovalOutbox>> getRestaurantApprovalOutboxMessagesByOutboxStatusAndOutboxSagaStatus(
             OutboxStatus outboxStatus, SagaStatus... sagaStatus) {
         return restaurantApprovalOutboxRepository.findByTypeAndOutboxStatusAndSagaStatusIn(

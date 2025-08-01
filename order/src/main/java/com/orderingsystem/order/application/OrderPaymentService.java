@@ -18,7 +18,6 @@ import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.service.PayOrderService;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

@@ -6,7 +6,7 @@ import lombok.Getter;
 public enum DebeziumOp {
     CREATE("c"), UPDATE("u"), DELETE("d");
 
-    private String value;
+    private final String value;
 
     DebeziumOp(String value) {
         this.value = value;

@@ -4,7 +4,6 @@ import com.orderingsystem.order.application.dto.RestaurantInfo;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.dto.response.OrderStatusResponse;
-import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;

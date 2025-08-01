@@ -1,6 +1,5 @@
 package com.orderingsystem.restaurant.application.outbox.scheduler;
 
-import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.outbox.OutboxScheduler;
 import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.outbox.OrderOutboxHelper;
