@@ -8,7 +8,7 @@ import lombok.Getter;
 @Getter
 public class RestaurantApprovalOrderItem {
 
-    private UUID productId;
+    private UUID id;
     private int quantity;
 
 }

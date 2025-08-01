@@ -3,12 +3,15 @@ package com.orderingsystem.restaurant.infra.kafka.listener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.restaurant.application.RestaurantService;
 import com.orderingsystem.restaurant.application.exception.RestaurantApplicationException;
+import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalRequestDebeziumMessage;
 import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalRequestMessage;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -39,12 +42,18 @@ public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<Str
 
         messages.forEach(message -> {
             try {
-                RestaurantApprovalRequestMessage requestMessage =
-                        objectMapper.readValue(message, RestaurantApprovalRequestMessage.class);
+                RestaurantApprovalRequestDebeziumMessage restaurantApprovalRequestDebeziumMessage =
+                        objectMapper.readValue(message, RestaurantApprovalRequestDebeziumMessage.class);
 
-                log.info("주문 승인 시작. Order Id : {}", requestMessage.getOrderId());
-                restaurantService.approveOrder(requestMessage.toApprovalRequest());
+                if (restaurantApprovalRequestDebeziumMessage.getBefore() == null &&
+                restaurantApprovalRequestDebeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
 
+                    RestaurantApprovalRequestMessage requestMessage = getRestaurantApprovalRequestMessage(
+                            restaurantApprovalRequestDebeziumMessage);
+
+                    log.info("주문 승인 시작. Order Id : {}", requestMessage.getOrderId());
+                    restaurantService.approveOrder(requestMessage.toApprovalRequest());
+                }
             } catch (JsonMappingException e) {
                 log.info("Json 매핑에 실패했습니다. error : {}", e.getMessage());
                 throw new RuntimeException(e);
@@ -65,5 +74,24 @@ public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<Str
                 }
             }
         });
+    }
+
+    private RestaurantApprovalRequestMessage getRestaurantApprovalRequestMessage(
+            RestaurantApprovalRequestDebeziumMessage restaurantApprovalRequestDebeziumMessage)
+            throws JsonProcessingException {
+
+        RestaurantApprovalRequestMessage payload =
+                objectMapper.readValue(restaurantApprovalRequestDebeziumMessage.getAfter().getPayload(),
+                        RestaurantApprovalRequestMessage.class);
+
+        return RestaurantApprovalRequestMessage.builder()
+                .sagaId(UUID.fromString(restaurantApprovalRequestDebeziumMessage.getAfter().getSagaId()))
+                .orderId(payload.getOrderId())
+                .restaurantId(payload.getRestaurantId())
+                .restaurantOrderStatus(payload.getRestaurantOrderStatus())
+                .products(payload.getProducts())
+                .price(payload.getPrice())
+                .createdAt(payload.getCreatedAt())
+                .build();
     }
 }

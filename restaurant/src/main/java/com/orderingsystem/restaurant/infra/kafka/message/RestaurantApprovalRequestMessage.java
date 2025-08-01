@@ -14,7 +14,6 @@ import lombok.Getter;
 @Getter
 public class RestaurantApprovalRequestMessage {
 
-    private UUID id;
     private UUID sagaId;
     private UUID orderId;
     private UUID restaurantId;
@@ -25,14 +24,13 @@ public class RestaurantApprovalRequestMessage {
 
     public ApprovalRequest toApprovalRequest() {
         return ApprovalRequest.builder()
-                .id(this.id)
                 .sagaId(this.sagaId)
                 .orderId(this.orderId)
                 .restaurantId(this.restaurantId)
                 .restaurantOrderStatus(this.restaurantOrderStatus)
                 .products(this.products.stream().map(product ->
                         ApprovalOrderItem.builder()
-                                .productId(product.getProductId())
+                                .productId(product.getId())
                                 .quantity(product.getQuantity())
                                 .build()).toList())
                 .price(this.price)
