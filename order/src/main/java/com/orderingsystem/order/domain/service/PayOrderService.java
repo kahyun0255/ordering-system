@@ -1,6 +1,5 @@
 package com.orderingsystem.order.domain.service;
 
-import com.orderingsystem.common.domain.publisher.DomainEventPublisher;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.model.Order;
 import java.time.ZonedDateTime;

@@ -18,7 +18,6 @@ import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.service.PayOrderService;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -70,7 +69,8 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         updatePaymentOutboxMessage(paymentOutboxMessage, orderPaidEvent.getOrder().getOrderStatus(), sagaStatus);
 
         restaurantApprovalOutboxHelper.saveRestaurantApprovalOutboxMessage(
-                orderDataMapper.orderPaidEventToRestaurantApprovalEventPayload(orderPaidEvent),
+                orderDataMapper.orderPaidEventToRestaurantApprovalEventPayload(orderPaidEvent,
+                        paymentResponse.getSagaId()),
                 orderPaidEvent.getOrder().getOrderStatus(),
                 sagaStatus,
                 OutboxStatus.STARTED,

@@ -31,7 +31,7 @@ public class PaymentOutbox {
     private UUID id;
 
     private UUID sagaId;
-    private ZonedDateTime createAt;
+    private ZonedDateTime createdAt;
     private ZonedDateTime processedAt;
     private String type;
 
@@ -62,10 +62,6 @@ public class PaymentOutbox {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
-    }
-
-    public void updateOutboxStatus(OutboxStatus outboxStatus) {
-        this.outboxStatus = outboxStatus;
     }
 
     public void updateProcessedAt(ZonedDateTime processedAt) {

@@ -64,10 +64,6 @@ public class RestaurantApprovalOutbox {
         return Objects.hashCode(id);
     }
 
-    public void updateOutboxStatus(OutboxStatus outboxStatus) {
-        this.outboxStatus = outboxStatus;
-    }
-
     public void updateProcessedAt(ZonedDateTime processedAt) {
         this.processedAt = processedAt;
     }

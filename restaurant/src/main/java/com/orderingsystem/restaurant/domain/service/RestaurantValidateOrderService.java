@@ -1,6 +1,5 @@
 package com.orderingsystem.restaurant.domain.service;
 
-import com.orderingsystem.common.domain.publisher.DomainEventPublisher;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.restaurant.domain.event.OrderApprovalEvent;
 import com.orderingsystem.restaurant.domain.event.OrderApprovedEvent;

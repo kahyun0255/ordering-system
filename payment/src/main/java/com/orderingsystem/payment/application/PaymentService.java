@@ -9,7 +9,6 @@ import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
 import com.orderingsystem.payment.application.mapper.PaymentDataMapper;
 import com.orderingsystem.payment.application.outbox.OrderOutboxHelper;
-import com.orderingsystem.payment.application.publisher.PaymentResponseMessagePublisher;
 import com.orderingsystem.payment.domain.event.PaymentEvent;
 import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
@@ -41,14 +40,13 @@ public class PaymentService {
     private final CreditEntryRepository creditEntryRepository;
     private final CreditHistoryRepository creditHistoryRepository;
     private final OrderOutboxRepository orderOutboxRepository;
-    private final PaymentResponseMessagePublisher paymentResponseMessagePublisher;
     private final OrderOutboxHelper orderOutboxHelper;
     private final PaymentDataMapper paymentDataMapper;
     private final PaymentValidateAndCancelService paymentValidateAndCancelService;
 
     @Transactional
     public void completePayment(PaymentRequest paymentRequest) {
-        if (publishIfOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.COMPLETED)) {
+        if (isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.COMPLETED)) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
                     paymentRequest.getSagaId());
             return;
@@ -73,7 +71,7 @@ public class PaymentService {
         persistCompleteDataBase(payment, creditEntry, creditInfo, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
-                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent),
+                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId()),
                 paymentEvent.getPayment().getStatus(),
                 OutboxStatus.STARTED,
                 paymentRequest.getSagaId());
@@ -83,7 +81,7 @@ public class PaymentService {
     public void cancelPayment(PaymentRequest paymentRequest) {
         log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
 
-        if (publishIfOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
+        if (isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 취소 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
                     paymentRequest.getSagaId());
             return;
@@ -104,22 +102,18 @@ public class PaymentService {
         persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
-                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent),
+                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId()),
                 paymentEvent.getPayment().getStatus(),
                 OutboxStatus.STARTED,
                 paymentRequest.getSagaId());
     }
 
-    private boolean publishIfOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,
-                                                              PaymentStatus paymentStatus) {
+    private boolean isOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,
+                                                       PaymentStatus paymentStatus) {
         Optional<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatusAndOutboxStatus(
                 ORDER_SAGA_NAME, paymentRequest.getSagaId(), paymentStatus, OutboxStatus.COMPLETED);
 
-        if (orderOutboxMessage.isPresent()){
-            paymentResponseMessagePublisher.publish(orderOutboxMessage.get(), orderOutboxHelper::updateOutboxMessage);
-            return true;
-        }
-        return false;
+        return orderOutboxMessage.isPresent();
     }
 
     private Payment getPayment(UUID orderId) {
@@ -155,11 +149,12 @@ public class PaymentService {
         return creditHistories.get();
     }
 
-    private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry, CreditInfo creditInfo, List<CreditHistory> creditHistories,
-                                 List<String> failureMassages, Money price) {
+    private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry, CreditInfo creditInfo,
+                                         List<CreditHistory> creditHistories,
+                                         List<String> failureMassages, Money price) {
         paymentRepository.save(payment);
         if (failureMassages.isEmpty()) {
-            if (creditInfo.getTotalCreditAmount().equals(creditEntry.getTotalCreditAmount().subtract(price))){
+            if (creditInfo.getTotalCreditAmount().equals(creditEntry.getTotalCreditAmount().subtract(price))) {
                 creditEntry.subtractCreditAmount(price);
                 creditEntryRepository.save(creditEntry);
             }
@@ -168,7 +163,7 @@ public class PaymentService {
     }
 
     private void persistCancelDataBase(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
-                                         List<String> failureMassages, Money price) {
+                                       List<String> failureMassages, Money price) {
         paymentRepository.save(payment);
         if (failureMassages.isEmpty()) {
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));

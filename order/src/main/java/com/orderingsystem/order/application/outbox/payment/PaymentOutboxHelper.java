@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
-import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
@@ -48,7 +47,7 @@ public class PaymentOutboxHelper {
         save(PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
-                .createAt(orderPaymentEventPayload.getCreatedAt())
+                .createdAt(orderPaymentEventPayload.getCreatedAt())
                 .type(ORDER_SAGA_NAME)
                 .payload(createPayload(orderPaymentEventPayload))
                 .orderStatus(orderStatus)
@@ -86,9 +85,5 @@ public class PaymentOutboxHelper {
     public Optional<PaymentOutbox> getPaymentOutboxBySagaIdAndSagaStatus(UUID sagaId, SagaStatus... sagaStatus) {
         return paymentOutboxRepository.findByTypeAndSagaIdAndSagaStatusIn(ORDER_SAGA_NAME, sagaId,
                 Arrays.asList(sagaStatus));
-    }
-
-    public Optional<PaymentOutbox> getPaymentOutboxBySagaIdAndSagaStatusIn(UUID sagaId, List<SagaStatus> started) {
-        return null;
     }
 }

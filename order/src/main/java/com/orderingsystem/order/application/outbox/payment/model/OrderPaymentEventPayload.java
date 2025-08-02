@@ -17,6 +17,8 @@ public class OrderPaymentEventPayload {
     @JsonProperty
     private String customerId;
     @JsonProperty
+    private String sagaId;
+    @JsonProperty
     private BigDecimal price;
     @JsonProperty
     private ZonedDateTime createdAt;

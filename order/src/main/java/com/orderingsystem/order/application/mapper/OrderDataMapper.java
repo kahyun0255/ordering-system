@@ -25,7 +25,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderDataMapper {
 
-    public Order createOrderRequestToOrder(CreateOrderApplicationRequest createOrderApplicationRequest, UUID orderAddress) {
+    public Order createOrderRequestToOrder(CreateOrderApplicationRequest createOrderApplicationRequest,
+                                           UUID orderAddress) {
         Order order = Order.builder()
                 .customerId(createOrderApplicationRequest.getCustomerId())
                 .restaurantId(createOrderApplicationRequest.getRestaurantId())
@@ -73,22 +74,26 @@ public class OrderDataMapper {
         return items.stream().map(OrderItemApplicationRequest::getProductId).toList();
     }
 
-    public OrderPaymentEventPayload orderCreatedToOrderPaymentEventPayload(OrderCreateEvent orderCreateEvent) {
+    public OrderPaymentEventPayload orderCreatedToOrderPaymentEventPayload(OrderCreateEvent orderCreateEvent,
+                                                                           UUID sagaId) {
         return OrderPaymentEventPayload.builder()
                 .customerId(orderCreateEvent.getOrder().getCustomerId().toString())
                 .orderId(orderCreateEvent.getOrder().getId().toString())
+                .sagaId(sagaId.toString())
                 .price(orderCreateEvent.getOrder().getPrice().getAmount())
                 .createdAt(orderCreateEvent.getCreatedAt())
                 .paymentOrderStatus(PaymentOrderStatus.PENDING.name())
                 .build();
     }
 
-    public RestaurantApprovalEventPayload orderPaidEventToRestaurantApprovalEventPayload(OrderPaidEvent orderPaidEvent) {
+    public RestaurantApprovalEventPayload orderPaidEventToRestaurantApprovalEventPayload(
+            OrderPaidEvent orderPaidEvent, UUID sagaId) {
         return RestaurantApprovalEventPayload.builder()
                 .orderId(orderPaidEvent.getOrder().getId().toString())
                 .restaurantId(orderPaidEvent.getOrder().getRestaurantId().toString())
+                .sagaId(sagaId.toString())
                 .restaurantOrderStatus(RestaurantOrderStatus.PAID.name())
-                .products(orderPaidEvent.getOrder().getItems().stream().map(orderItem->
+                .products(orderPaidEvent.getOrder().getItems().stream().map(orderItem ->
                         RestaurantApprovalEventProduct.builder()
                                 .id(orderItem.getProductId().toString())
                                 .quantity(orderItem.getQuantity())
@@ -98,9 +103,11 @@ public class OrderDataMapper {
                 .build();
     }
 
-    public OrderPaymentEventPayload orderCancelledEventToOrderPaymentEventPayload(OrderCancelledEvent orderCancelledEvent) {
+    public OrderPaymentEventPayload orderCancelledEventToOrderPaymentEventPayload(
+            OrderCancelledEvent orderCancelledEvent, UUID sagaId) {
         return OrderPaymentEventPayload.builder()
                 .orderId(orderCancelledEvent.getOrder().getId().toString())
+                .sagaId(sagaId.toString())
                 .customerId(orderCancelledEvent.getOrder().getCustomerId().toString())
                 .price(orderCancelledEvent.getOrder().getPrice().getAmount())
                 .createdAt(orderCancelledEvent.getCreatedAt())

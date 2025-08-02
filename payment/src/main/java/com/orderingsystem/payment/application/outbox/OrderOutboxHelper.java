@@ -16,8 +16,6 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderOutboxHelper {
     private final OrderOutboxRepository orderOutboxRepository;
     private final ObjectMapper objectMapper;
-
-    @Transactional
-    public void updateOutboxMessage(OrderOutbox orderOutbox, OutboxStatus outboxStatus) {
-        orderOutbox.updateOutboxStatus(outboxStatus);
-        log.info("Payment OrderOutbox Status 업데이트 : {}", outboxStatus);
-    }
 
     @Transactional
     public void save(OrderOutbox orderOutbox) {
