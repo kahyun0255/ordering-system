@@ -112,7 +112,8 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
         updateApprovalOutbox(restaurantApprovalOutbox, orderCancelledEvent.getOrder().getOrderStatus(), sagaStatus);
 
         paymentOutboxHelper.savePaymentOutboxMessage(
-                orderDataMapper.orderCancelledEventToOrderPaymentEventPayload(orderCancelledEvent),
+                orderDataMapper.orderCancelledEventToOrderPaymentEventPayload(orderCancelledEvent,
+                        restaurantApprovalResponse.getSagaId()),
                 orderCancelledEvent.getOrder().getOrderStatus(),
                 sagaStatus,
                 OutboxStatus.STARTED,

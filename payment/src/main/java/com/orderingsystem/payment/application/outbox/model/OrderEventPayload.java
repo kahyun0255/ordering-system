@@ -16,6 +16,8 @@ public class OrderEventPayload {
     @JsonProperty
     private String customerId;
     @JsonProperty
+    private String sagaId;
+    @JsonProperty
     private String orderId;
     @JsonProperty
     private BigDecimal price;

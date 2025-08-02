@@ -69,7 +69,8 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         updatePaymentOutboxMessage(paymentOutboxMessage, orderPaidEvent.getOrder().getOrderStatus(), sagaStatus);
 
         restaurantApprovalOutboxHelper.saveRestaurantApprovalOutboxMessage(
-                orderDataMapper.orderPaidEventToRestaurantApprovalEventPayload(orderPaidEvent),
+                orderDataMapper.orderPaidEventToRestaurantApprovalEventPayload(orderPaidEvent,
+                        paymentResponse.getSagaId()),
                 orderPaidEvent.getOrder().getOrderStatus(),
                 sagaStatus,
                 OutboxStatus.STARTED,

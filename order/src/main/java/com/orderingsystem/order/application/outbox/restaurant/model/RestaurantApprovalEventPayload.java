@@ -16,6 +16,8 @@ public class RestaurantApprovalEventPayload {
     @JsonProperty
     private String restaurantId;
     @JsonProperty
+    private String sagaId;
+    @JsonProperty
     private BigDecimal price;
     @JsonProperty
     private ZonedDateTime createdAt;

@@ -71,7 +71,7 @@ public class PaymentService {
         persistCompleteDataBase(payment, creditEntry, creditInfo, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
-                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent),
+                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId()),
                 paymentEvent.getPayment().getStatus(),
                 OutboxStatus.STARTED,
                 paymentRequest.getSagaId());
@@ -102,14 +102,14 @@ public class PaymentService {
         persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
-                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent),
+                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId()),
                 paymentEvent.getPayment().getStatus(),
                 OutboxStatus.STARTED,
                 paymentRequest.getSagaId());
     }
 
     private boolean isOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,
-                                                              PaymentStatus paymentStatus) {
+                                                       PaymentStatus paymentStatus) {
         Optional<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatusAndOutboxStatus(
                 ORDER_SAGA_NAME, paymentRequest.getSagaId(), paymentStatus, OutboxStatus.COMPLETED);
 
@@ -149,11 +149,12 @@ public class PaymentService {
         return creditHistories.get();
     }
 
-    private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry, CreditInfo creditInfo, List<CreditHistory> creditHistories,
-                                 List<String> failureMassages, Money price) {
+    private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry, CreditInfo creditInfo,
+                                         List<CreditHistory> creditHistories,
+                                         List<String> failureMassages, Money price) {
         paymentRepository.save(payment);
         if (failureMassages.isEmpty()) {
-            if (creditInfo.getTotalCreditAmount().equals(creditEntry.getTotalCreditAmount().subtract(price))){
+            if (creditInfo.getTotalCreditAmount().equals(creditEntry.getTotalCreditAmount().subtract(price))) {
                 creditEntry.subtractCreditAmount(price);
                 creditEntryRepository.save(creditEntry);
             }
@@ -162,7 +163,7 @@ public class PaymentService {
     }
 
     private void persistCancelDataBase(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
-                                         List<String> failureMassages, Money price) {
+                                       List<String> failureMassages, Money price) {
         paymentRepository.save(payment);
         if (failureMassages.isEmpty()) {
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));

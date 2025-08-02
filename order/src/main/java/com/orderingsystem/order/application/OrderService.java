@@ -37,12 +37,13 @@ public class OrderService {
         OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest, restaurantInfo);
         log.info("주문이 생성되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
 
+        UUID sagaId = UUID.randomUUID();
         paymentOutboxHelper.savePaymentOutboxMessage(
-                orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent),
+                orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent, sagaId),
                 orderCreateEvent.getOrder().getOrderStatus(),
                 OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
                 OutboxStatus.STARTED,
-                UUID.randomUUID()
+                sagaId
         );
 
         return orderDataMapper.orderToCreateOrderResponse(orderCreateEvent.getOrder(), "주문이 성공적으로 생성되었습니다.");

@@ -10,7 +10,6 @@ import com.orderingsystem.payment.application.exception.PaymentApplicationExcept
 import com.orderingsystem.payment.infra.kafka.message.PaymentRequestDebeziumMessage;
 import com.orderingsystem.payment.infra.kafka.message.PaymentRequestMessage;
 import java.sql.SQLException;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -43,7 +42,9 @@ public class PaymentRequestKafkaListener implements KafkaSingleConsumer<String> 
                 log.info("PaymentRequestKafkaListener에서 메시지를 받았습니다. message : {}, key : {}, partition : {}, offset: {}",
                         message, key, partition, offset);
 
-                PaymentRequestMessage requestMessage = getPaymentRequestMessage(debeziumMessage);
+                PaymentRequestDebeziumMessage.Payload payload = debeziumMessage.getAfter();
+                PaymentRequestMessage requestMessage = objectMapper.readValue(payload.getPayload(),
+                        PaymentRequestMessage.class);
 
                 if (PaymentOrderStatus.PENDING.equals(requestMessage.getPaymentOrderStatus())) {
                     log.info("결제 진행. order Id : {}", requestMessage.getOrderId());
@@ -69,22 +70,5 @@ public class PaymentRequestKafkaListener implements KafkaSingleConsumer<String> 
                 throw new PaymentApplicationException("DB 예외 발생", e);
             }
         }
-    }
-
-    private PaymentRequestMessage getPaymentRequestMessage(PaymentRequestDebeziumMessage debeziumMessage)
-            throws JsonProcessingException {
-        PaymentRequestDebeziumMessage.Payload payload = debeziumMessage.getAfter();
-        PaymentRequestMessage paymentRequestMessage = objectMapper.readValue(payload.getPayload(),
-                PaymentRequestMessage.class);
-
-        return PaymentRequestMessage.builder()
-                .id(UUID.fromString(payload.getId()))
-                .sagaId(UUID.fromString(payload.getSagaId()))
-                .orderId(paymentRequestMessage.getOrderId())
-                .customerId(paymentRequestMessage.getCustomerId())
-                .price(paymentRequestMessage.getPrice())
-                .createdAt(paymentRequestMessage.getCreatedAt())
-                .paymentOrderStatus(paymentRequestMessage.getPaymentOrderStatus())
-                .build();
     }
 }

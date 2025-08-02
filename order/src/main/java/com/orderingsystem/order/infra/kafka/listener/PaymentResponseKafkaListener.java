@@ -11,7 +11,6 @@ import com.orderingsystem.order.infra.kafka.message.PaymentResponseDebeziumMessa
 import com.orderingsystem.order.infra.kafka.message.PaymentResponseMessage;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -49,7 +48,8 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
                 if (debeziumMessage.getBefore() == null &&
                         debeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
 
-                    PaymentResponseMessage paymentResponseMessage = getPaymentResponseMessage(debeziumMessage);
+                    PaymentResponseMessage paymentResponseMessage = objectMapper.readValue(
+                            debeziumMessage.getAfter().getPayload(), PaymentResponseMessage.class);
 
                     log.info("결제 응답 수신. Order Id : {}, PaymentStatus: {}", paymentResponseMessage.getOrderId(),
                             paymentResponseMessage.getPaymentStatus());
@@ -81,22 +81,5 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
                 }
             }
         });
-    }
-
-    private PaymentResponseMessage getPaymentResponseMessage(PaymentResponseDebeziumMessage debeziumMessage)
-            throws JsonProcessingException {
-        PaymentResponseMessage payload =
-                objectMapper.readValue(debeziumMessage.getAfter().getPayload(), PaymentResponseMessage.class);
-
-        return PaymentResponseMessage.builder()
-                .sagaId(UUID.fromString(debeziumMessage.getAfter().getSagaId()))
-                .paymentId(payload.getPaymentId())
-                .orderId(payload.getOrderId())
-                .customerId(payload.getCustomerId())
-                .price(payload.getPrice())
-                .createdAt(payload.getCreatedAt())
-                .paymentStatus(payload.getPaymentStatus())
-                .failureMessages(payload.getFailureMessages())
-                .build();
     }
 }
