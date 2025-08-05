@@ -13,18 +13,16 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RestaurantApprovalOutboxRepository extends JpaRepository<RestaurantApprovalOutbox, UUID> {
 
-    Optional<List<RestaurantApprovalOutbox>> findByTypeAndOutboxStatusAndSagaStatus(String orderSagaName,
-                                                                                    OutboxStatus outboxStatus,
-                                                                                    SagaStatus sagaStatus);
-
-    Optional<List<RestaurantApprovalOutbox>> findByTypeAndOutboxStatusAndSagaStatusIn(String orderSagaName,
+    Optional<List<RestaurantApprovalOutbox>> findByTypeAndOutboxStatusAndSagaStatusIn(String type,
                                                                                       OutboxStatus outboxStatus,
-                                                                                      List<SagaStatus> list);
+                                                                                      List<SagaStatus> sagaStatuses);
 
-    void deleteAllByTypeAndOutboxStatusAndSagaStatusIn(String orderSagaName, OutboxStatus outboxStatus,
-                                                       List<SagaStatus> list);
+    void deleteAllByTypeAndOutboxStatusAndSagaStatusIn(String type, OutboxStatus outboxStatus,
+                                                       List<SagaStatus> sagaStatuses);
 
-    Optional<RestaurantApprovalOutbox> findByTypeAndSagaIdAndSagaStatus(String type, UUID sagaId, SagaStatus sagaStatus);
+    Optional<RestaurantApprovalOutbox> findByTypeAndSagaIdAndSagaStatus(String type, UUID sagaId,
+                                                                        SagaStatus sagaStatus);
 
-    boolean existsByTypeAndSagaIdAndOrderStatusAndSagaStatus(String type, UUID sagaId, OrderStatus orderStatus, SagaStatus sagaStatus);
+    boolean existsByTypeAndSagaIdAndOrderStatusAndSagaStatus(String type, UUID sagaId, OrderStatus orderStatus,
+                                                             SagaStatus sagaStatus);
 }

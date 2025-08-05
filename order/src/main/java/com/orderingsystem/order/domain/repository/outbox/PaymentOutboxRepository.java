@@ -3,7 +3,6 @@ package com.orderingsystem.order.domain.repository.outbox;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.outbox.OutboxStatus;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,11 +14,13 @@ public interface PaymentOutboxRepository extends JpaRepository<PaymentOutbox, UU
     Optional<List<PaymentOutbox>> findByTypeAndOutboxStatusAndSagaStatusIn(String type, OutboxStatus outboxStatus,
                                                                            List<SagaStatus> sagaStatuses);
 
-    void deleteAllByTypeAndOutboxStatusAndSagaStatusIn(String orderSagaName, OutboxStatus outboxStatus,
-                                                       List<SagaStatus> list);
+    void deleteAllByTypeAndOutboxStatusAndSagaStatusIn(String type, OutboxStatus outboxStatus,
+                                                       List<SagaStatus> sagaStatuses);
 
-    Optional<PaymentOutbox> findByTypeAndSagaIdAndSagaStatusIn(String type, UUID sagaId, Collection<SagaStatus> sagaStatuses);
+    Optional<PaymentOutbox> findByTypeAndSagaIdAndSagaStatusIn(String type, UUID sagaId,
+                                                               List<SagaStatus> sagaStatuses);
 
-    boolean existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus(String type, UUID sagaId, SagaStatus sagaStatus, OutboxStatus outboxStatus);
+    boolean existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus(String type, UUID sagaId, SagaStatus sagaStatus,
+                                                              OutboxStatus outboxStatus);
 
 }
