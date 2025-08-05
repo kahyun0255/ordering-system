@@ -139,14 +139,14 @@ public class PaymentService {
     }
 
     private List<CreditHistory> getCreditHistories(UUID customerId) {
-        Optional<List<CreditHistory>> creditHistories = creditHistoryRepository.findByCustomerId(customerId);
+        List<CreditHistory> creditHistories = creditHistoryRepository.findByCustomerId(customerId);
 
         if (creditHistories.isEmpty()) {
             log.error("해당 고객에 대한 CreditHistory 정보를 찾을 수 없습니다. Customer Id : {}", customerId);
             throw new PaymentApplicationException("해당 고객에 대한 CreditHistory 정보를 찾을 수 없습니다. Customer Id : " + customerId);
         }
 
-        return creditHistories.get();
+        return creditHistories;
     }
 
     private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry, CreditInfo creditInfo,
