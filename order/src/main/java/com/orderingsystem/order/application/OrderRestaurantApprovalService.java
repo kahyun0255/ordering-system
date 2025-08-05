@@ -46,7 +46,7 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
                         SagaStatus.PROCESSING);
 
         if (restaurantApprovalOutboxResponse.isEmpty()) {
-            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
+            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 없거나, 이미 다른 상태로 처리 중이므로 메시지를 무시합니다.",
                     restaurantApprovalResponse.getSagaId());
             return;
         }
@@ -142,7 +142,7 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
 
         if (paymentOutboxResponse.isEmpty()) {
             throw new OrderApplicationException(
-                    "SagaStatus가 {} 상태인 PaymentOutbox를 찾지 못했습니다." + SagaStatus.PROCESSING.name());
+                    "SagaStatus가 " + SagaStatus.PROCESSING.name() + " 상태인 PaymentOutbox를 찾지 못했습니다.");
         }
 
         PaymentOutbox paymentOutbox = paymentOutboxResponse.get();
