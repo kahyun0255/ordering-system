@@ -4,9 +4,7 @@ import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,12 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 public class RestaurantInfo extends AggregateRoot {
 
     private UUID restaurantId;
-    private UUID productId;
     private String restaurantName;
     private Boolean restaurantActive;
-    private String productName;
-    private BigDecimal productPrice;
-    private Boolean productAvailable;
     @Setter
     private OrderApproval orderApproval;
     @Setter
@@ -74,18 +68,4 @@ public class RestaurantInfo extends AggregateRoot {
         this.restaurantActive = active;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        RestaurantInfo that = (RestaurantInfo) o;
-        return Objects.equals(restaurantId, that.restaurantId) && Objects.equals(productId,
-                that.productId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(restaurantId, productId);
-    }
 }

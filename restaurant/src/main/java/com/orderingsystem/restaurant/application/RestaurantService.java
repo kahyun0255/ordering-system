@@ -104,17 +104,17 @@ public class RestaurantService {
         List<UUID> restaurantProductIds = restaurant.getOrderDetail().getProducts().stream()
                 .map(Product::getProductId).toList();
 
-        Optional<List<RestaurantInfoView>> restaurantInfos =
-                restaurantRepository.findRestaurantProducts(restaurantId, restaurantProductIds);
+        List<RestaurantInfoView> restaurantInfos =
+                restaurantRepository.findRestaurantInfo(restaurantId, restaurantProductIds);
 
-        if (restaurantInfos.isEmpty() || restaurantInfos.get().isEmpty()) {
+        if (restaurantInfos.isEmpty()) {
             log.error("레스토랑을 찾을 수 없습니다. Restaurant Id : {}", restaurant.getRestaurantId());
             throw new RestaurantNotFoundException("레스토랑을 찾을 수 없습니다. Restaurant Id : " + restaurant.getRestaurantId());
         }
 
-        restaurant.updateActive(restaurantInfos.get().get(0).getRestaurantActive());
+        restaurant.updateActive(restaurantInfos.get(0).getRestaurantActive());
 
-        List<Product> restaurantProducts = restaurantInfos.get().stream().map(r ->
+        List<Product> restaurantProducts = restaurantInfos.stream().map(r ->
                 Product.builder()
                         .productId(r.getProductId())
                         .name(r.getProductName())

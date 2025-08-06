@@ -14,10 +14,12 @@ public interface OrderOutboxRepository extends JpaRepository<OrderOutbox, UUID> 
 
     List<OrderOutbox> findByTypeAndSagaIdAndOutboxStatus(String type, UUID sagaId, OutboxStatus outboxStatus);
 
-    Optional<List<OrderOutbox>> findByTypeAndOutboxStatus(String orderSagaName, OutboxStatus outboxStatus);
+    Optional<List<OrderOutbox>> findByTypeAndOutboxStatus(String type, OutboxStatus outboxStatus);
 
-    void deleteAllByTypeAndOutboxStatus(String orderSagaName, OutboxStatus outboxStatus);
+    void deleteAllByTypeAndOutboxStatus(String type, OutboxStatus outboxStatus);
 
-    boolean existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus(String type, UUID sagaId, OrderApprovalStatus orderApprovalStatus, OutboxStatus outboxStatus);
+    boolean existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus(String type, UUID sagaId,
+                                                                       OrderApprovalStatus orderApprovalStatus,
+                                                                       OutboxStatus outboxStatus);
 
 }
