@@ -14,5 +14,6 @@ public class ProductInfoResponse {
     private UUID productId;
     private String name;
     private BigDecimal price;
+    private boolean active;
 
 }

@@ -23,18 +23,19 @@ public class PaymentValidateAndCancelService {
     public PaymentEvent validateAndCancel(Payment payment, CreditEntry creditEntry,
                                           List<CreditHistory> creditHistories, List<String> failureMessages) {
         payment.validatePayment(failureMessages);
-        addCreditEntry(payment, creditEntry);
-        updateCreditHistory(payment, creditHistories, TransactionType.CREDIT);
 
-        if (failureMessages.isEmpty()) {
-            payment.updateStatus(PaymentStatus.CANCELLED);
-            log.info("결제가 취소되었습니다. Order Id : {}", payment.getOrderId());
-            return new PaymentCancelledEvent(payment, ZonedDateTime.now());
-        } else {
+        if (!failureMessages.isEmpty()) {
             payment.updateStatus(PaymentStatus.FAILED);
             log.error("결제 취소에 실패했습니다. Order Id : {}", payment.getOrderId());
             return new PaymentFailedEvent(payment, ZonedDateTime.now(), failureMessages);
         }
+
+        addCreditEntry(payment, creditEntry);
+        updateCreditHistory(payment, creditHistories, TransactionType.CREDIT);
+        payment.updateStatus(PaymentStatus.CANCELLED);
+        log.info("결제가 취소되었습니다. Order Id : {}", payment.getOrderId());
+
+        return new PaymentCancelledEvent(payment, ZonedDateTime.now());
     }
 
     private void addCreditEntry(Payment payment, CreditEntry creditEntry) {

@@ -33,7 +33,8 @@ public class RestaurantQueryService {
                 .products(restaurant.getProducts().stream().map(product->new ProductInfoResponse(
                         product.getProductId(),
                         product.getName(),
-                        product.getPrice().getAmount())
+                        product.getPrice().getAmount(),
+                        product.isAvailable())
                 ).toList())
                 .active(restaurant.isActive())
                 .build();
@@ -48,6 +49,7 @@ public class RestaurantQueryService {
                                 .productId(restaurant.getProductId())
                                 .name(restaurant.getProductName())
                                 .price(restaurant.getProductPrice())
+                                .available(restaurant.getProductAvailable())
                                 .build())
                 .toList();
 
