@@ -107,7 +107,7 @@ public class RestaurantService {
         Optional<List<RestaurantInfoView>> restaurantInfos =
                 restaurantRepository.findRestaurantProducts(restaurantId, restaurantProductIds);
 
-        if (restaurantInfos.isEmpty()) {
+        if (restaurantInfos.isEmpty() || restaurantInfos.get().isEmpty()) {
             log.error("레스토랑을 찾을 수 없습니다. Restaurant Id : {}", restaurant.getRestaurantId());
             throw new RestaurantNotFoundException("레스토랑을 찾을 수 없습니다. Restaurant Id : " + restaurant.getRestaurantId());
         }

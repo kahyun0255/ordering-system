@@ -54,6 +54,11 @@ public class RestaurantInfo extends AggregateRoot {
             log.error("해당 주문의 총 금액이 올바르지 않습니다. Order Id : {}", orderDetail.getOrderId());
             failureMessages.add("해당 주문의 총 금액이 올바르지 않습니다. Order Id : " + orderDetail.getOrderId());
         }
+
+        if (!restaurantActive) {
+            log.error("레스토랑이 주문을 받을 수 없는 상태입니다. Order Id : {}", orderDetail.getOrderId());
+            failureMessages.add("레스토랑이 주문을 받을 수 없는 상태입니다. Order Id : " + orderDetail.getOrderId());
+        }
     }
 
     public void constructOrderApproval(OrderApprovalStatus orderApprovalStatus) {
