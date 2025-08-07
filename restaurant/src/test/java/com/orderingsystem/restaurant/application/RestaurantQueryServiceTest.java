@@ -66,7 +66,7 @@ class RestaurantQueryServiceTest {
         assertThat(restaurantInfo.getRestaurantId()).isEqualTo(restaurantId);
         assertThat(restaurantInfo.isActive()).isTrue();
         assertThat(restaurantInfo.getProducts()).hasSize(3)
-                .extracting("productId", "active")
+                .extracting("productId", "available")
                 .containsExactlyInAnyOrder(
                         tuple(productId1, true),
                         tuple(productId2, true),

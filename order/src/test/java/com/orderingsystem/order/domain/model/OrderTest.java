@@ -142,7 +142,7 @@ class OrderTest {
         Order order = getOrder();
 
         //when, then
-        assertDoesNotThrow(order::validateOrder);
+        assertDoesNotThrow(() -> order.validateOrder(new ArrayList<>()));
     }
 
     @DisplayName("OrderStatus가 null이 아닌 경우, 주문 초기화 검증에 실패한다.")
@@ -159,7 +159,7 @@ class OrderTest {
                 .build();
 
         //when, then
-        assertThatThrownBy(order::validateOrder)
+        assertThatThrownBy(() -> order.validateOrder(new ArrayList<>()))
                 .isInstanceOf(OrderDomainException.class)
                 .hasMessage("주문이 초기화될 수 없는 상태입니다.(이미 생성된 주문일 수 있습니다.)");
     }
@@ -178,7 +178,7 @@ class OrderTest {
                 .build();
 
         //when, then
-        assertThatThrownBy(order::validateOrder)
+        assertThatThrownBy(() -> order.validateOrder(new ArrayList<>()))
                 .isInstanceOf(OrderDomainException.class)
                 .hasMessage("주문이 초기화될 수 없는 상태입니다.(이미 생성된 주문일 수 있습니다.)");
     }
@@ -192,12 +192,16 @@ class OrderTest {
                 .restaurantId(UUID.randomUUID())
                 .address(UUID.randomUUID())
                 .items(List.of(getOrderItem()))
+                .price(null)
                 .build();
 
-        //when, then
-        assertThatThrownBy(order::validateOrder)
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("총 주문 금액은 0보다 커야합니다.");
+        List<String> failureMessages = new ArrayList<>();
+
+        //when
+        order.validateOrder(failureMessages);
+
+        //then
+        assertThat(failureMessages.get(0)).isEqualTo("총 주문 금액은 0보다 커야합니다.");
     }
 
     @DisplayName("주문 금액이 0이면, 주문 초기화 검증에 실패한다.")
@@ -212,10 +216,13 @@ class OrderTest {
                 .price(new Money(new BigDecimal("0.00")))
                 .build();
 
-        //when, then
-        assertThatThrownBy(order::validateOrder)
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("총 주문 금액은 0보다 커야합니다.");
+        List<String> failureMessages = new ArrayList<>();
+
+        //when
+        order.validateOrder(failureMessages);
+
+        //then
+        assertThat(failureMessages.get(0)).isEqualTo("총 주문 금액은 0보다 커야합니다.");
     }
 
     @DisplayName("주문 금액이 0보다 작으면, 주문 초기화 검증에 실패한다.")
@@ -230,10 +237,13 @@ class OrderTest {
                 .price(new Money(new BigDecimal("-1.00")))
                 .build();
 
-        //when, then
-        assertThatThrownBy(order::validateOrder)
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("총 주문 금액은 0보다 커야합니다.");
+        List<String> failureMessages = new ArrayList<>();
+
+        //when
+        order.validateOrder(failureMessages);
+
+        //then
+        assertThat(failureMessages.get(0)).isEqualTo("총 주문 금액은 0보다 커야합니다.");
     }
 
     @DisplayName("총 주문 금액과 개별 항목들의 합계가 일치하지 않으면, 주문 초기화 검증에 실패한다.")
@@ -248,10 +258,14 @@ class OrderTest {
                 .price(new Money(new BigDecimal("2.00")))
                 .build();
 
-        //when, then
-        assertThatThrownBy(order::validateOrder)
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("총 주문 금액 : 2.00 개별 항목들의 합계 : 20.00 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다.");
+        List<String> failureMessages = new ArrayList<>();
+
+        //when
+        order.validateOrder(failureMessages);
+
+        //then
+        assertThat(failureMessages.get(0)).isEqualTo(
+                "총 주문 금액 : 2.00 개별 항목들의 합계 : 20.00. 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다.");
     }
 
     @DisplayName("Order Status가 PENDING 상태면 PAID 상태로 갱신할 수 있다.")
@@ -618,6 +632,7 @@ class OrderTest {
                 .productId(productId)
                 .name("itemName")
                 .price(price)
+                .available(true)
                 .build();
 
         OrderItem orderItem = OrderItem.builder()
@@ -647,6 +662,7 @@ class OrderTest {
                 .productId(productId)
                 .name("itemName")
                 .price(price)
+                .available(true)
                 .build();
 
         return OrderItem.builder()

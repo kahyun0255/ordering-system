@@ -65,6 +65,6 @@ class RestaurantQueryControllerTest {
                 .andExpect(jsonPath("$.products").isArray())
                 .andExpect(jsonPath("$.products[0].productId").value(productId1.toString()))
                 .andExpect(jsonPath("$.products[1].productId").value(productId2.toString()))
-                .andExpect(jsonPath("$.products[1].active").value(true));
+                .andExpect(jsonPath("$.products[1].available").value(true));
     }
 }
