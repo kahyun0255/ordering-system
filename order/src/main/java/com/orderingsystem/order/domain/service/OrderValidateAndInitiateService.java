@@ -1,7 +1,6 @@
 package com.orderingsystem.order.domain.service;
 
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
-import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
 import com.orderingsystem.order.domain.model.Product;
@@ -15,18 +14,22 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderValidateAndInitiateService {
 
-    public OrderCreateEvent validateAndInitiate(Order order, Restaurant restaurant) {
-        validateRestaurant(restaurant);
+    public OrderCreateEvent validateAndInitiate(Order order, Restaurant restaurant,
+                                                          List<String> failureMessages) {
+        validateRestaurant(restaurant, failureMessages);
         setOrderProductInformation(order, restaurant);
-        order.validateOrder();
+        order.validateOrder(failureMessages);
         order.initializeOrder();
-        log.info("주문 생성. Order ID : {}", order.getId());
+
+        log.info("주문 생성. Order Id : {}", order.getId());
+
         return new OrderCreateEvent(order, ZonedDateTime.now());
     }
 
-    private void validateRestaurant(Restaurant restaurant) {
+    private void validateRestaurant(Restaurant restaurant, List<String> failureMessages) {
         if (!restaurant.isActive()) {
-            throw new OrderDomainException("restaurant Id : " + restaurant.getRestaurantId() + " active 상태가 아닙니다.");
+            log.warn("restaurant Id : {} active 상태가 아닙니다.", restaurant.getRestaurantId());
+            failureMessages.add("restaurant Id : " + restaurant.getRestaurantId() + " active 상태가 아닙니다.");
         }
     }
 
@@ -40,7 +43,7 @@ public class OrderValidateAndInitiateService {
             for (Product restaurantProduct : restaurantProducts) {
                 if (currentProduct.equals(restaurantProduct)) {
                     currentProduct.updateWithConfirmedNameAndPrice(restaurantProduct.getName(),
-                            restaurantProduct.getPrice());
+                            restaurantProduct.getPrice(), restaurantProduct.isAvailable());
                     break;
                 }
             }

@@ -29,6 +29,7 @@ public class RestaurantInfo {
                                         .productId(product.getProductId())
                                         .name(product.getName())
                                         .price(new Money(product.getPrice()))
+                                        .available(product.isAvailable())
                                         .build())
                         .toList())
                 .build();

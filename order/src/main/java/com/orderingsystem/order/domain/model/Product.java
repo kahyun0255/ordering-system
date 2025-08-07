@@ -16,10 +16,12 @@ public class Product {
     private UUID productId;
     private String name;
     private Money price;
+    private boolean available;
 
-    public void updateWithConfirmedNameAndPrice(String name, Money price) {
+    public void updateWithConfirmedNameAndPrice(String name, Money price, boolean available) {
         this.name = name;
         this.price = price;
+        this.available = available;
     }
 
     public Product(UUID productId) {

@@ -23,6 +23,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Entity
 @Table(name = "orders")
@@ -30,6 +31,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Slf4j
 public class Order extends AggregateRoot {
 
     @Id
@@ -89,10 +91,10 @@ public class Order extends AggregateRoot {
         }
     }
 
-    public void validateOrder() {
+    public void validateOrder(List<String> failureMessages) {
         validateInitialOrder();
-        validateTotalPrice();
-        validateItemsPrice();
+        validateTotalPrice(failureMessages);
+        validateItems(failureMessages);
     }
 
     private void validateInitialOrder() {
@@ -101,28 +103,42 @@ public class Order extends AggregateRoot {
         }
     }
 
-    private void validateTotalPrice() {
+    private void validateTotalPrice(List<String> failureMessages) {
         if (price == null || !price.isGreaterThanZero()) {
-            throw new OrderDomainException("총 주문 금액은 0보다 커야합니다.");
+            log.warn("총 주문 금액은 0보다 커야합니다. Order Id : {}", this.id);
+            failureMessages.add("총 주문 금액은 0보다 커야합니다.");
         }
     }
 
-    private void validateItemsPrice() {
+    private void validateItems(List<String> failureMessages) {
         Money orderItemsTotal = items.stream().map(orderItem -> {
-            validateItemPrice(orderItem);
+            validateItemPrice(orderItem, failureMessages);
+            validateItemAvailability(orderItem, failureMessages);
             return orderItem.getSubTotal();
         }).reduce(Money.ZERO, Money::add);
 
         if (!price.equals(orderItemsTotal)) {
-            throw new OrderDomainException("총 주문 금액 : " + price.getAmount()
-                    + " 개별 항목들의 합계 : " + orderItemsTotal.getAmount() + " 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다.");
+            log.warn("총 주문 금액 : {} 개별 항목들의 합계 : {}. 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다. Order Id : {}", price.getAmount(),
+                    orderItemsTotal.getAmount(), this.id);
+            failureMessages.add("총 주문 금액 : " + price.getAmount()
+                    + " 개별 항목들의 합계 : " + orderItemsTotal.getAmount() + ". 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다.");
         }
     }
 
-    private void validateItemPrice(OrderItem orderItem) {
+    private void validateItemPrice(OrderItem orderItem, List<String> failureMessages) {
         if (!orderItem.isPriceValid()) {
-            throw new OrderDomainException("상품: " + orderItem.getProduct().getProductId() +
+            log.warn("상품 : {}의 항목 가격 : {}이 유효하지 않습니다. Order Id : {}", orderItem.getProduct().getProductId(),
+                    orderItem.getProduct().getPrice().getAmount(), this.id);
+            failureMessages.add("상품 : " + orderItem.getProduct().getProductId() +
                     "의 항목 가격 : " + orderItem.getProduct().getPrice().getAmount() + "이 유효하지 않습니다.");
+        }
+    }
+
+    private void validateItemAvailability(OrderItem orderItem, List<String> failureMessages) {
+        if (!orderItem.getProduct().isAvailable()) {
+            log.warn("상품 : {}이 판매할 수 없는 상태입니다. Order Id : {}", orderItem.getProduct().getProductId(),
+                    orderItem.getOrder().getId());
+            failureMessages.add("상품 : " + orderItem.getProduct().getProductId() + "이 판매할 수 없는 상태입니다.");
         }
     }
 
@@ -171,8 +187,8 @@ public class Order extends AggregateRoot {
         }
     }
 
-    public void updateItems(List<OrderItem> items){
-        this.items=items;
+    public void updateItems(List<OrderItem> items) {
+        this.items = items;
     }
 
 }

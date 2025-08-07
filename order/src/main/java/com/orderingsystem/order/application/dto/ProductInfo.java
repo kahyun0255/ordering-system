@@ -16,5 +16,6 @@ public class ProductInfo {
     private UUID productId;
     private String name;
     private BigDecimal price;
+    private boolean available;
 
 }

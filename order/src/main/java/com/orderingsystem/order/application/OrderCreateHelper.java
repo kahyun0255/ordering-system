@@ -12,6 +12,7 @@ import com.orderingsystem.order.domain.repository.CustomerRepository;
 import com.orderingsystem.order.domain.repository.OrderAddressRepository;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.service.OrderValidateAndInitiateService;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,19 +32,22 @@ public class OrderCreateHelper {
     private final OrderAddressRepository orderAddressRepository;
 
     @Transactional
-    public OrderCreateEvent persistOrder(CreateOrderApplicationRequest createOrderRequest, RestaurantInfo restaurantInfo) {
+    public OrderCreateEvent persistOrder(CreateOrderApplicationRequest createOrderRequest,
+                                         RestaurantInfo restaurantInfo, List<String> failureMessages) {
         checkCustomer(createOrderRequest.getCustomerId());
 
         OrderAddress orderAddress = orderDataMapper.orderAddressToStreetAddress(createOrderRequest.getAddress());
         Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest, orderAddress.getId());
 
         OrderCreateEvent orderCreateEvent =
-                orderValidateAndInitiateService.validateAndInitiate(order, restaurantInfo.toRestaurant());
+                orderValidateAndInitiateService.validateAndInitiate(
+                        order, restaurantInfo.toRestaurant(), failureMessages);
 
         Order savedOrder = saveOrder(order);
         saveOrderAddress(orderAddress, order);
 
         log.info("주문이 생성되었습니다. Order Id : {}", savedOrder.getId());
+
         return orderCreateEvent;
     }
 
@@ -70,7 +74,7 @@ public class OrderCreateHelper {
         try {
             orderAddress.updateOrderId(order.getId());
             orderAddressRepository.save(orderAddress);
-        } catch (Exception e){
+        } catch (Exception e) {
             log.warn("주문 주소가 저장되지 않았습니다.");
             throw new OrderDomainException("주문 주소가 저장되지 않았습니다.");
         }
