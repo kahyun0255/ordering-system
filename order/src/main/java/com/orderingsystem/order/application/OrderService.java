@@ -11,6 +11,8 @@ import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.outbox.OutboxStatus;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,22 +33,35 @@ public class OrderService {
 
     @Transactional
     public CreateOrderResponse createOrder(CreateOrderApplicationRequest createOrderRequest) {
+        List<String> failureMessages = new ArrayList<>();
+
         RestaurantInfo restaurantInfo = restaurantApi.getRestaurantInfo(createOrderRequest.getRestaurantId(),
                 orderDataMapper.itemsToItemIdList(createOrderRequest.getItems()));
 
-        OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest, restaurantInfo);
+        OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest, restaurantInfo,
+                failureMessages);
         log.info("주문이 생성되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
 
-        UUID sagaId = UUID.randomUUID();
-        paymentOutboxHelper.savePaymentOutboxMessage(
-                orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent, sagaId),
-                orderCreateEvent.getOrder().getOrderStatus(),
-                OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
-                OutboxStatus.STARTED,
-                sagaId
-        );
+        String resultMessage = "주문이 성공적으로 생성되었습니다.";
 
-        return orderDataMapper.orderToCreateOrderResponse(orderCreateEvent.getOrder(), "주문이 성공적으로 생성되었습니다.");
+        if (!failureMessages.isEmpty()) {
+            log.warn("주문이 취소되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
+            Order order = orderCreateEvent.getOrder();
+            order.cancel(failureMessages);
+            orderRepository.save(order);
+            resultMessage = "주문 요청이 유효하지 않아 주문이 완료되지 않았습니다.";
+        } else {
+            UUID sagaId = UUID.randomUUID();
+            paymentOutboxHelper.savePaymentOutboxMessage(
+                    orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent, sagaId),
+                    orderCreateEvent.getOrder().getOrderStatus(),
+                    OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
+                    OutboxStatus.STARTED,
+                    sagaId
+            );
+        }
+
+        return orderDataMapper.orderToCreateOrderResponse(orderCreateEvent.getOrder(), resultMessage);
     }
 
     @Transactional(readOnly = true)
