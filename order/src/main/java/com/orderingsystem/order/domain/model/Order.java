@@ -94,6 +94,7 @@ public class Order extends AggregateRoot {
     public void validateOrder(List<String> failureMessages) {
         validateInitialOrder();
         validateTotalPrice(failureMessages);
+        if (!failureMessages.isEmpty()) return;
         validateItems(failureMessages);
     }
 

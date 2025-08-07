@@ -13,9 +13,12 @@ import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequ
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Customer;
+import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.repository.CustomerRepository;
+import com.orderingsystem.order.domain.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +43,9 @@ class OrderServiceTest {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     @AfterEach
     void tearDown() {
@@ -73,6 +79,7 @@ class OrderServiceTest {
                                 .productId(productId1)
                                 .name("product1")
                                 .price(new BigDecimal("50.00"))
+                                .available(true)
                                 .build()))
                         .build());
 
@@ -98,11 +105,13 @@ class OrderServiceTest {
                                         .productId(productId1)
                                         .name("product1")
                                         .price(new BigDecimal("50.00"))
+                                        .available(true)
                                         .build(),
                                 ProductInfo.builder()
                                         .productId(productId2)
                                         .name("product2")
                                         .price(new BigDecimal("25.00"))
+                                        .available(true)
                                         .build()))
                         .build());
 
@@ -128,14 +137,18 @@ class OrderServiceTest {
                                 .productId(productId1)
                                 .name("product1")
                                 .price(new BigDecimal("25.00"))
+                                .available(true)
                                 .build()))
                         .build());
 
-        //when, then
-        assertThatThrownBy(() -> orderService.createOrder(request))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("상품: " + productId1 + "의 항목 가격 : 25.00이 유효하지 않습니다.");
+        //when
+        CreateOrderResponse orderResponse = orderService.createOrder(request);
 
+        // then
+        Optional<Order> order = orderRepository.findByTrackingId(orderResponse.getOrderTrackingId());
+        assertThat(order).isPresent();
+        assertThat(order.get().getFailureMessages()).isEqualTo("상품 : " + productId1 + "의 항목 가격 : 25.00이 유효하지 않습니다.");
+        assertThat(orderResponse.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 
     @DisplayName("상품이 2개 일 때 하나라도 상품 가격이 일치하지 않을 경우, 주문 생성에 실패한다.")
@@ -152,18 +165,24 @@ class OrderServiceTest {
                                         .productId(productId1)
                                         .name("product1")
                                         .price(new BigDecimal("20.00"))
+                                        .available(true)
                                         .build(),
                                 ProductInfo.builder()
                                         .productId(productId2)
                                         .name("product2")
                                         .price(new BigDecimal("25.00"))
+                                        .available(true)
                                         .build()))
                         .build());
 
-        //when, then
-        assertThatThrownBy(() -> orderService.createOrder(request))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("상품: " + productId1 + "의 항목 가격 : 20.00이 유효하지 않습니다.");
+        //when
+        CreateOrderResponse createdOrder = orderService.createOrder(request);
+
+        // then
+        Optional<Order> order = orderRepository.findByTrackingId(createdOrder.getOrderTrackingId());
+        assertThat(order).isPresent();
+        assertThat(order.get().getFailureMessages()).isEqualTo("상품 : " + productId1 + "의 항목 가격 : 20.00이 유효하지 않습니다.");
+        assertThat(createdOrder.getOrderStatus()).isEqualByComparingTo(OrderStatus.CANCELLED);
     }
 
     @DisplayName("주문자가 존재하지 않을 경우, 주문 생성에 실패한다.")
@@ -217,13 +236,18 @@ class OrderServiceTest {
                                 .productId(productId1)
                                 .name("product1")
                                 .price(new BigDecimal("50.00"))
+                                .available(true)
                                 .build()))
                         .build());
 
-        //when, then
-        assertThatThrownBy(() -> orderService.createOrder(request))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("restaurant Id : " + restaurantId + " active 상태가 아닙니다.");
+        //when
+        CreateOrderResponse createdOrder = orderService.createOrder(request);
+
+        // then
+        Optional<Order> order = orderRepository.findByTrackingId(createdOrder.getOrderTrackingId());
+        assertThat(order).isPresent();
+        assertThat(order.get().getFailureMessages()).isEqualTo("restaurant Id : " + restaurantId + " active 상태가 아닙니다.");
+        assertThat(createdOrder.getOrderStatus()).isEqualByComparingTo(OrderStatus.CANCELLED);
     }
 
     @DisplayName("개별 항목들의 총 합이 전체 총합과 일치하지 않으면 주문 생성에 실패한다.")
@@ -255,10 +279,15 @@ class OrderServiceTest {
 
         restaurantApi();
 
-        //when, then
-        assertThatThrownBy(() -> orderService.createOrder(request))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("총 주문 금액 : 20000.00 개별 항목들의 합계 : 100.00 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다.");
+        //when
+        CreateOrderResponse createdOrder = orderService.createOrder(request);
+
+        // then
+        Optional<Order> order = orderRepository.findByTrackingId(createdOrder.getOrderTrackingId());
+        assertThat(order).isPresent();
+        assertThat(order.get().getFailureMessages()).isEqualTo(
+                "총 주문 금액 : 20000.00 개별 항목들의 합계 : 100.00. 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다.");
+        assertThat(createdOrder.getOrderStatus()).isEqualByComparingTo(OrderStatus.CANCELLED);
     }
 
     private CreateOrderApplicationRequest getOneProductCreateOrderApplicationRequest() {
@@ -314,11 +343,13 @@ class OrderServiceTest {
                                         .productId(productId1)
                                         .name("product1")
                                         .price(new BigDecimal("50.00"))
+                                                .available(true)
                                         .build(),
                                 ProductInfo.builder()
                                         .productId(productId2)
                                         .name("product2")
                                         .price(new BigDecimal("25.00"))
+                                        .available(true)
                                         .build()))
                         .build());
     }
