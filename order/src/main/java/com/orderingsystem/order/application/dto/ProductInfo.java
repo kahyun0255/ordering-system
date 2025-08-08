@@ -1,6 +1,7 @@
 package com.orderingsystem.order.application.dto;
 
-import java.math.BigDecimal;
+import com.orderingsystem.common.domain.Money;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +16,30 @@ public class ProductInfo {
 
     private UUID productId;
     private String name;
-    private BigDecimal price;
+    private Money price;
     private boolean available;
 
+    public void updateWithConfirmedNameAndPrice(String name, Money price, boolean available) {
+        this.name = name;
+        this.price = price;
+        this.available = available;
+    }
+
+    public ProductInfo(UUID productId) {
+        this.productId = productId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ProductInfo that = (ProductInfo) o;
+        return Objects.equals(productId, that.productId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(productId);
+    }
 }

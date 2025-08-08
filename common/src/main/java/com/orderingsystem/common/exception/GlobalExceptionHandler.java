@@ -44,4 +44,16 @@ public class GlobalExceptionHandler {
                         .message("Unexpected error")
                         .build());
     }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorDTO> handleNotFoundException(NotFoundException e) {
+        log.error(e.getMessage());
+
+        return ResponseEntity.badRequest()
+                .body(ErrorDTO.builder()
+                        .code(HttpStatus.NOT_FOUND.getReasonPhrase())
+                        .message(e.getMessage())
+                        .build());
+    }
+
 }

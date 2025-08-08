@@ -40,8 +40,7 @@ public class OrderCreateHelper {
         Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest, orderAddress.getId());
 
         OrderCreateEvent orderCreateEvent =
-                orderValidateAndInitiateService.validateAndInitiate(
-                        order, restaurantInfo.toRestaurant(), failureMessages);
+                orderValidateAndInitiateService.validateAndInitiate(order, restaurantInfo, failureMessages);
 
         Order savedOrder = saveOrder(order);
         saveOrderAddress(orderAddress, order);

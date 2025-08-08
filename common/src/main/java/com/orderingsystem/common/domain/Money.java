@@ -4,7 +4,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
@@ -42,18 +41,21 @@ public class Money {
         return amount;
     }
 
+    public boolean equalTo(Money other) {
+        if (this.amount == null || other == null || other.amount == null) return false;
+        return this.amount.compareTo(other.amount) == 0;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Money money = (Money) o;
-        return Objects.equals(amount, money.amount);
+        if (!(o instanceof Money m)) return false;
+        if (this.amount == null || m.amount == null) return this.amount == m.amount;
+        return this.amount.compareTo(m.amount) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(amount);
+        return amount == null ? 0 : amount.stripTrailingZeros().hashCode();
     }
 
     private BigDecimal setScale(BigDecimal input) {

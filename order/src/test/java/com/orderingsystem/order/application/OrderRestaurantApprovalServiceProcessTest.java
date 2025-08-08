@@ -8,13 +8,13 @@ import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
+import com.orderingsystem.order.application.dto.ProductInfo;
 import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
-import com.orderingsystem.order.domain.model.Product;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
@@ -61,7 +61,7 @@ class OrderRestaurantApprovalServiceProcessTest {
     private final UUID paymentOutboxId = UUID.randomUUID();
     private final OrderItem orderItem = OrderItem.builder()
             .productId(productId)
-            .product(Product.builder()
+            .product(ProductInfo.builder()
                     .productId(productId)
                     .name("product1")
                     .price(new Money(new BigDecimal("25.00")))

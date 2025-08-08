@@ -432,8 +432,7 @@ class RestaurantServiceTest {
                 OutboxStatus.STARTED);
         assertThat(orderOutbox).isPresent();
         String payload = orderOutbox.get().get(0).getPayload();
-        OrderEventPayload orderEventPayload = objectMapper.readValue(payload, OrderEventPayload.class);
-        return orderEventPayload;
+        return objectMapper.readValue(payload, OrderEventPayload.class);
     }
 
 }
