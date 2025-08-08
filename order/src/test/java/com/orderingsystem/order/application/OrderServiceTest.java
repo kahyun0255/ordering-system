@@ -2,11 +2,9 @@ package com.orderingsystem.order.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
 
+import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
-import com.orderingsystem.order.application.dto.ProductInfo;
-import com.orderingsystem.order.application.dto.RestaurantInfo;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
@@ -14,8 +12,14 @@ import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.model.Order;
+import com.orderingsystem.order.domain.model.restaurant.Product;
+import com.orderingsystem.order.domain.model.restaurant.Restaurant;
+import com.orderingsystem.order.domain.model.restaurant.RestaurantProduct;
 import com.orderingsystem.order.domain.repository.CustomerRepository;
 import com.orderingsystem.order.domain.repository.OrderRepository;
+import com.orderingsystem.order.domain.repository.restaurant.ProductRepository;
+import com.orderingsystem.order.domain.repository.restaurant.RestaurantProductRepository;
+import com.orderingsystem.order.domain.repository.restaurant.RestaurantRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -38,14 +41,20 @@ class OrderServiceTest {
     @Autowired
     private OrderService orderService;
 
-    @MockitoBean
-    private RestaurantApi restaurantApi;
-
     @Autowired
     private CustomerRepository customerRepository;
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private RestaurantRepository restaurantRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private RestaurantProductRepository restaurantProductRepository;
 
     @AfterEach
     void tearDown() {
@@ -58,30 +67,53 @@ class OrderServiceTest {
                 .id(customerId)
                 .name("user1")
                 .build());
+
+        restaurantRepository.save(Restaurant.builder()
+                .restaurantId(restaurantId)
+                .active(true)
+                .name("restaurant")
+                .build());
+
+        productRepository.save(Product.builder()
+                .productId(productId1)
+                .price(product1Price)
+                .available(true)
+                .name("product1")
+                .build());
+
+        productRepository.save(Product.builder()
+                .productId(productId2)
+                .price(product2Price)
+                .available(true)
+                .name("product2")
+                .build());
+
+        restaurantProductRepository.save(RestaurantProduct.builder()
+                .id(UUID.randomUUID())
+                .restaurantId(restaurantId)
+                .productId(productId1)
+                .build());
+
+        restaurantProductRepository.save(RestaurantProduct.builder()
+                .id(UUID.randomUUID())
+                .restaurantId(restaurantId)
+                .productId(productId2)
+                .build());
+
     }
 
     private final UUID customerId = UUID.randomUUID();
     private final UUID restaurantId = UUID.randomUUID();
     private final UUID productId1 = UUID.randomUUID();
     private final UUID productId2 = UUID.randomUUID();
+    private final Money product1Price = new Money(new BigDecimal("25.00"));
+    private final Money product2Price = new Money(new BigDecimal("20.00"));
 
     @DisplayName("주문 물품이 1개인 경우, 주문 생성에 성공한다.")
     @Test
     void createOrder_withOneProduct() {
         //given
         CreateOrderApplicationRequest request = getOneProductCreateOrderApplicationRequest();
-
-        given(restaurantApi.getRestaurantInfo(restaurantId, List.of(productId1)))
-                .willReturn(RestaurantInfo.builder()
-                        .restaurantId(restaurantId)
-                        .active(true)
-                        .products(List.of(ProductInfo.builder()
-                                .productId(productId1)
-                                .name("product1")
-                                .price(new BigDecimal("50.00"))
-                                .available(true)
-                                .build()))
-                        .build());
 
         //when
         CreateOrderResponse response = orderService.createOrder(request);
@@ -97,24 +129,6 @@ class OrderServiceTest {
         //given
         CreateOrderApplicationRequest request = getTwoProductCreateOrderApplicationRequest();
 
-        given(restaurantApi.getRestaurantInfo(restaurantId, List.of(productId1, productId2)))
-                .willReturn(RestaurantInfo.builder()
-                        .restaurantId(restaurantId)
-                        .active(true)
-                        .products(List.of(ProductInfo.builder()
-                                        .productId(productId1)
-                                        .name("product1")
-                                        .price(new BigDecimal("50.00"))
-                                        .available(true)
-                                        .build(),
-                                ProductInfo.builder()
-                                        .productId(productId2)
-                                        .name("product2")
-                                        .price(new BigDecimal("25.00"))
-                                        .available(true)
-                                        .build()))
-                        .build());
-
         //when
         CreateOrderResponse response = orderService.createOrder(request);
 
@@ -127,19 +141,22 @@ class OrderServiceTest {
     @Test
     void failToCreateOrder_whenProductPricesAreMismatched_withOneProduct() {
         //given
-        CreateOrderApplicationRequest request = getOneProductCreateOrderApplicationRequest();
-
-        given(restaurantApi.getRestaurantInfo(restaurantId, List.of(productId1)))
-                .willReturn(RestaurantInfo.builder()
-                        .restaurantId(restaurantId)
-                        .active(true)
-                        .products(List.of(ProductInfo.builder()
-                                .productId(productId1)
-                                .name("product1")
-                                .price(new BigDecimal("25.00"))
-                                .available(true)
-                                .build()))
-                        .build());
+        CreateOrderApplicationRequest request = CreateOrderApplicationRequest.builder()
+                .customerId(customerId)
+                .restaurantId(restaurantId)
+                .address(OrderAddressApplicationRequest.builder()
+                        .street("street1")
+                        .postalCode("123-78")
+                        .city("city1")
+                        .build())
+                .price(BigDecimal.valueOf(100000L))
+                .items(List.of(OrderItemApplicationRequest.builder()
+                        .productId(productId1)
+                        .quantity(1)
+                        .price(BigDecimal.valueOf(100000L))
+                        .subTotal(BigDecimal.valueOf(100000L))
+                        .build()))
+                .build();
 
         //when
         CreateOrderResponse orderResponse = orderService.createOrder(request);
@@ -155,25 +172,28 @@ class OrderServiceTest {
     @Test
     void failToCreateOrder_whenProductPricesAreMismatched_withTwoProducts() {
         //given
-        CreateOrderApplicationRequest request = getTwoProductCreateOrderApplicationRequest();
-
-        given(restaurantApi.getRestaurantInfo(restaurantId, List.of(productId1, productId2)))
-                .willReturn(RestaurantInfo.builder()
-                        .restaurantId(restaurantId)
-                        .active(true)
-                        .products(List.of(ProductInfo.builder()
-                                        .productId(productId1)
-                                        .name("product1")
-                                        .price(new BigDecimal("20.00"))
-                                        .available(true)
-                                        .build(),
-                                ProductInfo.builder()
-                                        .productId(productId2)
-                                        .name("product2")
-                                        .price(new BigDecimal("25.00"))
-                                        .available(true)
-                                        .build()))
-                        .build());
+        CreateOrderApplicationRequest request = CreateOrderApplicationRequest.builder()
+                .customerId(customerId)
+                .restaurantId(restaurantId)
+                .address(OrderAddressApplicationRequest.builder()
+                        .street("street1")
+                        .postalCode("123-78")
+                        .city("city1")
+                        .build())
+                .price(product2Price.multiply(2).getAmount().add(BigDecimal.valueOf(100000L)))
+                .items(List.of(OrderItemApplicationRequest.builder()
+                                .productId(productId1)
+                                .quantity(1)
+                                .price(BigDecimal.valueOf(100000L))
+                                .subTotal(BigDecimal.valueOf(100000L))
+                                .build(),
+                        OrderItemApplicationRequest.builder()
+                                .productId(productId2)
+                                .quantity(2)
+                                .price(product2Price.getAmount())
+                                .subTotal(product2Price.multiply(2).getAmount())
+                                .build()))
+                .build();
 
         //when
         CreateOrderResponse createdOrder = orderService.createOrder(request);
@@ -181,7 +201,7 @@ class OrderServiceTest {
         // then
         Optional<Order> order = orderRepository.findByTrackingId(createdOrder.getOrderTrackingId());
         assertThat(order).isPresent();
-        assertThat(order.get().getFailureMessages()).isEqualTo("상품 : " + productId1 + "의 항목 가격 : 20.00이 유효하지 않습니다.");
+        assertThat(order.get().getFailureMessages()).isEqualTo("상품 : " + productId1 + "의 항목 가격 : "+product1Price.getAmount()+"이 유효하지 않습니다.");
         assertThat(createdOrder.getOrderStatus()).isEqualByComparingTo(OrderStatus.CANCELLED);
     }
 
@@ -214,8 +234,6 @@ class OrderServiceTest {
                                 .build()))
                 .build();
 
-        restaurantApi();
-
         //when, then
         assertThatThrownBy(() -> orderService.createOrder(request))
                 .isInstanceOf(OrderDomainException.class)
@@ -226,19 +244,13 @@ class OrderServiceTest {
     @Test
     void failToCreateOrder_whenNotActiveRestaurant() {
         //given
-        CreateOrderApplicationRequest request = getOneProductCreateOrderApplicationRequest();
+        restaurantRepository.save(Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("restaurant")
+                .active(false)
+                .build());
 
-        given(restaurantApi.getRestaurantInfo(restaurantId, List.of(productId1)))
-                .willReturn(RestaurantInfo.builder()
-                        .restaurantId(restaurantId)
-                        .active(false)
-                        .products(List.of(ProductInfo.builder()
-                                .productId(productId1)
-                                .name("product1")
-                                .price(new BigDecimal("50.00"))
-                                .available(true)
-                                .build()))
-                        .build());
+        CreateOrderApplicationRequest request = getOneProductCreateOrderApplicationRequest();
 
         //when
         CreateOrderResponse createdOrder = orderService.createOrder(request);
@@ -266,18 +278,16 @@ class OrderServiceTest {
                 .items(List.of(OrderItemApplicationRequest.builder()
                                 .productId(productId1)
                                 .quantity(1)
-                                .price(new BigDecimal("50.00"))
-                                .subTotal(new BigDecimal("50.00"))
+                                .price(product1Price.getAmount())
+                                .subTotal(product1Price.getAmount())
                                 .build(),
                         OrderItemApplicationRequest.builder()
                                 .productId(productId2)
                                 .quantity(2)
-                                .price(new BigDecimal("25.00"))
-                                .subTotal(new BigDecimal("50.00"))
+                                .price(product2Price.getAmount())
+                                .subTotal(product2Price.multiply(2).getAmount())
                                 .build()))
                 .build();
-
-        restaurantApi();
 
         //when
         CreateOrderResponse createdOrder = orderService.createOrder(request);
@@ -286,7 +296,7 @@ class OrderServiceTest {
         Optional<Order> order = orderRepository.findByTrackingId(createdOrder.getOrderTrackingId());
         assertThat(order).isPresent();
         assertThat(order.get().getFailureMessages()).isEqualTo(
-                "총 주문 금액 : 20000.00 개별 항목들의 합계 : 100.00. 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다.");
+                "총 주문 금액 : 20000.00 개별 항목들의 합계 : "+product1Price.add(product2Price.multiply(2)).getAmount()+". 총 주문 금액과 개별 항목들의 합계가 일치하지 않습니다.");
         assertThat(createdOrder.getOrderStatus()).isEqualByComparingTo(OrderStatus.CANCELLED);
     }
 
@@ -299,12 +309,12 @@ class OrderServiceTest {
                         .postalCode("123-78")
                         .city("city1")
                         .build())
-                .price(new BigDecimal("50.00"))
+                .price(product1Price.getAmount())
                 .items(List.of(OrderItemApplicationRequest.builder()
                         .productId(productId1)
                         .quantity(1)
-                        .price(new BigDecimal("50.00"))
-                        .subTotal(new BigDecimal("50.00"))
+                        .price(product1Price.getAmount())
+                        .subTotal(product1Price.getAmount())
                         .build()))
                 .build();
     }
@@ -318,39 +328,19 @@ class OrderServiceTest {
                         .postalCode("123-78")
                         .city("city1")
                         .build())
-                .price(new BigDecimal("100.00"))
+                .price(product1Price.add(product2Price.multiply(2)).getAmount())
                 .items(List.of(OrderItemApplicationRequest.builder()
                                 .productId(productId1)
                                 .quantity(1)
-                                .price(new BigDecimal("50.00"))
-                                .subTotal(new BigDecimal("50.00"))
+                                .price(product1Price.getAmount())
+                                .subTotal(product1Price.getAmount())
                                 .build(),
                         OrderItemApplicationRequest.builder()
                                 .productId(productId2)
                                 .quantity(2)
-                                .price(new BigDecimal("25.00"))
-                                .subTotal(new BigDecimal("50.00"))
+                                .price(product2Price.getAmount())
+                                .subTotal(product2Price.multiply(2).getAmount())
                                 .build()))
                 .build();
-    }
-
-    private void restaurantApi() {
-        given(restaurantApi.getRestaurantInfo(restaurantId, List.of(productId1, productId2)))
-                .willReturn(RestaurantInfo.builder()
-                        .restaurantId(restaurantId)
-                        .active(true)
-                        .products(List.of(ProductInfo.builder()
-                                        .productId(productId1)
-                                        .name("product1")
-                                        .price(new BigDecimal("50.00"))
-                                                .available(true)
-                                        .build(),
-                                ProductInfo.builder()
-                                        .productId(productId2)
-                                        .name("product2")
-                                        .price(new BigDecimal("25.00"))
-                                        .available(true)
-                                        .build()))
-                        .build());
     }
 }

@@ -1,10 +1,10 @@
 package com.orderingsystem.order.domain.service;
 
+import com.orderingsystem.order.application.dto.ProductInfo;
+import com.orderingsystem.order.application.dto.RestaurantInfo;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
-import com.orderingsystem.order.domain.model.Product;
-import com.orderingsystem.order.domain.model.Restaurant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +14,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderValidateAndInitiateService {
 
-    public OrderCreateEvent validateAndInitiate(Order order, Restaurant restaurant,
+    public OrderCreateEvent validateAndInitiate(Order order, RestaurantInfo restaurantInfo,
                                                           List<String> failureMessages) {
-        validateRestaurant(restaurant, failureMessages);
-        setOrderProductInformation(order, restaurant);
+        validateRestaurant(restaurantInfo, failureMessages);
+        setOrderProductInformation(order, restaurantInfo);
         order.validateOrder(failureMessages);
         order.initializeOrder();
 
@@ -26,21 +26,20 @@ public class OrderValidateAndInitiateService {
         return new OrderCreateEvent(order, ZonedDateTime.now());
     }
 
-    private void validateRestaurant(Restaurant restaurant, List<String> failureMessages) {
-        if (!restaurant.isActive()) {
-            log.warn("restaurant Id : {} active 상태가 아닙니다.", restaurant.getRestaurantId());
-            failureMessages.add("restaurant Id : " + restaurant.getRestaurantId() + " active 상태가 아닙니다.");
+    private void validateRestaurant(RestaurantInfo restaurantInfo, List<String> failureMessages) {
+        if (!restaurantInfo.isActive()) {
+            log.warn("restaurant Id : {} active 상태가 아닙니다.", restaurantInfo.getRestaurantId());
+            failureMessages.add("restaurant Id : " + restaurantInfo.getRestaurantId() + " active 상태가 아닙니다.");
         }
     }
 
-    private void setOrderProductInformation(Order order, Restaurant restaurant) {
+    private void setOrderProductInformation(Order order, RestaurantInfo restaurantInfo) {
         List<OrderItem> orderItems = order.getItems();
-        List<Product> restaurantProducts = restaurant.getProducts();
+        List<ProductInfo> restaurantProducts = restaurantInfo.getProducts();
 
         for (OrderItem orderItem : orderItems) {
-            Product currentProduct = orderItem.getProduct();
-
-            for (Product restaurantProduct : restaurantProducts) {
+            ProductInfo currentProduct = orderItem.getProduct();
+            for (ProductInfo restaurantProduct : restaurantProducts) {
                 if (currentProduct.equals(restaurantProduct)) {
                     currentProduct.updateWithConfirmedNameAndPrice(restaurantProduct.getName(),
                             restaurantProduct.getPrice(), restaurantProduct.isAvailable());

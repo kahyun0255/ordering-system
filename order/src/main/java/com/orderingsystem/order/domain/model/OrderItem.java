@@ -2,6 +2,7 @@ package com.orderingsystem.order.domain.model;
 
 import com.orderingsystem.common.domain.BaseEntity;
 import com.orderingsystem.common.domain.Money;
+import com.orderingsystem.order.application.dto.ProductInfo;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CascadeType;
@@ -57,7 +58,7 @@ public class OrderItem extends BaseEntity {
     private Integer quantity;
 
     @Transient
-    private Product product;
+    private ProductInfo product;
 
     @Override
     public boolean equals(Object o) {

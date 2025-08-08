@@ -28,14 +28,14 @@ public class OrderService {
     private final OrderCreateHelper orderCreateHelper;
     private final OrderDataMapper orderDataMapper;
     private final OrderRepository orderRepository;
-    private final RestaurantApi restaurantApi;
     private final PaymentOutboxHelper paymentOutboxHelper;
+    private final RestaurantValidationService restaurantValidationService;
 
     @Transactional
     public CreateOrderResponse createOrder(CreateOrderApplicationRequest createOrderRequest) {
         List<String> failureMessages = new ArrayList<>();
 
-        RestaurantInfo restaurantInfo = restaurantApi.getRestaurantInfo(createOrderRequest.getRestaurantId(),
+        RestaurantInfo restaurantInfo = restaurantValidationService.getRestaurantInfo(createOrderRequest.getRestaurantId(),
                 orderDataMapper.itemsToItemIdList(createOrderRequest.getItems()));
 
         OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest, restaurantInfo,

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
+import com.orderingsystem.order.application.dto.ProductInfo;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -102,7 +103,7 @@ class OrderTest {
         int quantity = 1;
         Money subTotal = price.multiply(quantity);
 
-        Product product = Product.builder()
+        ProductInfo product = ProductInfo.builder()
                 .productId(productId)
                 .name("itemName")
                 .price(price)
@@ -628,7 +629,7 @@ class OrderTest {
         int quantity = 1;
         Money subTotal = price.multiply(quantity);
 
-        Product product = Product.builder()
+        ProductInfo product = ProductInfo.builder()
                 .productId(productId)
                 .name("itemName")
                 .price(price)
@@ -658,7 +659,7 @@ class OrderTest {
         int quantity = 1;
         Money subTotal = price.multiply(quantity);
 
-        Product product = Product.builder()
+        ProductInfo product = ProductInfo.builder()
                 .productId(productId)
                 .name("itemName")
                 .price(price)
