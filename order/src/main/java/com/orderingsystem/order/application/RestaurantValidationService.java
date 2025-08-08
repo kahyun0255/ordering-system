@@ -3,9 +3,12 @@ package com.orderingsystem.order.application;
 import com.orderingsystem.order.application.dto.ProductInfo;
 import com.orderingsystem.order.application.dto.RestaurantInfo;
 import com.orderingsystem.order.domain.exception.RestaurantNotFoundException;
+import com.orderingsystem.order.domain.model.restaurant.Restaurant;
 import com.orderingsystem.order.domain.model.restaurant.RestaurantInfoView;
 import com.orderingsystem.order.domain.repository.restaurant.RestaurantReadRepository;
+import com.orderingsystem.order.domain.repository.restaurant.RestaurantRepository;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -19,14 +22,21 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class RestaurantValidationService {
     private final RestaurantReadRepository restaurantReadRepository;
+    private final RestaurantRepository restaurantRepository;
 
     @Transactional(readOnly = true)
     public RestaurantInfo getRestaurantInfo(UUID restaurantId, List<UUID> productIds) {
-        List<RestaurantInfoView> restaurantInfo = restaurantReadRepository.findRestaurantInfo(restaurantId, productIds);
-
-        if (restaurantInfo.isEmpty()) {
+        Optional<Restaurant> restaurant = restaurantRepository.findById(restaurantId);
+        if (restaurant.isEmpty()) {
             log.error("레스토랑 정보를 찾을 수 없습니다. Restaurant Id : {} ", restaurantId);
             throw new RestaurantNotFoundException("레스토랑 정보를 찾을 수 없습니다. Restaurant Id : " + restaurantId);
+        }
+
+        List<RestaurantInfoView> restaurantInfo = restaurantReadRepository.findRestaurantInfo(restaurantId, productIds);
+        if (restaurantInfo.isEmpty()) {
+            log.error("상품 정보를 찾을 수 없습니다. productId : {}, restaurantId : {}", productIds, restaurantId);
+            throw new RestaurantNotFoundException(
+                    "상품 정보를 찾을 수 없습니다. productId : " + productIds + ", restaurantId : " + restaurantId);
         }
 
         Set<UUID> findIds = restaurantInfo.stream()

@@ -131,9 +131,9 @@ class RestaurantValidationServiceTest {
                 .hasMessage("레스토랑 정보를 찾을 수 없습니다. Restaurant Id : " + restaurantId);
     }
 
-    @DisplayName("물품이 존재하지 않으면 예외가 발생한다.")
+    @DisplayName("요청한 물품 중 하나라도 존재하지 않으면 예외가 발생한다.")
     @Test
-    void throwException_whenProductDoesNotExist() {
+    void throwException_whenAnyRequestedProductDoesNotExist() {
         //given
         restaurantRepository.save(Restaurant.builder()
                 .restaurantId(restaurantId)
@@ -158,6 +158,73 @@ class RestaurantValidationServiceTest {
         assertThatThrownBy(
                 () -> restaurantValidationService.getRestaurantInfo(restaurantId, List.of(productId1, productId2)))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessage("요청한 상품 중 일부를 찾을 수 없습니다. RestaurantId : "+restaurantId+", productIds : "+List.of(productId1, productId2)+", findIds : "+List.of(productId2));
+                .hasMessage("요청한 상품 중 일부를 찾을 수 없습니다. RestaurantId : " + restaurantId + ", productIds : " + List.of(
+                        productId1, productId2) + ", findIds : " + List.of(productId2));
+    }
+
+    @DisplayName("요청한 물품이 여러 개일 때, 모두 존재하지 않으면 예외가 발생한다.")
+    @Test
+    void throwException_whenMultipleRequestedProductsAllDoNotExist() {
+        //given
+        UUID productId3 = UUID.randomUUID();
+
+        restaurantRepository.save(Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("restaurantName")
+                .active(true)
+                .build());
+
+        productRepository.save(Product.builder()
+                .productId(productId2)
+                .price(new Money(new BigDecimal("25.00")))
+                .name("productId2")
+                .available(false)
+                .build());
+
+        restaurantProductRepository.save(RestaurantProduct.builder()
+                .id(UUID.randomUUID())
+                .productId(productId2)
+                .restaurantId(restaurantId)
+                .build());
+
+        //when, then
+        assertThatThrownBy(
+                () -> restaurantValidationService.getRestaurantInfo(restaurantId, List.of(productId1, productId3)))
+                .isInstanceOf(RestaurantNotFoundException.class)
+                .hasMessage(
+                        "상품 정보를 찾을 수 없습니다. productId : " + List.of(productId1, productId3) + ", restaurantId : "
+                                + restaurantId);
+    }
+
+    @DisplayName("요청한 물품이 한 개일 때, 존재하지 않으면 예외가 발생한다.")
+    @Test
+    void throwException_whenSingleRequestedProductDoesNotExist() {
+        //given
+        restaurantRepository.save(Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("restaurantName")
+                .active(true)
+                .build());
+
+        productRepository.save(Product.builder()
+                .productId(productId2)
+                .price(new Money(new BigDecimal("25.00")))
+                .name("productId2")
+                .available(false)
+                .build());
+
+        restaurantProductRepository.save(RestaurantProduct.builder()
+                .id(UUID.randomUUID())
+                .productId(productId2)
+                .restaurantId(restaurantId)
+                .build());
+
+        //when, then
+        assertThatThrownBy(
+                () -> restaurantValidationService.getRestaurantInfo(restaurantId, List.of(productId1)))
+                .isInstanceOf(RestaurantNotFoundException.class)
+                .hasMessage(
+                        "상품 정보를 찾을 수 없습니다. productId : " + List.of(productId1) + ", restaurantId : "
+                                + restaurantId);
     }
 }
