@@ -25,7 +25,7 @@ public class User extends AggregateRoot {
     @Id
     private UUID userId;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String id;
 
     @Column(nullable = false)

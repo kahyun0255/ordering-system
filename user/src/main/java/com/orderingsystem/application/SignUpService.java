@@ -2,15 +2,11 @@ package com.orderingsystem.application;
 
 import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
 import com.orderingsystem.application.dto.response.TokenResponse;
-import com.orderingsystem.application.mapper.UserDataMapper;
-import com.orderingsystem.application.outbox.customer.CustomerOutboxHelper;
+import com.orderingsystem.application.outbox.UserOutboxPolicyRegistry;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.model.RefreshToken;
-import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.util.JwtUtil;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,9 +19,8 @@ public class SignUpService {
 
     private final JwtUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final UserDataMapper userDataMapper;
     private final UserServiceHelper userServiceHelper;
-    private final CustomerOutboxHelper customerOutboxHelper;
+    private final UserOutboxPolicyRegistry userOutboxPolicyRegistry;
 
     @Transactional
     public TokenResponse signUp(SignUpApplicationRequest signUpApplicationRequest) {
@@ -41,21 +36,14 @@ public class SignUpService {
                 .token(refreshToken)
                 .build());
 
-        saveOutbox(signUpApplicationRequest, userCreatedEvent);
+        userOutboxPolicyRegistry.get(signUpApplicationRequest.getType())
+                .ifPresentOrElse(p -> p.saveOutbox(userCreatedEvent),
+                        ()->log.warn("outbox policy가 없습니다. {}", signUpApplicationRequest.getType()));
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
-    }
-
-    private void saveOutbox(SignUpApplicationRequest signUpApplicationRequest, UserCreatedEvent userCreatedEvent) {
-        if (signUpApplicationRequest.getType().equals(UserType.CUSTOMER)) {
-            customerOutboxHelper.saveCustomerOutboxMessage(
-                    userDataMapper.userCreatedToUserCreateEventPayload(userCreatedEvent),
-                    OutboxStatus.STARTED,
-                    UUID.randomUUID());
-        }
     }
 
 }

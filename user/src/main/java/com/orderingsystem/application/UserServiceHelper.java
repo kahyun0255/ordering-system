@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class UserServiceHelper {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     public UserCreatedEvent persistUser(SignUpApplicationRequest signUpApplicationRequest) {
         validSignUp(signUpApplicationRequest);
@@ -25,6 +26,11 @@ public class UserServiceHelper {
     }
 
     private void validSignUp(SignUpApplicationRequest signUpApplicationRequest) {
+        boolean existsById = userRepository.existsById(signUpApplicationRequest.getId());
+        if (existsById){
+            throw new DuplicateKeyException("이미 존재하는 아이디입니다.");
+        }
+
         boolean existsByNickname = userRepository.existsByNickname(signUpApplicationRequest.getNickname());
         if (existsByNickname){
             throw new DuplicateKeyException("이미 존재하는 닉네임입니다.");
@@ -36,13 +42,13 @@ public class UserServiceHelper {
         }
     }
 
-    private static User getUser(SignUpApplicationRequest signUpApplicationRequest) {
+    private User getUser(SignUpApplicationRequest signUpApplicationRequest) {
         return User.builder()
                 .userId(UUID.randomUUID())
                 .id(signUpApplicationRequest.getId())
                 .username(signUpApplicationRequest.getUsername())
                 .type(signUpApplicationRequest.getType())
-                .password(new BCryptPasswordEncoder().encode(signUpApplicationRequest.getPassword()))
+                .password(passwordEncoder.encode(signUpApplicationRequest.getPassword()))
                 .email(signUpApplicationRequest.getEmail())
                 .nickname(signUpApplicationRequest.getNickname())
                 .phoneNumber(signUpApplicationRequest.getPhoneNumber())
