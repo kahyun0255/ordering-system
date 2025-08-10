@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orderingsystem.application.SignUpService;
+import com.orderingsystem.application.UserService;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.presentation.request.SignUpRequest;
@@ -26,14 +26,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("UserController 단위테스트")
-class UserControllerWebMvcTest {
+@DisplayName("UserController 회원가입 단위테스트")
+class UserControllerSignUpWebMvcTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private SignUpService signUpService;
+    private UserService userService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -52,7 +52,7 @@ class UserControllerWebMvcTest {
                 .refreshToken("refresh.jwt.token")
                 .build();
 
-        given(signUpService.signUp(any())).willReturn(tokenResponse);
+        given(userService.signUp(any())).willReturn(tokenResponse);
 
         //when, then
         mockMvc.perform(post("/api/auth/sign-up")
@@ -71,7 +71,7 @@ class UserControllerWebMvcTest {
         SignUpRequest signUpRequest = getSignUpRequest();
 
         doThrow(new DuplicateKeyException("이미 존재하는 아이디입니다."))
-                .when(signUpService).signUp(any());
+                .when(userService).signUp(any());
 
         //when, then
         mockMvc.perform(
@@ -92,7 +92,7 @@ class UserControllerWebMvcTest {
         SignUpRequest signUpRequest = getSignUpRequest();
 
         doThrow(new DuplicateKeyException("이미 존재하는 닉네임입니다."))
-                .when(signUpService).signUp(any());
+                .when(userService).signUp(any());
 
         //when, then
         mockMvc.perform(
@@ -113,7 +113,7 @@ class UserControllerWebMvcTest {
         SignUpRequest signUpRequest = getSignUpRequest();
 
         doThrow(new DuplicateKeyException("이미 존재하는 이메일입니다."))
-                .when(signUpService).signUp(any());
+                .when(userService).signUp(any());
 
         //when, then
         mockMvc.perform(

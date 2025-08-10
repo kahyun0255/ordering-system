@@ -1,6 +1,7 @@
 package com.orderingsystem.application;
 
 import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
+import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.repository.UserRepository;
@@ -23,6 +24,12 @@ public class UserServiceHelper {
         User user = getUser(signUpApplicationRequest);
         userRepository.save(user);
         return new UserCreatedEvent(user, ZonedDateTime.now());
+    }
+
+    public void varifyPassword(String rowPassword, String userPassword){
+        if (!passwordEncoder.matches(rowPassword, userPassword)) {
+            throw new InvalidCredentialsException("비밀번호가 일치하지 않습니다.");
+        }
     }
 
     private void validSignUp(SignUpApplicationRequest signUpApplicationRequest) {

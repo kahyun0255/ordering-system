@@ -29,10 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
-class SignUpServiceTest {
+class UserServiceSignUpTest {
 
     @Autowired
-    private SignUpService signUpService;
+    private UserService userService;
 
     @Autowired
     private UserRepository userRepository;
@@ -63,7 +63,7 @@ class SignUpServiceTest {
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
         //when
-        TokenResponse tokenResponse = signUpService.signUp(signUpApplicationRequest);
+        TokenResponse tokenResponse = userService.signUp(signUpApplicationRequest);
 
         //then
         Optional<User> user = userRepository.findById(signUpApplicationRequest.getId());
@@ -85,7 +85,7 @@ class SignUpServiceTest {
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
         //when
-        signUpService.signUp(signUpApplicationRequest);
+        userService.signUp(signUpApplicationRequest);
 
         //then
         Optional<User> user = userRepository.findById(signUpApplicationRequest.getId());
@@ -102,7 +102,7 @@ class SignUpServiceTest {
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
         //when
-        TokenResponse tokenResponse = signUpService.signUp(signUpApplicationRequest);
+        TokenResponse tokenResponse = userService.signUp(signUpApplicationRequest);
 
         //then
         Optional<User> user = userRepository.findById(signUpApplicationRequest.getId());
@@ -129,7 +129,7 @@ class SignUpServiceTest {
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
         //when
-        signUpService.signUp(signUpApplicationRequest);
+        userService.signUp(signUpApplicationRequest);
 
         //then
         assertThat(customerOutboxRepository.count()).isEqualTo(1L);
@@ -151,7 +151,7 @@ class SignUpServiceTest {
         ;
 
         //when
-        signUpService.signUp(signUpApplicationRequest);
+        userService.signUp(signUpApplicationRequest);
 
         //then
         assertThat(customerOutboxRepository.count()).isEqualTo(0L);
@@ -174,7 +174,7 @@ class SignUpServiceTest {
                 .build());
 
         //when, then
-        assertThatThrownBy(() -> signUpService.signUp(signUpApplicationRequest))
+        assertThatThrownBy(() -> userService.signUp(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 아이디입니다.");
     }
@@ -196,7 +196,7 @@ class SignUpServiceTest {
                 .build());
 
         //when, then
-        assertThatThrownBy(() -> signUpService.signUp(signUpApplicationRequest))
+        assertThatThrownBy(() -> userService.signUp(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 이메일입니다.");
     }
@@ -218,7 +218,7 @@ class SignUpServiceTest {
                 .build());
 
         //when, then
-        assertThatThrownBy(() -> signUpService.signUp(signUpApplicationRequest))
+        assertThatThrownBy(() -> userService.signUp(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 닉네임입니다.");
     }

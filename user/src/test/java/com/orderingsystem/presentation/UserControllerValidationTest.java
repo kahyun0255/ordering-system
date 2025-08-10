@@ -8,8 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orderingsystem.application.SignUpService;
+import com.orderingsystem.application.UserService;
 import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.presentation.request.SignInRequest;
 import com.orderingsystem.presentation.request.SignUpRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class UserControllerValidationTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private SignUpService signUpService;
+    private UserService userService;
 
     @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;
@@ -584,6 +585,88 @@ class UserControllerValidationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("phoneNumber: 유효한 휴대폰 번호 형식이 아닙니다."));
+    }
+
+    @DisplayName("로그인 시, 아이디는 필수 값이다.")
+    @Test
+    void failToSignIn_whenIdIsMissing() throws Exception {
+        //given
+        SignInRequest signInRequest = SignInRequest.builder()
+                .password("password")
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/auth/sign-in")
+                                .content(objectMapper.writeValueAsString(signInRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("id: 아이디는 생략이 불가능합니다."));
+    }
+
+    @DisplayName("로그인 시, 아이디는 비어있으면 안 된다.")
+    @Test
+    void failToSignIn_whenIdIsBlank() throws Exception {
+        //given
+        SignInRequest signInRequest = SignInRequest.builder()
+                .id("")
+                .password("password1234")
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/auth/sign-in")
+                                .content(objectMapper.writeValueAsString(signInRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("id: 아이디는 생략이 불가능합니다."));
+    }
+
+    @DisplayName("로그인 시, 비밀번호는 필수 값이다.")
+    @Test
+    void failToSignIn_whenPasswordIsMissing() throws Exception {
+        //given
+        SignInRequest signInRequest = SignInRequest.builder()
+                .id("iddddd")
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/auth/sign-in")
+                                .content(objectMapper.writeValueAsString(signInRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("password: 비밀번호는 생략이 불가능합니다."));
+    }
+
+    @DisplayName("로그인 시, 비밀번호는 비어있으면 안 된다.")
+    @Test
+    void failToSignIn_whenPasswordIsBlank() throws Exception {
+        //given
+        SignInRequest signInRequest = SignInRequest.builder()
+                .id("iddddd")
+                .password("")
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/auth/sign-in")
+                                .content(objectMapper.writeValueAsString(signInRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("password: 비밀번호는 생략이 불가능합니다."));
     }
 
 }

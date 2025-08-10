@@ -5,7 +5,7 @@ import static com.orderingsystem.common.saga.SagaConstants.CUSTOMER_CREATED_NAME
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.application.outbox.customer.model.CustomerEventPayload;
-import com.orderingsystem.domain.UserDomainException;
+import com.orderingsystem.domain.exception.UserDomainException;
 import com.orderingsystem.domain.model.outbox.CustomerOutbox;
 import com.orderingsystem.domain.repository.outbox.CustomerOutboxRepository;
 import com.orderingsystem.outbox.OutboxStatus;

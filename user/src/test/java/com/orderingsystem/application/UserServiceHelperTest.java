@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
+import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
@@ -70,7 +71,7 @@ class UserServiceHelperTest {
         given(userRepository.existsById(signUpApplicationRequest.getId())).willReturn(true);
 
         //when, then
-        assertThatThrownBy(()->userServiceHelper.persistUser(signUpApplicationRequest))
+        assertThatThrownBy(() -> userServiceHelper.persistUser(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 아이디입니다.");
 
@@ -86,7 +87,7 @@ class UserServiceHelperTest {
         given(userRepository.existsByNickname(signUpApplicationRequest.getNickname())).willReturn(true);
 
         //when, then
-        assertThatThrownBy(()->userServiceHelper.persistUser(signUpApplicationRequest))
+        assertThatThrownBy(() -> userServiceHelper.persistUser(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 닉네임입니다.");
 
@@ -102,12 +103,21 @@ class UserServiceHelperTest {
         given(userRepository.existsByEmail(signUpApplicationRequest.getEmail())).willReturn(true);
 
         //when, then
-        assertThatThrownBy(()->userServiceHelper.persistUser(signUpApplicationRequest))
+        assertThatThrownBy(() -> userServiceHelper.persistUser(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 이메일입니다.");
 
         then(userRepository).should(never()).save(any());
         then(bCryptPasswordEncoder).shouldHaveNoInteractions();
+    }
+
+    @DisplayName("비밀번호가 일치하지 않으면 예외가 발생한다.")
+    @Test
+    void verifyPasswordMatchesStoredPassword() {
+        //when, then
+        assertThatThrownBy(() -> userServiceHelper.varifyPassword("testpassword1234", "testpassword12345"))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessage("비밀번호가 일치하지 않습니다.");
     }
 
     private SignUpApplicationRequest getSignUpApplicationRequest() {

@@ -1,4 +1,4 @@
-package com.orderingsystem.domain;
+package com.orderingsystem.domain.exception;
 
 import com.orderingsystem.common.exception.DomainException;
 

@@ -25,9 +25,10 @@ public class RefreshToken {
     @Id
     private Long id;
 
-    @Column
+    @Column(nullable = false, length = 1024)
     private String token;
 
+    @Column(unique = true, nullable = false)
     private UUID userId;
 
     public void updateToken(String token) {

@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorDTO> handleNotFoundException(NotFoundException e) {
         log.error(e.getMessage());
 
-        return ResponseEntity.badRequest()
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorDTO.builder()
                         .code(HttpStatus.NOT_FOUND.getReasonPhrase())
                         .message(e.getMessage())
@@ -64,6 +64,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ErrorDTO.builder()
                         .code(HttpStatus.CONFLICT.getReasonPhrase())
+                        .message(e.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorDTO> handleInvalidCredentialsException(InvalidCredentialsException e) {
+        log.error(e.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorDTO.builder()
+                        .code(HttpStatus.UNAUTHORIZED.getReasonPhrase())
                         .message(e.getMessage())
                         .build());
     }
