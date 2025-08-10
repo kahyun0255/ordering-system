@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorDTO> handleDuplicateKeyException(DuplicateKeyException e) {
         log.error(e.getMessage());
 
-        return ResponseEntity.badRequest()
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ErrorDTO.builder()
                         .code(HttpStatus.CONFLICT.getReasonPhrase())
                         .message(e.getMessage())

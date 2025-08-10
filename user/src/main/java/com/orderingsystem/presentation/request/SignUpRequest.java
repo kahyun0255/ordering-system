@@ -6,9 +6,11 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder
 public class SignUpRequest {
 
     @NotBlank(message = "이름은 생략이 불가능합니다.")
@@ -30,7 +32,7 @@ public class SignUpRequest {
     @Size(min = 2, max = 30, message = "닉네임은 2 ~ 30자여야 합니다.")
     private String nickname;
 
-    @Pattern(regexp = "^$|^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$", message = "휴대폰 번호 형식이 아닙니다.")
+    @Pattern(regexp = "^$|^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$", message = "유효한 휴대폰 번호 형식이 아닙니다.")
     private String phoneNumber;
 
     private UserType type;

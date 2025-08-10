@@ -3,6 +3,7 @@ package com.orderingsystem.presentation;
 import com.orderingsystem.application.SignUpService;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.presentation.request.SignUpRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -19,7 +20,7 @@ public class UserController {
     private final SignUpService signUpService;
 
     @PostMapping("/sign-up")
-    public ResponseEntity<TokenResponse> signUp(@RequestBody SignUpRequest signUpRequest, BindingResult bindingResult){
+    public ResponseEntity<TokenResponse> signUp(@Valid @RequestBody SignUpRequest signUpRequest, BindingResult bindingResult){
         if (bindingResult.hasErrors()){
             String message = bindingResult.getFieldErrors().stream()
                     .map(e->e.getField()+": "+e.getDefaultMessage())
