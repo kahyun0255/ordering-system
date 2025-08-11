@@ -56,7 +56,7 @@ public class UserService {
     @Transactional
     public TokenResponse signIn(SignInApplicationRequest signInApplicationRequest) {
         User user = findUser(signInApplicationRequest.getId());
-        userServiceHelper.varifyPassword(signInApplicationRequest.getPassword(), user.getPassword());
+        userServiceHelper.verifyPassword(signInApplicationRequest.getPassword(), user.getPassword());
 
         RefreshToken refreshToken = findRefreshToken(user);
         String newRefreshToken = jwtUtil.createRefreshToken(user);

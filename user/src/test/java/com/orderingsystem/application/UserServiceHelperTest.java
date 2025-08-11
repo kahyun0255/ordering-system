@@ -115,7 +115,7 @@ class UserServiceHelperTest {
     @Test
     void verifyPasswordMatchesStoredPassword() {
         //when, then
-        assertThatThrownBy(() -> userServiceHelper.varifyPassword("testpassword1234", "testpassword12345"))
+        assertThatThrownBy(() -> userServiceHelper.verifyPassword("testpassword1234", "testpassword12345"))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("비밀번호가 일치하지 않습니다.");
     }

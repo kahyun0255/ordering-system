@@ -29,14 +29,13 @@ public class RestaurantValidationService {
         Optional<Restaurant> restaurant = restaurantRepository.findById(restaurantId);
         if (restaurant.isEmpty()) {
             log.error("레스토랑 정보를 찾을 수 없습니다. Restaurant Id : {} ", restaurantId);
-            throw new RestaurantNotFoundException("레스토랑 정보를 찾을 수 없습니다. Restaurant Id : " + restaurantId);
+            throw new RestaurantNotFoundException("레스토랑 정보를 찾을 수 없습니다.");
         }
 
         List<RestaurantInfoView> restaurantInfo = restaurantReadRepository.findRestaurantInfo(restaurantId, productIds);
         if (restaurantInfo.isEmpty()) {
             log.error("상품 정보를 찾을 수 없습니다. productId : {}, restaurantId : {}", productIds, restaurantId);
-            throw new RestaurantNotFoundException(
-                    "상품 정보를 찾을 수 없습니다. productId : " + productIds + ", restaurantId : " + restaurantId);
+            throw new RestaurantNotFoundException("상품 정보를 찾을 수 없습니다.");
         }
 
         Set<UUID> findIds = restaurantInfo.stream()
@@ -46,8 +45,7 @@ public class RestaurantValidationService {
         if (!findIds.containsAll(productIds)) {
             log.error("요청한 상품 중 일부를 찾을 수 없습니다. RestaurantId : {}, productIds : {}, findIds : {}", restaurantId,
                     productIds, findIds);
-            throw new RestaurantNotFoundException("요청한 상품 중 일부를 찾을 수 없습니다. RestaurantId : " + restaurantId
-                    + ", productIds : " + productIds + ", findIds : " + findIds);
+            throw new RestaurantNotFoundException("요청한 상품 중 일부를 찾을 수 없습니다.");
         }
 
         return RestaurantInfo.builder()

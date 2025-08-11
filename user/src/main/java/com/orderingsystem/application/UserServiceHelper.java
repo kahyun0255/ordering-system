@@ -9,7 +9,7 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class UserServiceHelper {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     public UserCreatedEvent persistUser(SignUpApplicationRequest signUpApplicationRequest) {
         validSignUp(signUpApplicationRequest);
@@ -26,7 +26,7 @@ public class UserServiceHelper {
         return new UserCreatedEvent(user, ZonedDateTime.now());
     }
 
-    public void varifyPassword(String rowPassword, String userPassword){
+    public void verifyPassword(String rowPassword, String userPassword){
         if (!passwordEncoder.matches(rowPassword, userPassword)) {
             throw new InvalidCredentialsException("비밀번호가 일치하지 않습니다.");
         }

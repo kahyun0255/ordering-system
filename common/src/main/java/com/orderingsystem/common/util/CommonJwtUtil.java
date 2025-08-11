@@ -1,11 +1,13 @@
 package com.orderingsystem.common.util;
 
+import com.orderingsystem.common.exception.InvalidCredentialsException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.time.Duration;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -30,7 +32,7 @@ public class CommonJwtUtil {
         this.issuer = issuer;
     }
 
-    public boolean isValidRefreshToken(String token){
+    public boolean isValidRefreshToken(String token) {
         try {
             Claims claims = getClaims(token);
             return "refresh".equals(claims.get("typ", String.class))
@@ -46,6 +48,35 @@ public class CommonJwtUtil {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public UUID getUserIdFromToken(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")){
+            throw new InvalidCredentialsException("Authorization 헤더가 유효하지 않습니다.");
+        }
+
+        String accessToken = authorizationHeader.replace("Bearer ", "").trim();
+
+        if (!isValidAccessToken(accessToken)) {
+            throw new InvalidCredentialsException("AccessToken 검증에 실패했습니다.");
+        }
+
+        Claims claims = getClaims(accessToken);
+        return UUID.fromString(claims.get("userId", String.class));
+    }
+
+    private boolean isValidAccessToken(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+
+        try {
+            Claims claims = getClaims(token);
+            return "access".equals(claims.get("typ", String.class))
+                    && issuer.equals(claims.getIssuer());
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
 }
