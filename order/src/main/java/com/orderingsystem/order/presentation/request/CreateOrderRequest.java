@@ -16,9 +16,6 @@ import lombok.Getter;
 public class CreateOrderRequest {
 
     @NotNull
-    private final UUID customerId;
-
-    @NotNull
     private final UUID restaurantId;
 
     @NotNull
@@ -30,9 +27,9 @@ public class CreateOrderRequest {
     @NotNull
     private final OrderAddressRequest address;
 
-    public CreateOrderApplicationRequest toApplicationRequest(){
+    public CreateOrderApplicationRequest toApplicationRequest(UUID customerId){
         return CreateOrderApplicationRequest.builder()
-                .customerId(this.customerId)
+                .customerId(customerId)
                 .restaurantId(this.restaurantId)
                 .price(this.price)
                 .items(this.items.stream()

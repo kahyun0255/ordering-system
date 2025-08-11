@@ -80,7 +80,7 @@ public class RestaurantService {
 
         if (restaurant.isEmpty()) {
             log.error("레스토랑을 찾을 수 없습니다. Restaurant Id : {}", restaurantId);
-            throw new RestaurantNotFoundException("레스토랑을 찾을 수 없습니다. Restaurant Id : " + restaurantId);
+            throw new RestaurantNotFoundException("레스토랑을 찾을 수 없습니다.");
         }
 
         return restaurant.get();

@@ -2,6 +2,7 @@ package com.orderingsystem.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -41,7 +42,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest()
                 .body(ErrorDTO.builder()
                         .code(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                        .message("Unexpected error")
+                        .message(e.getMessage())
                         .build());
     }
 
@@ -49,9 +50,31 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorDTO> handleNotFoundException(NotFoundException e) {
         log.error(e.getMessage());
 
-        return ResponseEntity.badRequest()
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorDTO.builder()
                         .code(HttpStatus.NOT_FOUND.getReasonPhrase())
+                        .message(e.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ErrorDTO> handleDuplicateKeyException(DuplicateKeyException e) {
+        log.error(e.getMessage());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorDTO.builder()
+                        .code(HttpStatus.CONFLICT.getReasonPhrase())
+                        .message(e.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorDTO> handleInvalidCredentialsException(InvalidCredentialsException e) {
+        log.error(e.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorDTO.builder()
+                        .code(HttpStatus.UNAUTHORIZED.getReasonPhrase())
                         .message(e.getMessage())
                         .build());
     }
