@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orderingsystem.application.UserService;
+import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.presentation.request.SignInRequest;
 import com.orderingsystem.presentation.request.SignUpRequest;
@@ -34,7 +34,7 @@ class UserControllerValidationTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private UserService userService;
+    private AuthFacade authFacade;
 
     @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;

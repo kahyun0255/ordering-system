@@ -9,8 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.UserService;
-import com.orderingsystem.application.UserServiceHelper;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.exception.UserNotFoundException;
@@ -34,7 +34,7 @@ class UserControllerSignInWebMvcTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserService userService;
+    private AuthFacade authFacade;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -43,7 +43,7 @@ class UserControllerSignInWebMvcTest {
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     @MockitoBean
-    private UserServiceHelper userServiceHelper;
+    private UserService userService;
 
     @DisplayName("로그인에 성공한다.")
     @Test
@@ -56,7 +56,7 @@ class UserControllerSignInWebMvcTest {
                 .refreshToken("refresh.jwt.token")
                 .build();
 
-        given(userService.signIn(any())).willReturn(tokenResponse);
+        given(authFacade.signIn(any())).willReturn(tokenResponse);
 
         //when, then
         mockMvc.perform(post("/api/auth/sign-in")
@@ -74,7 +74,7 @@ class UserControllerSignInWebMvcTest {
         //given
         SignInRequest signInRequest = getSignInRequest("id", "password");
 
-        given(userService.signIn(any()))
+        given(authFacade.signIn(any()))
                 .willThrow(new InvalidCredentialsException("비밀번호가 일치하지 않습니다."));
 
         // when, then
@@ -94,7 +94,7 @@ class UserControllerSignInWebMvcTest {
         //given
         SignInRequest signInRequest = getSignInRequest("id", "password");
 
-        given(userService.signIn(any()))
+        given(authFacade.signIn(any()))
                 .willThrow(new UserNotFoundException("존재하지 않는 사용자입니다."));
 
         // when, then

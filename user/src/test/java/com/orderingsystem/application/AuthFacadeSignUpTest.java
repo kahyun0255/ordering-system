@@ -7,7 +7,6 @@ import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
-import com.orderingsystem.domain.repository.RefreshTokenRepository;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.domain.repository.outbox.CustomerOutboxRepository;
 import com.orderingsystem.util.JwtUtil;
@@ -29,16 +28,13 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
-class UserServiceSignUpTest {
+class AuthFacadeSignUpTest {
 
     @Autowired
-    private UserService userService;
+    private AuthFacade authFacade;
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
     private CustomerOutboxRepository customerOutboxRepository;
@@ -52,7 +48,6 @@ class UserServiceSignUpTest {
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        refreshTokenRepository.deleteAllInBatch();
         customerOutboxRepository.deleteAllInBatch();
     }
 
@@ -63,7 +58,7 @@ class UserServiceSignUpTest {
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
         //when
-        TokenResponse tokenResponse = userService.signUp(signUpApplicationRequest);
+        TokenResponse tokenResponse = authFacade.signUp(signUpApplicationRequest);
 
         //then
         Optional<User> user = userRepository.findById(signUpApplicationRequest.getId());
@@ -73,9 +68,6 @@ class UserServiceSignUpTest {
 
         assertThat(tokenResponse.getAccessToken()).isNotBlank();
         assertThat(tokenResponse.getRefreshToken()).isNotBlank();
-
-        assertThat(refreshTokenRepository.findByTokenAndUserId(tokenResponse.getRefreshToken(),
-                user.get().getUserId())).isPresent();
     }
 
     @DisplayName("비밀번호가 암호화되어 저장된다.")
@@ -85,7 +77,7 @@ class UserServiceSignUpTest {
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
         //when
-        userService.signUp(signUpApplicationRequest);
+        authFacade.signUp(signUpApplicationRequest);
 
         //then
         Optional<User> user = userRepository.findById(signUpApplicationRequest.getId());
@@ -102,7 +94,7 @@ class UserServiceSignUpTest {
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
         //when
-        TokenResponse tokenResponse = userService.signUp(signUpApplicationRequest);
+        TokenResponse tokenResponse = authFacade.signUp(signUpApplicationRequest);
 
         //then
         Optional<User> user = userRepository.findById(signUpApplicationRequest.getId());
@@ -129,7 +121,7 @@ class UserServiceSignUpTest {
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
         //when
-        userService.signUp(signUpApplicationRequest);
+        authFacade.signUp(signUpApplicationRequest);
 
         //then
         assertThat(customerOutboxRepository.count()).isEqualTo(1L);
@@ -151,7 +143,7 @@ class UserServiceSignUpTest {
         ;
 
         //when
-        userService.signUp(signUpApplicationRequest);
+        authFacade.signUp(signUpApplicationRequest);
 
         //then
         assertThat(customerOutboxRepository.count()).isEqualTo(0L);
@@ -174,7 +166,7 @@ class UserServiceSignUpTest {
                 .build());
 
         //when, then
-        assertThatThrownBy(() -> userService.signUp(signUpApplicationRequest))
+        assertThatThrownBy(() -> authFacade.signUp(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 아이디입니다.");
     }
@@ -196,7 +188,7 @@ class UserServiceSignUpTest {
                 .build());
 
         //when, then
-        assertThatThrownBy(() -> userService.signUp(signUpApplicationRequest))
+        assertThatThrownBy(() -> authFacade.signUp(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 이메일입니다.");
     }
@@ -218,7 +210,7 @@ class UserServiceSignUpTest {
                 .build());
 
         //when, then
-        assertThatThrownBy(() -> userService.signUp(signUpApplicationRequest))
+        assertThatThrownBy(() -> authFacade.signUp(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 닉네임입니다.");
     }

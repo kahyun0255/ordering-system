@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orderingsystem.application.UserService;
+import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.presentation.request.SignUpRequest;
@@ -33,7 +33,7 @@ class UserControllerSignUpWebMvcTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserService userService;
+    private AuthFacade authFacade;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -52,7 +52,7 @@ class UserControllerSignUpWebMvcTest {
                 .refreshToken("refresh.jwt.token")
                 .build();
 
-        given(userService.signUp(any())).willReturn(tokenResponse);
+        given(authFacade.signUp(any())).willReturn(tokenResponse);
 
         //when, then
         mockMvc.perform(post("/api/auth/sign-up")
@@ -71,7 +71,7 @@ class UserControllerSignUpWebMvcTest {
         SignUpRequest signUpRequest = getSignUpRequest();
 
         doThrow(new DuplicateKeyException("이미 존재하는 아이디입니다."))
-                .when(userService).signUp(any());
+                .when(authFacade).signUp(any());
 
         //when, then
         mockMvc.perform(
@@ -92,7 +92,7 @@ class UserControllerSignUpWebMvcTest {
         SignUpRequest signUpRequest = getSignUpRequest();
 
         doThrow(new DuplicateKeyException("이미 존재하는 닉네임입니다."))
-                .when(userService).signUp(any());
+                .when(authFacade).signUp(any());
 
         //when, then
         mockMvc.perform(
@@ -113,7 +113,7 @@ class UserControllerSignUpWebMvcTest {
         SignUpRequest signUpRequest = getSignUpRequest();
 
         doThrow(new DuplicateKeyException("이미 존재하는 이메일입니다."))
-                .when(userService).signUp(any());
+                .when(authFacade).signUp(any());
 
         //when, then
         mockMvc.perform(

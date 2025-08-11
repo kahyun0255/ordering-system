@@ -1,14 +1,15 @@
 package com.orderingsystem.domain.repository;
 
-import com.orderingsystem.domain.model.RefreshToken;
-import java.util.Optional;
+import java.time.Duration;
 import java.util.UUID;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
-@Repository
-public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
-    Optional<RefreshToken> findByTokenAndUserId(String token, UUID userId);
+public interface RefreshTokenRepository {
 
-    Optional<RefreshToken> findByUserId(UUID id);
+    void save(UUID userId, String refreshToken, Duration ttl);
+
+    String findByUserId(UUID userId);
+
+    void delete(UUID userId);
+
+    void update(UUID userId, String newRefreshToken, Duration ttl);
 }

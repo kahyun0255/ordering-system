@@ -9,10 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
-import com.orderingsystem.domain.repository.RefreshTokenRepository;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.domain.repository.outbox.CustomerOutboxRepository;
 import com.orderingsystem.presentation.request.SignUpRequest;
@@ -45,15 +43,11 @@ class UserControllerSignUpTest {
     private UserRepository userRepository;
 
     @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-
-    @Autowired
     private CustomerOutboxRepository customerOutboxRepository;
 
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        refreshTokenRepository.deleteAllInBatch();
         customerOutboxRepository.deleteAllInBatch();
     }
 
@@ -75,16 +69,11 @@ class UserControllerSignUpTest {
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty())
                 .andReturn().getResponse().getContentAsString();
 
-        TokenResponse tokenResponse = objectMapper.readValue(json, TokenResponse.class);
-
         //then
         Optional<User> user = userRepository.findById(signUpRequest.getId());
         assertThat(user).isPresent();
         assertThat(user.get().getEmail()).isEqualTo(signUpRequest.getEmail());
         assertThat(user.get().getType()).isEqualTo(signUpRequest.getType());
-
-        assertThat(refreshTokenRepository.findByTokenAndUserId(tokenResponse.getRefreshToken(),
-                user.get().getUserId())).isPresent();
 
         assertThat(customerOutboxRepository.count()).isEqualTo(1L);
     }

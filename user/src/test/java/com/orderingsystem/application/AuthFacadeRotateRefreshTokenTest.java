@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
-import com.orderingsystem.domain.model.RefreshToken;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
@@ -16,6 +15,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
@@ -34,10 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
-class UserServiceRotateRefreshTokenTest {
+class AuthFacadeRotateRefreshTokenTest {
 
     @Autowired
-    private UserService userService;
+    private AuthFacade authFacade;
 
     @Autowired
     private UserRepository userRepository;
@@ -60,6 +60,9 @@ class UserServiceRotateRefreshTokenTest {
     @Value("${jwt.secret-key}")
     private String secretKey;
 
+    @Value("${jwt.refresh-token-expiration}")
+    private Duration refreshTokenTtl;
+
     private final UUID userId = UUID.randomUUID();
     private final String id = "testId";
     private final String password = "testpassword";
@@ -69,7 +72,6 @@ class UserServiceRotateRefreshTokenTest {
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        refreshTokenRepository.deleteAllInBatch();
         customerOutboxRepository.deleteAllInBatch();
     }
 
@@ -93,22 +95,19 @@ class UserServiceRotateRefreshTokenTest {
 
         userRepository.save(user);
 
-        refreshTokenRepository.save(RefreshToken.builder()
-                .userId(userId)
-                .token(refreshToken)
-                .build());
+        refreshTokenRepository.save(userId, refreshToken, refreshTokenTtl);
     }
 
     @DisplayName("refreshToken이 만료되지 않았고, 저장된 값하고 동일하면 AccessToken, RefreshToken 재발급에 성공한다.")
     @Test
     void reissueTokens_whenRefreshTokenIsValidAndMatchesStoredValue() {
         //when
-        TokenResponse tokenResponse = userService.rotateRefreshAndIssueAccess(refreshToken);
+        TokenResponse tokenResponse = authFacade.rotateRefreshAndIssueAccess(refreshToken);
 
         //then
         assertThat(refreshToken).isNotEqualTo(tokenResponse.getRefreshToken());
 
-        String findRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String findRefreshToken = refreshTokenRepository.findByUserId(userId);
         assertThat(findRefreshToken).isEqualTo(tokenResponse.getRefreshToken());
     }
 
@@ -119,7 +118,7 @@ class UserServiceRotateRefreshTokenTest {
         String token = buildToken("create", issuer, Instant.now().plusSeconds(60));
 
         //when, then
-        assertThatThrownBy(() -> userService.rotateRefreshAndIssueAccess(token))
+        assertThatThrownBy(() -> authFacade.rotateRefreshAndIssueAccess(token))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Refresh Token이 만료되었습니다.");
     }
@@ -131,7 +130,7 @@ class UserServiceRotateRefreshTokenTest {
         String token = buildToken("refresh", issuer, Instant.now().minusSeconds(10));
 
         //when, then
-        assertThatThrownBy(() -> userService.rotateRefreshAndIssueAccess(token))
+        assertThatThrownBy(() -> authFacade.rotateRefreshAndIssueAccess(token))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Refresh Token이 만료되었습니다.");
     }
@@ -143,7 +142,7 @@ class UserServiceRotateRefreshTokenTest {
         String refreshToken = buildToken("refresh", "another-issure", Instant.now().plusSeconds(60));
 
         //when, then
-        assertThatThrownBy(() -> userService.rotateRefreshAndIssueAccess(refreshToken))
+        assertThatThrownBy(() -> authFacade.rotateRefreshAndIssueAccess(refreshToken))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Refresh Token이 만료되었습니다.");
     }
@@ -167,7 +166,7 @@ class UserServiceRotateRefreshTokenTest {
         String tampered = refreshToken.substring(0, refreshToken.length() - 2) + "aa";
 
         //when, then
-        assertThatThrownBy(() -> userService.rotateRefreshAndIssueAccess(tampered))
+        assertThatThrownBy(() -> authFacade.rotateRefreshAndIssueAccess(tampered))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Refresh Token이 만료되었습니다.");
     }
@@ -190,7 +189,7 @@ class UserServiceRotateRefreshTokenTest {
         String refreshToken = jwtUtil.createRefreshToken(user);
 
         //when, then
-        assertThatThrownBy(() -> userService.rotateRefreshAndIssueAccess(refreshToken))
+        assertThatThrownBy(() -> authFacade.rotateRefreshAndIssueAccess(refreshToken))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Refresh Token이 일치하지 않습니다.");
     }

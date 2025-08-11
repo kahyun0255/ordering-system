@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
+import com.orderingsystem.application.outbox.UserOutboxPolicyRegistry;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.model.User;
@@ -24,16 +25,19 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceHelperTest {
+class AuthFacadeHelperTest {
 
     @InjectMocks
-    private UserServiceHelper userServiceHelper;
+    private UserService userService;
 
     @Mock
     private UserRepository userRepository;
 
     @Mock
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    @Mock
+    private UserOutboxPolicyRegistry userOutboxPolicyRegistry;
 
     @DisplayName("user 정보가 성공적으로 저장된다.")
     @Test
@@ -50,7 +54,7 @@ class UserServiceHelperTest {
         ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(User.class);
 
         //when
-        UserCreatedEvent userCreatedEvent = userServiceHelper.persistUser(signUpApplicationRequest);
+        UserCreatedEvent userCreatedEvent = userService.persistUser(signUpApplicationRequest);
 
         //then
         then(userRepository).should().save(userArgumentCaptor.capture());
@@ -71,7 +75,7 @@ class UserServiceHelperTest {
         given(userRepository.existsById(signUpApplicationRequest.getId())).willReturn(true);
 
         //when, then
-        assertThatThrownBy(() -> userServiceHelper.persistUser(signUpApplicationRequest))
+        assertThatThrownBy(() -> userService.persistUser(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 아이디입니다.");
 
@@ -87,7 +91,7 @@ class UserServiceHelperTest {
         given(userRepository.existsByNickname(signUpApplicationRequest.getNickname())).willReturn(true);
 
         //when, then
-        assertThatThrownBy(() -> userServiceHelper.persistUser(signUpApplicationRequest))
+        assertThatThrownBy(() -> userService.persistUser(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 닉네임입니다.");
 
@@ -103,7 +107,7 @@ class UserServiceHelperTest {
         given(userRepository.existsByEmail(signUpApplicationRequest.getEmail())).willReturn(true);
 
         //when, then
-        assertThatThrownBy(() -> userServiceHelper.persistUser(signUpApplicationRequest))
+        assertThatThrownBy(() -> userService.persistUser(signUpApplicationRequest))
                 .isInstanceOf(DuplicateKeyException.class)
                 .hasMessage("이미 존재하는 이메일입니다.");
 
@@ -115,7 +119,7 @@ class UserServiceHelperTest {
     @Test
     void verifyPasswordMatchesStoredPassword() {
         //when, then
-        assertThatThrownBy(() -> userServiceHelper.verifyPassword("testpassword1234", "testpassword12345"))
+        assertThatThrownBy(() -> userService.verifyPassword("testpassword1234", "testpassword12345"))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("비밀번호가 일치하지 않습니다.");
     }

@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.application.dto.response.TokenResponse;
-import com.orderingsystem.domain.model.RefreshToken;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
@@ -21,6 +20,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import java.security.Key;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
@@ -64,14 +64,17 @@ class UserControllerRefreshTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Value("${jwt.issuer}")
-    private String issuer;
-
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Value("${jwt.issuer}")
+    private String issuer;
+
     @Value("${jwt.secret-key}")
     private String secretKey;
+
+    @Value("${jwt.refresh-token-expiration}")
+    private Duration refreshTokenTtl;
 
     private final UUID userId = UUID.randomUUID();
     private final String id = "testId";
@@ -82,7 +85,6 @@ class UserControllerRefreshTest {
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        refreshTokenRepository.deleteAllInBatch();
         customerOutboxRepository.deleteAllInBatch();
     }
 
@@ -106,17 +108,14 @@ class UserControllerRefreshTest {
 
         userRepository.save(user);
 
-        refreshTokenRepository.save(RefreshToken.builder()
-                .userId(userId)
-                .token(refreshToken)
-                .build());
+        refreshTokenRepository.save(userId, refreshToken, refreshTokenTtl);
     }
 
     @DisplayName("RefreshToken 재발급에 성공한다.")
     @Test
     void succeedToReissueRefreshToken() throws Exception {
         //given
-        String oldRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String oldRefreshToken = refreshTokenRepository.findByUserId(userId);
 
         //when
         MvcResult mvcResult = mockMvc.perform(
@@ -135,7 +134,7 @@ class UserControllerRefreshTest {
         String json = mvcResult.getResponse().getContentAsString();
         TokenResponse tokenResponse = objectMapper.readValue(json, TokenResponse.class);
 
-        String storedRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String storedRefreshToken = refreshTokenRepository.findByUserId(userId);
         assertThat(storedRefreshToken).isNotEqualTo(oldRefreshToken);
         assertThat(storedRefreshToken).isEqualTo(tokenResponse.getRefreshToken());
 

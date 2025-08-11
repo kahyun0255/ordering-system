@@ -1,6 +1,6 @@
 package com.orderingsystem.presentation;
 
-import com.orderingsystem.application.UserService;
+import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.presentation.request.SignInRequest;
 import com.orderingsystem.presentation.request.SignUpRequest;
@@ -22,20 +22,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final AuthFacade authFacade;
 
     @PostMapping("/sign-up")
     public ResponseEntity<TokenResponse> signUp(@Valid @RequestBody SignUpRequest signUpRequest,
                                                 BindingResult bindingResult) {
         valid(bindingResult);
-        return ResponseEntity.ok(userService.signUp(signUpRequest.toSignUpApplicationRequest()));
+        return ResponseEntity.ok(authFacade.signUp(signUpRequest.toSignUpApplicationRequest()));
     }
 
     @PostMapping("/sign-in")
     public ResponseEntity<TokenResponse> signIn(@Valid @RequestBody SignInRequest signInRequest,
                                                 BindingResult bindingResult, HttpServletResponse httpServletResponse) {
         valid(bindingResult);
-        TokenResponse tokenResponse = userService.signIn(signInRequest.toSignInApplicationRequest());
+        TokenResponse tokenResponse = authFacade.signIn(signInRequest.toSignInApplicationRequest());
 
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken", tokenResponse.getRefreshToken())
                 .httpOnly(true)
@@ -54,7 +54,7 @@ public class UserController {
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse httpServletResponse) {
 
-        TokenResponse rotated = userService.rotateRefreshAndIssueAccess(refreshToken);
+        TokenResponse rotated = authFacade.rotateRefreshAndIssueAccess(refreshToken);
 
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken", rotated.getRefreshToken())
                 .httpOnly(true)

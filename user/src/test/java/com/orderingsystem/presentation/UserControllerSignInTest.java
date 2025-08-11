@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.application.dto.response.TokenResponse;
-import com.orderingsystem.domain.model.RefreshToken;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
@@ -17,7 +16,7 @@ import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.domain.repository.outbox.CustomerOutboxRepository;
 import com.orderingsystem.presentation.request.SignInRequest;
 import com.orderingsystem.util.JwtUtil;
-import java.util.Optional;
+import java.time.Duration;
 import java.util.UUID;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
@@ -25,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
@@ -61,6 +61,9 @@ class UserControllerSignInTest {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Value("${jwt.refresh-token-expiration}")
+    private Duration refreshTokenTtl;
+
     private final UUID userId = UUID.randomUUID();
     private final String id = "testId";
     private final String password = "testpassword";
@@ -68,7 +71,6 @@ class UserControllerSignInTest {
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        refreshTokenRepository.deleteAllInBatch();
         customerOutboxRepository.deleteAllInBatch();
     }
 
@@ -91,10 +93,7 @@ class UserControllerSignInTest {
 
         userRepository.save(user);
 
-        refreshTokenRepository.save(RefreshToken.builder()
-                .userId(userId)
-                .token(refreshToken)
-                .build());
+        refreshTokenRepository.save(userId, refreshToken, refreshTokenTtl);
     }
 
     @DisplayName("로그인에 성공한다.")
@@ -102,7 +101,7 @@ class UserControllerSignInTest {
     void signIn() throws Exception {
         //given
         SignInRequest signInRequest = getSignInRequest(id, password);
-        String oldRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String oldRefreshToken = refreshTokenRepository.findByUserId(userId);
 
         //when
         MvcResult mvcResult = mockMvc.perform(
@@ -121,7 +120,7 @@ class UserControllerSignInTest {
         String json = mvcResult.getResponse().getContentAsString();
         TokenResponse tokenResponse = objectMapper.readValue(json, TokenResponse.class);
 
-        String storedRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String storedRefreshToken = refreshTokenRepository.findByUserId(userId);
         assertThat(storedRefreshToken).isNotEqualTo(oldRefreshToken);
         assertThat(storedRefreshToken).isEqualTo(tokenResponse.getRefreshToken());
 
@@ -139,7 +138,7 @@ class UserControllerSignInTest {
     void failToSignIn_whenPasswordDoesNotMatch() throws Exception {
         //given
         SignInRequest signInRequest = getSignInRequest(id, "passssworddddd");
-        String oldRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String oldRefreshToken = refreshTokenRepository.findByUserId(userId);
 
         //when, then
         mockMvc.perform(
@@ -153,7 +152,7 @@ class UserControllerSignInTest {
                 .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다."))
                 .andReturn().getResponse().getContentAsString();
 
-        String storedRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String storedRefreshToken = refreshTokenRepository.findByUserId(userId);
         assertThat(storedRefreshToken).isEqualTo(oldRefreshToken);
     }
 
@@ -162,7 +161,7 @@ class UserControllerSignInTest {
     void failToSignIn_whenIdDoesNotMatch() throws Exception {
         //given
         SignInRequest signInRequest = getSignInRequest("iddddddd", password);
-        String oldRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String oldRefreshToken = refreshTokenRepository.findByUserId(userId);
 
         //when, then
         mockMvc.perform(
@@ -175,7 +174,7 @@ class UserControllerSignInTest {
                 .andExpect(jsonPath("$.code").value("Not Found"))
                 .andExpect(jsonPath("$.message").value("존재하지 않는 사용자입니다."));
 
-        String storedRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String storedRefreshToken = refreshTokenRepository.findByUserId(userId);
         assertThat(storedRefreshToken).isEqualTo(oldRefreshToken);
     }
 
@@ -200,8 +199,6 @@ class UserControllerSignInTest {
                 .build();
 
         userRepository.save(user);
-        Optional<RefreshToken> oldRefreshToken = refreshTokenRepository.findByUserId(userId);
-        assertThat(oldRefreshToken).isNotPresent();
 
         SignInRequest signInRequest = getSignInRequest(id, password);
 
@@ -218,7 +215,7 @@ class UserControllerSignInTest {
         //then
         TokenResponse tokenResponse = objectMapper.readValue(json, TokenResponse.class);
 
-        String storedRefreshToken = refreshTokenRepository.findByUserId(userId).orElseThrow().getToken();
+        String storedRefreshToken = refreshTokenRepository.findByUserId(userId);
         assertThat(storedRefreshToken).isEqualTo(tokenResponse.getRefreshToken());
     }
 

@@ -2,7 +2,7 @@ package com.orderingsystem.application.outbox;
 
 import com.orderingsystem.application.mapper.UserDataMapper;
 import com.orderingsystem.application.outbox.customer.CustomerOutboxHelper;
-import com.orderingsystem.domain.event.UserCreatedEvent;
+import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.util.UUID;
@@ -22,9 +22,9 @@ public class CustomerOutboxPolicy implements UserOutboxPolicy {
     }
 
     @Override
-    public void saveOutbox(UserCreatedEvent userCreatedEvent) {
+    public void saveOutbox(User user) {
         customerOutboxHelper.saveCustomerOutboxMessage(
-                userDataMapper.userCreatedToUserCreateEventPayload(userCreatedEvent),
+                userDataMapper.userCreatedToUserCreateEventPayload(user),
                 OutboxStatus.STARTED,
                 UUID.randomUUID());
     }
