@@ -128,7 +128,7 @@ class RestaurantValidationServiceTest {
         assertThatThrownBy(
                 () -> restaurantValidationService.getRestaurantInfo(restaurantId, List.of(productId1, productId2)))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessage("레스토랑 정보를 찾을 수 없습니다. Restaurant Id : " + restaurantId);
+                .hasMessage("레스토랑 정보를 찾을 수 없습니다.");
     }
 
     @DisplayName("요청한 물품 중 하나라도 존재하지 않으면 예외가 발생한다.")
@@ -158,8 +158,7 @@ class RestaurantValidationServiceTest {
         assertThatThrownBy(
                 () -> restaurantValidationService.getRestaurantInfo(restaurantId, List.of(productId1, productId2)))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessage("요청한 상품 중 일부를 찾을 수 없습니다. RestaurantId : " + restaurantId + ", productIds : " + List.of(
-                        productId1, productId2) + ", findIds : " + List.of(productId2));
+                .hasMessage("요청한 상품 중 일부를 찾을 수 없습니다.");
     }
 
     @DisplayName("요청한 물품이 여러 개일 때, 모두 존재하지 않으면 예외가 발생한다.")
@@ -191,9 +190,7 @@ class RestaurantValidationServiceTest {
         assertThatThrownBy(
                 () -> restaurantValidationService.getRestaurantInfo(restaurantId, List.of(productId1, productId3)))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessage(
-                        "상품 정보를 찾을 수 없습니다. productId : " + List.of(productId1, productId3) + ", restaurantId : "
-                                + restaurantId);
+                .hasMessage("상품 정보를 찾을 수 없습니다.");
     }
 
     @DisplayName("요청한 물품이 한 개일 때, 존재하지 않으면 예외가 발생한다.")
@@ -223,8 +220,6 @@ class RestaurantValidationServiceTest {
         assertThatThrownBy(
                 () -> restaurantValidationService.getRestaurantInfo(restaurantId, List.of(productId1)))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessage(
-                        "상품 정보를 찾을 수 없습니다. productId : " + List.of(productId1) + ", restaurantId : "
-                                + restaurantId);
+                .hasMessage("상품 정보를 찾을 수 없습니다.");
     }
 }

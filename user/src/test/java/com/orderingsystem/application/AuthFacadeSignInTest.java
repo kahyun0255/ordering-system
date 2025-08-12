@@ -11,7 +11,7 @@ import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
 import com.orderingsystem.domain.repository.UserRepository;
-import com.orderingsystem.domain.repository.outbox.CustomerOutboxRepository;
+import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
 import com.orderingsystem.util.JwtUtil;
 import java.time.Duration;
 import java.util.UUID;
@@ -41,7 +41,7 @@ class AuthFacadeSignInTest {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
-    private CustomerOutboxRepository customerOutboxRepository;
+    private UserOutboxRepository userOutboxRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -59,7 +59,7 @@ class AuthFacadeSignInTest {
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        customerOutboxRepository.deleteAllInBatch();
+        userOutboxRepository.deleteAllInBatch();
     }
 
     @BeforeEach

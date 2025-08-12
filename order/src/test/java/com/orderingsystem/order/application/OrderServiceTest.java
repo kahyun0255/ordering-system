@@ -9,7 +9,7 @@ import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRe
 import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
-import com.orderingsystem.order.domain.exception.OrderDomainException;
+import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.restaurant.Product;
@@ -236,8 +236,8 @@ class OrderServiceTest {
 
         //when, then
         assertThatThrownBy(() -> orderService.createOrder(request))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("주문자를 찾을 수 없습니다. Customer Id : " + notCustomerId);
+                .isInstanceOf(OrderNotFoundException.class)
+                .hasMessage("주문자를 찾을 수 없습니다.");
     }
 
     @DisplayName("레스토랑이 활성화 상태가 아니라면 주문 생성에 실패한다.")

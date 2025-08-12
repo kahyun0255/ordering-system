@@ -1,5 +1,6 @@
 package com.orderingsystem.domain.model.outbox;
 
+import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.outbox.OutboxStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,12 +18,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "customer_outbox")
+@Table(name = "user_outbox")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class CustomerOutbox {
+public class UserOutbox {
 
     @Id
     private UUID id;
@@ -31,6 +32,9 @@ public class CustomerOutbox {
     private ZonedDateTime createdAt;
     private ZonedDateTime processedAt;
     private String type;
+
+    @Enumerated(EnumType.STRING)
+    private UserType userType;
 
     @Column(name = "payload", columnDefinition = "TEXT", nullable = false)
     private String payload;

@@ -9,7 +9,7 @@ import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
 import com.orderingsystem.domain.repository.UserRepository;
-import com.orderingsystem.domain.repository.outbox.CustomerOutboxRepository;
+import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
 import com.orderingsystem.util.JwtUtil;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -46,7 +46,7 @@ class AuthFacadeRotateRefreshTokenTest {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
-    private CustomerOutboxRepository customerOutboxRepository;
+    private UserOutboxRepository userOutboxRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -72,7 +72,7 @@ class AuthFacadeRotateRefreshTokenTest {
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        customerOutboxRepository.deleteAllInBatch();
+        userOutboxRepository.deleteAllInBatch();
     }
 
     @BeforeEach

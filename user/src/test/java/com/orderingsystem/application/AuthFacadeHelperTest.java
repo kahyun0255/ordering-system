@@ -8,7 +8,8 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
-import com.orderingsystem.application.outbox.UserOutboxPolicyRegistry;
+import com.orderingsystem.application.mapper.UserDataMapper;
+import com.orderingsystem.application.outbox.UserOutboxHelper;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.model.User;
@@ -37,7 +38,10 @@ class AuthFacadeHelperTest {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Mock
-    private UserOutboxPolicyRegistry userOutboxPolicyRegistry;
+    private UserDataMapper userDataMapper;
+
+    @Mock
+    private UserOutboxHelper userOutboxHelper;
 
     @DisplayName("user 정보가 성공적으로 저장된다.")
     @Test

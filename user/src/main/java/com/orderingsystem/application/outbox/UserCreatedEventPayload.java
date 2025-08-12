@@ -1,4 +1,4 @@
-package com.orderingsystem.application.outbox.customer.model;
+package com.orderingsystem.application.outbox;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.ZonedDateTime;
@@ -9,7 +9,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @AllArgsConstructor
-public class CustomerEventPayload {
+public class UserCreatedEventPayload {
 
     @JsonProperty
     private String id;
@@ -17,5 +17,7 @@ public class CustomerEventPayload {
     private String username;
     @JsonProperty
     private ZonedDateTime createdAt;
+    @JsonProperty
+    private String type;
 
 }
