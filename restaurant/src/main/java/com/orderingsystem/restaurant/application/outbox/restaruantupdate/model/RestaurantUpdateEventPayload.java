@@ -1,24 +1,23 @@
-package com.orderingsystem.restaurant.application.outbox.model;
+package com.orderingsystem.restaurant.application.outbox.restaruantupdate.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.ZonedDateTime;
-import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class OrderEventPayload {
+public class RestaurantUpdateEventPayload {
 
-    @JsonProperty
-    private String orderId;
     @JsonProperty
     private String restaurantId;
     @JsonProperty
     private ZonedDateTime createdAt;
     @JsonProperty
-    private String orderApprovalStatus;
+    private String name;
     @JsonProperty
-    private List<String> failureMessages;
+    private boolean active;
+    @JsonProperty
+    private String type;
 
 }

@@ -1,4 +1,4 @@
-package com.orderingsystem.restaurant.application.outbox.scheduler;
+package com.orderingsystem.restaurant.application.outbox.order.scheduler;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.orderingsystem.outbox.OutboxStatus;
-import com.orderingsystem.restaurant.application.outbox.OrderOutboxHelper;
+import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

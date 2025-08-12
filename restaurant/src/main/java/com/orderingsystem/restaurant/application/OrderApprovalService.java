@@ -7,8 +7,8 @@ import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
 import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
-import com.orderingsystem.restaurant.application.outbox.OrderOutboxHelper;
-import com.orderingsystem.restaurant.domain.event.OrderApprovalEvent;
+import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovalEvent;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.model.OrderDetail;
@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class RestaurantService {
+public class OrderApprovalService {
 
     private final RestaurantRepository restaurantRepository;
     private final RestaurantValidateOrderService restaurantValidateOrderService;

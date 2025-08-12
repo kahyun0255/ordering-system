@@ -1,4 +1,4 @@
-package com.orderingsystem.restaurant.application.outbox;
+package com.orderingsystem.restaurant.application.outbox.order;
 
 import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.outbox.OutboxStatus;
-import com.orderingsystem.restaurant.application.outbox.model.OrderEventPayload;
+import com.orderingsystem.restaurant.application.outbox.order.model.OrderEventPayload;
 import com.orderingsystem.restaurant.domain.exception.RestaurantDomainException;
 import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.restaurant.domain.repository.outbox.OrderOutboxRepository;

@@ -12,7 +12,7 @@ import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
 import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalOrderItem;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
-import com.orderingsystem.restaurant.application.outbox.model.OrderEventPayload;
+import com.orderingsystem.restaurant.application.outbox.order.model.OrderEventPayload;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.model.Product;
@@ -41,10 +41,10 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
-class RestaurantServiceTest {
+class OrderApprovalServiceTest {
 
     @Autowired
-    private RestaurantService restaurantService;
+    private OrderApprovalService orderApprovalService;
 
     @Autowired
     private RestaurantRepository restaurantRepository;
@@ -89,7 +89,7 @@ class RestaurantServiceTest {
         ApprovalRequest request = getApprovalRequest();
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
@@ -107,7 +107,7 @@ class RestaurantServiceTest {
         ApprovalRequest request = getApprovalRequest();
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
@@ -129,7 +129,7 @@ class RestaurantServiceTest {
         ApprovalRequest request = getApprovalRequest(RestaurantOrderStatus.PENDING);
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
@@ -152,7 +152,7 @@ class RestaurantServiceTest {
         ApprovalRequest request = getApprovalRequest();
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
@@ -195,7 +195,7 @@ class RestaurantServiceTest {
                 .build();
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
@@ -239,7 +239,7 @@ class RestaurantServiceTest {
                 .build();
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
@@ -273,7 +273,7 @@ class RestaurantServiceTest {
                 .build();
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
@@ -307,7 +307,7 @@ class RestaurantServiceTest {
         ApprovalRequest request = getApprovalRequest();
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         assertThat(orderApprovalRepository.count()).isEqualTo(0);
@@ -322,7 +322,7 @@ class RestaurantServiceTest {
         ApprovalRequest request = getApprovalRequest();
 
         //when, then
-        assertThatThrownBy(()->restaurantService.approveOrder(request))
+        assertThatThrownBy(()-> orderApprovalService.approveOrder(request))
                 .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("레스토랑을 찾을 수 없습니다.");
     }
@@ -346,7 +346,7 @@ class RestaurantServiceTest {
         assertThat(orderApprovalRepository.count()).isEqualTo(1);
 
         //when
-        restaurantService.approveOrder(request);
+        orderApprovalService.approveOrder(request);
 
         //then
         assertThat(orderApprovalRepository.count()).isEqualTo(1);
@@ -362,7 +362,7 @@ class RestaurantServiceTest {
         ApprovalRequest request = getApprovalRequest();
 
         // when, then
-        assertThatThrownBy(() -> restaurantService.approveOrder(request))
+        assertThatThrownBy(() -> orderApprovalService.approveOrder(request))
                 .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessageContaining("레스토랑을 찾을 수 없습니다");
     }

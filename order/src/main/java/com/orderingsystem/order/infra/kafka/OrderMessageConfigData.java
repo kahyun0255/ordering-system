@@ -12,5 +12,6 @@ public class OrderMessageConfigData {
     private String paymentResponseTopicName;
     private String restaurantApprovalResponseTopicName;
     private String customerTopicName;
+    private String restaurantTopicName;
 
 }

@@ -1,4 +1,4 @@
-package com.orderingsystem.restaurant.application.outbox.scheduler;
+package com.orderingsystem.restaurant.application.outbox.order.scheduler;
 
 import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 import static org.assertj.core.api.Assertions.assertThat;

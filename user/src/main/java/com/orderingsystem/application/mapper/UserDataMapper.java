@@ -1,7 +1,7 @@
 package com.orderingsystem.application.mapper;
 
 import com.orderingsystem.application.outbox.UserCreatedEventPayload;
-import com.orderingsystem.application.outbox.UserOutboxEventOperation;
+import com.orderingsystem.common.domain.status.OutboxEventOperation;
 import com.orderingsystem.domain.model.User;
 import java.time.ZonedDateTime;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,7 @@ public class UserDataMapper {
                 .username(user.getUsername())
                 .id(user.getUserId().toString())
                 .createdAt(ZonedDateTime.now())
-                .type(UserOutboxEventOperation.INSERT.name())
+                .type(OutboxEventOperation.INSERT.name())
                 .build();
     }
 
