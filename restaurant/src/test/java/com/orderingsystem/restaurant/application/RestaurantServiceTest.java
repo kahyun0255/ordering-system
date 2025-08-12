@@ -324,7 +324,7 @@ class RestaurantServiceTest {
         //when, then
         assertThatThrownBy(()->restaurantService.approveOrder(request))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessage("레스토랑을 찾을 수 없습니다. Restaurant Id : " + restaurantId);
+                .hasMessage("레스토랑을 찾을 수 없습니다.");
     }
 
     @DisplayName("해당 주문이 이미 승인된 상태로 저장되어 있으면, 중복해서 저장하지 않는다.")
