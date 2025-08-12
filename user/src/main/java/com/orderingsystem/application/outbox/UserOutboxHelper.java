@@ -28,8 +28,7 @@ public class UserOutboxHelper {
         if (!userOutboxRepository.existsByTypeAndOutboxStatusAndEventId(USER_CREATED_NAME, OutboxStatus.STARTED,
                 userOutbox.getEventId())) {
             userOutboxRepository.save(userOutbox);
-            log.info("User UserOutbox 저장. EventId : {}, Type : {}", userOutbox.getEventId(),
-                    userOutbox.getType());
+            log.info("User UserOutbox 저장. EventId : {}, Type : {}", userOutbox.getEventId(), userOutbox.getType());
         } else {
             log.warn("이미 저장된 User UserOutbox가 존재합니다. EventId : {}, Type : {}", userOutbox.getEventId(),
                     userOutbox.getType());

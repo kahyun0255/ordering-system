@@ -26,4 +26,10 @@ public class RestaurantOwner {
 
     private List<UUID> restaurants;
 
+    public static RestaurantOwner createOwner(UUID userId){
+        return RestaurantOwner.builder()
+                .userId(userId)
+                .build();
+    }
+
 }

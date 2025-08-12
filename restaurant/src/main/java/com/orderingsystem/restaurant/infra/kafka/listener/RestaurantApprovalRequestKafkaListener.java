@@ -30,7 +30,7 @@ public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<Str
     private final RestaurantService restaurantService;
 
     @Override
-    @KafkaListener(id = "${kafka-consumer-config.restaurant-consumer-group-id}",
+    @KafkaListener(id = "${kafka-consumer-config.restaurant-consumer-user-group-id}",
             topics = "${restaurant-topic.restaurant-approval-request-topic-name}")
     public void receive(@Payload List<String> messages,
                         @Header(KafkaHeaders.RECEIVED_KEY) List<String> keys,
