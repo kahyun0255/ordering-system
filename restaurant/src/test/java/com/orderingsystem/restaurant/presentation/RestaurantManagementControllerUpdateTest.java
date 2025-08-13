@@ -91,7 +91,7 @@ class RestaurantManagementControllerUpdateTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/restaurant")
+                        post("/api/restaurants")
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
@@ -117,7 +117,7 @@ class RestaurantManagementControllerUpdateTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/restaurant")
+                        post("/api/restaurants")
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
@@ -141,7 +141,7 @@ class RestaurantManagementControllerUpdateTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/restaurant")
+                        post("/api/restaurants")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
@@ -170,7 +170,7 @@ class RestaurantManagementControllerUpdateTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/restaurant")
+                        post("/api/restaurants")
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
