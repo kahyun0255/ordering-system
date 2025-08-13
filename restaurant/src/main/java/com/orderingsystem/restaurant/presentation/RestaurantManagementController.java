@@ -2,7 +2,7 @@ package com.orderingsystem.restaurant.presentation;
 
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.common.util.CommonJwtUtil;
-import com.orderingsystem.restaurant.application.RestaurantManagementService;
+import com.orderingsystem.restaurant.application.RestaurantManagementFacade;
 import com.orderingsystem.restaurant.application.dto.response.CreateRestaurantResponse;
 import com.orderingsystem.restaurant.presentation.request.CreateRestaurantRequest;
 import jakarta.validation.Valid;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RestaurantManagementController {
 
     private final CommonJwtUtil commonJwtUtil;
-    private final RestaurantManagementService restaurantManagementService;
+    private final RestaurantManagementFacade restaurantManagementFacade;
 
     @PostMapping
     public ResponseEntity<CreateRestaurantResponse> createRestaurant(
@@ -35,7 +35,7 @@ public class RestaurantManagementController {
 
         log.info("레스토랑 생성. Restaurant Owner Id : {}", restaurantOwnerId);
 
-        return ResponseEntity.ok(restaurantManagementService.createRestaurant(
+        return ResponseEntity.ok(restaurantManagementFacade.createRestaurant(
                 createRestaurantRequest.toCreateRestaurantApplicationRequest(restaurantOwnerId)));
     }
 
@@ -50,7 +50,7 @@ public class RestaurantManagementController {
     }
 
     private UUID getRestaurantOwnerId(String authorizationHeader) {
-        if (authorizationHeader == null || authorizationHeader.isBlank()){
+        if (authorizationHeader == null || authorizationHeader.isBlank()) {
             throw new InvalidCredentialsException("레스토랑 오너 정보를 찾을 수 없습니다.");
         }
         return commonJwtUtil.getUserIdFromToken(authorizationHeader);

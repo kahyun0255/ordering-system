@@ -2,16 +2,14 @@ package com.orderingsystem.restaurant.application;
 
 import static com.orderingsystem.common.saga.SagaConstants.RESTAURANT_CREATE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 
-import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.CreateRestaurantApplicationRequest;
-import com.orderingsystem.restaurant.application.dto.response.CreateRestaurantResponse;
-import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
+import com.orderingsystem.restaurant.domain.event.restaruant.CreatedRestaurantEvent;
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
+import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
 import com.orderingsystem.restaurant.domain.model.outbox.RestaurantUpdateOutbox;
 import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
@@ -29,10 +27,10 @@ import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles("test")
 @SpringBootTest
-class RestaurantManagementServiceTest {
+class RestaurantCreateServiceTest {
 
     @Autowired
-    private RestaurantManagementService restaurantManagementService;
+    private RestaurantCreateService restaurantCreateService;
 
     @Autowired
     private OwnerRepository ownerRepository;
@@ -60,10 +58,12 @@ class RestaurantManagementServiceTest {
     @Test
     void saveRestaurantSuccessfully() {
         //given
-        ownerRepository.save(Owner.builder()
+        Owner owner = Owner.builder()
                 .name("name")
                 .userId(ownerId)
-                .build());
+                .build();
+
+        ownerRepository.save(owner);
 
         CreateRestaurantApplicationRequest request = CreateRestaurantApplicationRequest.builder()
                 .ownerId(ownerId)
@@ -71,13 +71,14 @@ class RestaurantManagementServiceTest {
                 .build();
 
         //when
-        CreateRestaurantResponse response = restaurantManagementService.createRestaurant(request);
+        CreatedRestaurantEvent createdRestaurantEvent = restaurantCreateService.create(request, owner);
 
         //then
-        assertThat(response.getMessage()).isEqualTo("레스토랑이 성공적으로 생성되었습니다.");
-        assertThat(response.getRestaurantId()).isNotNull();
+        assertThat(createdRestaurantEvent.getRestaurant().getRestaurantId()).isNotNull();
+        assertThat(createdRestaurantEvent.getRestaurant().getName()).isEqualTo(request.getName());
 
-        Optional<Restaurant> savedRestaurant = restaurantRepository.findById(response.getRestaurantId());
+        Optional<Restaurant> savedRestaurant =
+                restaurantRepository.findById(createdRestaurantEvent.getRestaurant().getRestaurantId());
         assertThat(savedRestaurant).isPresent();
         assertThat(savedRestaurant.get().getActive()).isTrue();
         assertThat(savedRestaurant.get().getName()).isEqualTo(request.getName());
@@ -85,29 +86,11 @@ class RestaurantManagementServiceTest {
         List<RestaurantOwnership> savedRestaurantOwnership = restaurantOwnershipRepository.findByOwnerId(ownerId);
         assertThat(savedRestaurantOwnership).hasSize(1)
                 .extracting("restaurantId", "ownerId")
-                .containsExactlyInAnyOrder(tuple(response.getRestaurantId(), ownerId));
+                .containsExactlyInAnyOrder(tuple(createdRestaurantEvent.getRestaurant().getRestaurantId(), ownerId));
 
         Optional<List<RestaurantUpdateOutbox>> outbox = restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(
                 RESTAURANT_CREATE_NAME, OutboxStatus.STARTED);
         assertThat(outbox).isPresent();
-    }
-
-    @DisplayName("레스토랑 오너 정보가 없으면 레스토랑 저장에 실패하고, 예외가 발생한다.")
-    @Test
-    void failToSaveRestaurant_whenOwnerInfoIsMissing() {
-        //given
-        CreateRestaurantApplicationRequest request = CreateRestaurantApplicationRequest.builder()
-                .ownerId(ownerId)
-                .name("restaurant1")
-                .build();
-
-        //when, then
-        assertThatThrownBy(()->restaurantManagementService.createRestaurant(request))
-                .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessage("레스토랑 오너 정보를 찾을 수 없습니다.");
-
-        assertThat(restaurantRepository.count()).isEqualTo(0L);
-        assertThat(restaurantOwnershipRepository.count()).isEqualTo(0L);
     }
 
 }
