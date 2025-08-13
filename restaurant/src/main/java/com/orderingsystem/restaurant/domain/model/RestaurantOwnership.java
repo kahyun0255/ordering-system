@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "restaruant_ownership")
+@Table(name = "restaurant_ownership",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_owner_restaurant", columnNames = {"owner_id", "restaurant_id"}
+                )
+        })
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
