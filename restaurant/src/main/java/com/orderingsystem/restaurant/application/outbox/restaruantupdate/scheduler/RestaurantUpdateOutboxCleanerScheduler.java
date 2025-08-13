@@ -5,7 +5,6 @@ import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.outbox.restaruantupdate.RestaurantUpdateOutboxHelper;
 import com.orderingsystem.restaurant.domain.model.outbox.RestaurantUpdateOutbox;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +23,10 @@ public class RestaurantUpdateOutboxCleanerScheduler implements OutboxScheduler {
     @Scheduled(cron = "@midnight")
     @Transactional
     public void processOutboxMessage() {
-        Optional<List<RestaurantUpdateOutbox>> outboxMessageResponse =
+        List<RestaurantUpdateOutbox> outboxMessages =
                 orderOutboxHelper.getOrderOutboxMessageByOutboxStatus(OutboxStatus.COMPLETED);
 
-        if (outboxMessageResponse.isPresent() && !outboxMessageResponse.get().isEmpty()) {
-            List<RestaurantUpdateOutbox> outboxMessages = outboxMessageResponse.get();
-
+        if (!outboxMessages.isEmpty()) {
             orderOutboxHelper.deleteAllOrderOutboxByOutboxStatus(OutboxStatus.COMPLETED);
 
             log.info("{}개의 Order RestaurantUpdateOutbox Message를 삭제했습니다. payloads : {}", outboxMessages.size(),

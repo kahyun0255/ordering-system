@@ -65,7 +65,7 @@ public class RestaurantUpdateOutboxHelper {
     }
 
     @Transactional(readOnly = true)
-    public Optional<List<RestaurantUpdateOutbox>> getOrderOutboxMessageByOutboxStatus(OutboxStatus outboxStatus) {
+    public List<RestaurantUpdateOutbox> getOrderOutboxMessageByOutboxStatus(OutboxStatus outboxStatus) {
         return restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME, outboxStatus);
     }
 
@@ -73,4 +73,5 @@ public class RestaurantUpdateOutboxHelper {
     public void deleteAllOrderOutboxByOutboxStatus(OutboxStatus outboxStatus) {
         restaurantUpdateOutboxRepository.deleteAllByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME, outboxStatus);
     }
+
 }

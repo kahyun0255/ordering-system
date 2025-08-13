@@ -79,4 +79,15 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorDTO> handleAccessDeniedException(AccessDeniedException e) {
+        log.error(e.getMessage());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorDTO.builder()
+                        .code(HttpStatus.FORBIDDEN.getReasonPhrase())
+                        .message(e.getMessage())
+                        .build());
+    }
+
 }

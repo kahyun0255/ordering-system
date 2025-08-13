@@ -26,4 +26,11 @@ public class Restaurant extends BaseEntity {
     private String name;
     private Boolean active;
 
+    public void updateName(String name) {
+        this.name = name;
+    }
+
+    public void updateActive(boolean active) {
+        this.active = active;
+    }
 }

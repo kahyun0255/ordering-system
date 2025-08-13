@@ -26,4 +26,22 @@ public class RestaurantUpdateService {
                 .active(restaurantUpdateApplicationRequest.isActive())
                 .build());
     }
+
+    @Transactional
+    public void update(RestaurantUpdateApplicationRequest restaurantUpdateApplicationRequest) {
+        log.info("주문 도메인 레스토랑 업데이트. Restaurant Id : {}", restaurantUpdateApplicationRequest.getRestaurantId());
+
+        UUID restaurantId = UUID.fromString(restaurantUpdateApplicationRequest.getRestaurantId());
+
+        restaurantRepository.findById(restaurantId).ifPresentOrElse(r -> {
+            r.updateName(restaurantUpdateApplicationRequest.getName());
+            r.updateActive(restaurantUpdateApplicationRequest.isActive());
+        }, () -> {
+            restaurantRepository.save(Restaurant.builder()
+                    .restaurantId(restaurantId)
+                    .name(restaurantUpdateApplicationRequest.getName())
+                    .active(restaurantUpdateApplicationRequest.isActive())
+                    .build());
+        });
+    }
 }

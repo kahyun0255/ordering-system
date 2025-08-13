@@ -1,16 +1,13 @@
 package com.orderingsystem.restaurant.application;
 
-import static com.orderingsystem.common.saga.SagaConstants.RESTAURANT_CREATE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.CreateRestaurantApplicationRequest;
 import com.orderingsystem.restaurant.domain.event.restaruant.CreatedRestaurantEvent;
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
-import com.orderingsystem.restaurant.domain.model.outbox.RestaurantUpdateOutbox;
 import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
@@ -87,10 +84,6 @@ class RestaurantCreateServiceTest {
         assertThat(savedRestaurantOwnership).hasSize(1)
                 .extracting("restaurantId", "ownerId")
                 .containsExactlyInAnyOrder(tuple(createdRestaurantEvent.getRestaurant().getRestaurantId(), ownerId));
-
-        Optional<List<RestaurantUpdateOutbox>> outbox = restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(
-                RESTAURANT_CREATE_NAME, OutboxStatus.STARTED);
-        assertThat(outbox).isPresent();
     }
 
 }

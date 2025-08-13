@@ -35,8 +35,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-@DisplayName("RestaurantManagementController 통합 테스트")
-class RestaurantManagementControllerTest {
+@DisplayName("RestaurantManagementController 레스토랑 생성 통합 테스트")
+class RestaurantManagementControllerCreateTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -120,8 +120,8 @@ class RestaurantManagementControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("Unauthorized"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("Forbidden"))
                 .andExpect(jsonPath("$.message").value("레스토랑 오너 정보를 찾을 수 없습니다."));
 
         assertThat(restaurantRepository.count()).isEqualTo(0L);

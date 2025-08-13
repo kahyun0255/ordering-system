@@ -30,4 +30,11 @@ public class Restaurant extends BaseEntity {
     @Transient
     private OrderDetail orderDetail;
 
+    public void updateName(String name) {
+        this.name = name;
+    }
+
+    public void updateActive(boolean active) {
+        this.active = active;
+    }
 }

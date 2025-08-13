@@ -1,0 +1,40 @@
+package com.orderingsystem.restaurant.application;
+
+import com.orderingsystem.restaurant.application.dto.request.UpdateRestaurantApplicationRequest;
+import com.orderingsystem.restaurant.domain.event.restaruant.UpdatedRestaurantEvent;
+import com.orderingsystem.restaurant.domain.model.Restaurant;
+import java.time.ZonedDateTime;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class RestaurantUpdateService {
+
+    @Transactional
+    public UpdatedRestaurantEvent update(UpdateRestaurantApplicationRequest request, Restaurant restaurant) {
+        boolean changed = false;
+
+        if (request.getName() != null) {
+            String newName = request.getName().trim();
+            if (newName.isEmpty()) {
+                throw new IllegalArgumentException("레스토랑 이름은 비어있을 수 없습니다.");
+            }
+            if (!newName.equals(restaurant.getName())) {
+                restaurant.updateName(request.getName());
+                changed = true;
+            }
+        }
+        if (request.getActive() != null) {
+            Boolean newActive = request.getActive();
+            if (!newActive.equals(restaurant.getActive())) {
+                restaurant.updateActive(newActive);
+                changed = true;
+            }
+        }
+
+        return changed ? new UpdatedRestaurantEvent(restaurant, ZonedDateTime.now()) : null;
+    }
+
+}

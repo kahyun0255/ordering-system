@@ -3,6 +3,7 @@ package com.orderingsystem.order.infra.kafka.listener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
+import com.orderingsystem.common.domain.status.OutboxEventOperation;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.RestaurantUpdateService;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
@@ -49,9 +50,12 @@ public class RestaurantUpdateKafkaListener implements KafkaConsumer<String> {
                     RestaurantUpdateMessage restaurantUpdateMessage = objectMapper.readValue(
                             restaurantUpdateDebeziumMessage.getAfter().getPayload(), RestaurantUpdateMessage.class);
 
-                    if (restaurantUpdateMessage.getType().equals("INSERT")) {
+                    if (restaurantUpdateMessage.getType().equals(OutboxEventOperation.INSERT.name())) {
                         log.info("주문 도메인 레스토랑 생성. Restaurant Id : {}", restaurantUpdateMessage.getRestaurantId());
                         restaurantUpdateService.create(restaurantUpdateMessage.toRestaurantUpdateApplicationRequest());
+                    } else if (restaurantUpdateMessage.getType().equals(OutboxEventOperation.UPDATE.name())) {
+                        log.info("주문 도메인 레스토랑 업데이트. Restaurant Id : {}", restaurantUpdateMessage.getRestaurantId());
+                        restaurantUpdateService.update(restaurantUpdateMessage.toRestaurantUpdateApplicationRequest());
                     }
 
                 }
