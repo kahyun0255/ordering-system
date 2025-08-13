@@ -8,6 +8,7 @@ import com.orderingsystem.restaurant.application.dto.response.UpdateRestaurantRe
 import com.orderingsystem.restaurant.presentation.request.CreateRestaurantRequest;
 import com.orderingsystem.restaurant.presentation.request.UpdateRestaurantRequest;
 import jakarta.validation.Valid;
+import java.net.URI;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +40,10 @@ public class RestaurantManagementController {
 
         log.info("레스토랑 생성. Restaurant Owner Id : {}", restaurantOwnerId);
 
-        return ResponseEntity.ok(restaurantManagementFacade.createRestaurant(
-                createRestaurantRequest.toCreateRestaurantApplicationRequest(restaurantOwnerId)));
+        CreateRestaurantResponse response = restaurantManagementFacade.createRestaurant(
+                createRestaurantRequest.toCreateRestaurantApplicationRequest(restaurantOwnerId));
+        return ResponseEntity.created(URI.create("/restaurants/" + response.getRestaurantId()))
+                .body(response);
     }
 
     @PatchMapping("/{restaurantId}")

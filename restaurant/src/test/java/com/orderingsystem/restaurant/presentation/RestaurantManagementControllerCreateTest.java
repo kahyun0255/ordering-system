@@ -94,7 +94,7 @@ class RestaurantManagementControllerCreateTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.restaurantId").isNotEmpty())
                 .andExpect(jsonPath("$.message").value("레스토랑이 성공적으로 생성되었습니다."));
 
