@@ -1,6 +1,5 @@
 package com.orderingsystem.restaurant.domain.model;
 
-import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
@@ -19,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
-public class RestaurantInfo extends AggregateRoot {
+public class RestaurantInfo {
 
     private UUID restaurantId;
     private String restaurantName;

@@ -1,11 +1,10 @@
 package com.orderingsystem.restaurant.domain.model;
 
-import com.orderingsystem.common.domain.BaseEntity;
+import com.orderingsystem.common.domain.AggregateRoot;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Restaurant extends BaseEntity {
+public class Restaurant extends AggregateRoot {
 
     @Id
     @Column(columnDefinition = "varchar(36)")
@@ -27,14 +26,31 @@ public class Restaurant extends BaseEntity {
     private String name;
     private Boolean active;
 
-    @Transient
-    private OrderDetail orderDetail;
+    public static Restaurant create(UUID restaurantId, String name) {
+        return Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name(normalizeAndValidateName(name))
+                .active(true)
+                .build();
+    }
 
     public void updateName(String name) {
-        this.name = name;
+        this.name = normalizeAndValidateName(name);
     }
 
     public void updateActive(boolean active) {
         this.active = active;
     }
+
+    private static String normalizeAndValidateName(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("레스토랑 이름은 null일 수 없습니다.");
+        }
+        String trimmed = name.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("레스토랑 이름은 비어있을 수 없습니다.");
+        }
+        return trimmed;
+    }
+
 }

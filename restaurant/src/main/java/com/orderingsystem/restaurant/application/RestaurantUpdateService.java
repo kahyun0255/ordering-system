@@ -18,14 +18,12 @@ public class RestaurantUpdateService {
 
         if (request.getName() != null) {
             String newName = request.getName().trim();
-            if (newName.isEmpty()) {
-                throw new IllegalArgumentException("레스토랑 이름은 비어있을 수 없습니다.");
-            }
             if (!newName.equals(restaurant.getName())) {
                 restaurant.updateName(request.getName());
                 changed = true;
             }
         }
+
         if (request.getActive() != null) {
             Boolean newActive = request.getActive();
             if (!newActive.equals(restaurant.getActive())) {

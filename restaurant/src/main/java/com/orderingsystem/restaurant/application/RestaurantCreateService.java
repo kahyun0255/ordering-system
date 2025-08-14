@@ -24,11 +24,7 @@ public class RestaurantCreateService {
     public CreatedRestaurantEvent create(CreateRestaurantApplicationRequest request, Owner owner) {
         UUID restaurantId = UUID.randomUUID();
 
-        Restaurant savedRestaurant = restaurantRepository.save(Restaurant.builder()
-                .restaurantId(restaurantId)
-                .name(request.getName())
-                .active(true)
-                .build());
+        Restaurant savedRestaurant = restaurantRepository.save(Restaurant.create(restaurantId, request.getName()));
 
         restaurantOwnershipRepository.save(RestaurantOwnership.builder()
                 .ownerId(owner.getUserId())
