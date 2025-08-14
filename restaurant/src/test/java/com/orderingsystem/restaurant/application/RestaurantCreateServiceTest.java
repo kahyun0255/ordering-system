@@ -8,10 +8,6 @@ import com.orderingsystem.restaurant.domain.event.restaruant.CreatedRestaurantEv
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
-import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
-import com.orderingsystem.restaurant.domain.repository.outbox.RestaurantUpdateOutboxRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,36 +15,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@ActiveProfiles("test")
-@SpringBootTest
-class RestaurantCreateServiceTest {
+class RestaurantCreateServiceTest extends ApplicationTestSupport {
 
     @Autowired
     private RestaurantCreateService restaurantCreateService;
-
-    @Autowired
-    private OwnerRepository ownerRepository;
-
-    @Autowired
-    private RestaurantOwnershipRepository restaurantOwnershipRepository;
-
-    @Autowired
-    private RestaurantRepository restaurantRepository;
-
-    @Autowired
-    private RestaurantUpdateOutboxRepository restaurantUpdateOutboxRepository;
 
     private final UUID ownerId = UUID.randomUUID();
 
     @AfterEach
     void tearDown() {
         ownerRepository.deleteAllInBatch();
-        restaurantOwnershipRepository.deleteAllInBatch();
         restaurantRepository.deleteAllInBatch();
-        restaurantUpdateOutboxRepository.deleteAllInBatch();
+        restaurantOwnershipRepository.deleteAllInBatch();
     }
 
     @DisplayName("레스토랑이 성공적으로 저장된다.")

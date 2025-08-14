@@ -12,10 +12,6 @@ import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundExceptio
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
-import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
-import com.orderingsystem.restaurant.domain.repository.outbox.RestaurantUpdateOutboxRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -23,27 +19,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@ActiveProfiles("test")
-@SpringBootTest
-class RestaurantManagementFacadeUpdateTest {
+class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
 
     @Autowired
     private RestaurantManagementFacade restaurantManagementFacade;
-
-    @Autowired
-    private OwnerRepository ownerRepository;
-
-    @Autowired
-    private RestaurantRepository restaurantRepository;
-
-    @Autowired
-    private RestaurantOwnershipRepository restaurantOwnershipRepository;
-
-    @Autowired
-    private RestaurantUpdateOutboxRepository restaurantUpdateOutboxRepository;
 
     private final UUID restaurantId = UUID.randomUUID();
     private final UUID ownerId = UUID.randomUUID();
@@ -69,8 +49,8 @@ class RestaurantManagementFacadeUpdateTest {
 
     @AfterEach
     void tearDown() {
-        ownerRepository.deleteAllInBatch();
         restaurantRepository.deleteAllInBatch();
+        ownerRepository.deleteAllInBatch();
         restaurantOwnershipRepository.deleteAllInBatch();
         restaurantUpdateOutboxRepository.deleteAllInBatch();
     }
@@ -268,7 +248,8 @@ class RestaurantManagementFacadeUpdateTest {
 
         //when, then
         assertThatThrownBy(
-                () -> restaurantManagementFacade.updateRestaurant(request, restaurantId.toString(), notOwnershipOwnerId))
+                () -> restaurantManagementFacade.updateRestaurant(request, restaurantId.toString(),
+                        notOwnershipOwnerId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("레스토랑 정보를 수정 할 권한이 없습니다.");
     }

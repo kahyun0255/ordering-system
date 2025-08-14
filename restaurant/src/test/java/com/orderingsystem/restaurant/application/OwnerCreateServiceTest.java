@@ -4,27 +4,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.orderingsystem.restaurant.application.dto.request.CreateRestaurantOwnerApplicationRequest;
 import com.orderingsystem.restaurant.domain.model.Owner;
-import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@ActiveProfiles("test")
-@SpringBootTest
-class OwnerCreateServiceTest {
+class OwnerCreateServiceTest extends ApplicationTestSupport {
 
     @Autowired
     private OwnerCreateService ownerCreateService;
 
-    @Autowired
-    private OwnerRepository ownerRepository;
-
     private final UUID ownerId = UUID.randomUUID();
+
+    @AfterEach
+    void tearDown() {
+        ownerRepository.deleteAllInBatch();
+    }
 
     @DisplayName("레스토랑 오너를 성공적으로 저장한다.")
     @Test

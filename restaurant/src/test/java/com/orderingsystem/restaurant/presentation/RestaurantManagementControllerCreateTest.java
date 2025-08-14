@@ -6,71 +6,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.restaurant.domain.model.Owner;
-import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
-import com.orderingsystem.restaurant.domain.repository.outbox.RestaurantUpdateOutboxRepository;
 import com.orderingsystem.restaurant.presentation.request.CreateRestaurantRequest;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.Jwts.SIG;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import java.time.Instant;
-import java.util.Date;
 import java.util.UUID;
-import javax.crypto.SecretKey;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
 
-@ActiveProfiles("test")
-@SpringBootTest
-@AutoConfigureMockMvc
 @DisplayName("RestaurantManagementController 레스토랑 생성 통합 테스트")
-class RestaurantManagementControllerCreateTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private OwnerRepository ownerRepository;
-
-    @Autowired
-    private RestaurantRepository restaurantRepository;
-
-    @Autowired
-    private RestaurantOwnershipRepository restaurantOwnershipRepository;
-
-    @Autowired
-    private RestaurantUpdateOutboxRepository restaurantUpdateOutboxRepository;
-
-    @Value("${jwt.issuer}")
-    private String issuer;
-
-    @Value("${jwt.secret-key}")
-    private String secretKey;
+class RestaurantManagementControllerCreateTest extends ControllerTestSupport {
 
     private final UUID userId = UUID.randomUUID();
 
-    @AfterEach
-    void tearDown() {
-        restaurantRepository.deleteAllInBatch();
-        ownerRepository.deleteAllInBatch();
-        restaurantOwnershipRepository.deleteAllInBatch();
-        restaurantUpdateOutboxRepository.deleteAllInBatch();
-    }
 
     @DisplayName("성공적으로 레스토랑을 생성한다.")
     @Test
@@ -180,20 +128,6 @@ class RestaurantManagementControllerCreateTest {
         assertThat(restaurantRepository.count()).isEqualTo(0L);
         assertThat(restaurantOwnershipRepository.count()).isEqualTo(0L);
         assertThat(restaurantUpdateOutboxRepository.count()).isEqualTo(0L);
-    }
-
-    private String buildToken(UUID userId, String typ, String iss, Instant exp) {
-        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
-
-        return Jwts.builder()
-                .subject(userId.toString())
-                .issuer(iss)
-                .claim("userId", userId.toString())
-                .claim("typ", typ)
-                .expiration(Date.from(exp))
-                .issuedAt(new Date())
-                .signWith(key, SIG.HS256)
-                .compact();
     }
 
 }

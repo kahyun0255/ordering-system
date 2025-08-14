@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
@@ -19,11 +18,6 @@ import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantProduct;
 import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
-import com.orderingsystem.restaurant.domain.repository.OrderApprovalRepository;
-import com.orderingsystem.restaurant.domain.repository.ProductRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantProductRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
-import com.orderingsystem.restaurant.domain.repository.outbox.OrderOutboxRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -34,35 +28,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
-@ActiveProfiles("test")
-@SpringBootTest
-@Transactional
-class OrderApprovalServiceTest {
+class OrderApprovalServiceTest extends ApplicationTestSupport {
 
     @Autowired
     private OrderApprovalService orderApprovalService;
-
-    @Autowired
-    private RestaurantRepository restaurantRepository;
-
-    @Autowired
-    private OrderApprovalRepository orderApprovalRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private RestaurantProductRepository restaurantProductRepository;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private OrderOutboxRepository orderOutboxRepository;
 
     private final UUID sagaId = UUID.randomUUID();
     private final UUID orderId = UUID.randomUUID();
@@ -72,10 +42,11 @@ class OrderApprovalServiceTest {
 
     @AfterEach
     void tearDown() {
+        orderApprovalRepository.deleteAllInBatch();
+        orderOutboxRepository.deleteAllInBatch();
         restaurantRepository.deleteAllInBatch();
         productRepository.deleteAllInBatch();
         restaurantProductRepository.deleteAllInBatch();
-        orderOutboxRepository.deleteAllInBatch();
     }
 
     @DisplayName("레스토랑 승인에 성공한다.")
@@ -322,7 +293,7 @@ class OrderApprovalServiceTest {
         ApprovalRequest request = getApprovalRequest();
 
         //when, then
-        assertThatThrownBy(()-> orderApprovalService.approveOrder(request))
+        assertThatThrownBy(() -> orderApprovalService.approveOrder(request))
                 .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("레스토랑을 찾을 수 없습니다.");
     }
@@ -332,10 +303,10 @@ class OrderApprovalServiceTest {
     void doNotSaveOrder_whenAlreadyApproved() {
         //given
         orderApprovalRepository.save(OrderApproval.builder()
-                        .id(UUID.randomUUID())
-                        .orderId(orderId)
-                        .restaurantId(restaurantId)
-                        .status(OrderApprovalStatus.APPROVED)
+                .id(UUID.randomUUID())
+                .orderId(orderId)
+                .restaurantId(restaurantId)
+                .status(OrderApprovalStatus.APPROVED)
                 .build());
 
         saveRestaurant();

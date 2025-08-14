@@ -7,40 +7,14 @@ import com.orderingsystem.restaurant.application.dto.request.UpdateRestaurantApp
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
-import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
-import jakarta.persistence.EntityManager;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
-@ActiveProfiles("test")
-@SpringBootTest
-@Transactional
-class RestaurantUpdateServiceTest {
-
-    @Autowired
-    private RestaurantUpdateService restaurantUpdateService;
-
-    @Autowired
-    private RestaurantOwnershipRepository restaurantOwnershipRepository;
-
-    @Autowired
-    private OwnerRepository ownerRepository;
-
-    @Autowired
-    private RestaurantRepository restaurantRepository;
-
-    @Autowired
-    private EntityManager em;
+class RestaurantUpdateServiceTest extends ApplicationTestSupport {
 
     private final Restaurant restaurant = Restaurant.builder()
             .restaurantId(UUID.randomUUID())
@@ -85,7 +59,6 @@ class RestaurantUpdateServiceTest {
         assertThat(beforeRestaurant.get().getName()).isEqualTo(restaurant.getName());
         assertThat(beforeRestaurant.get().getName()).isNotEqualTo(request.getName());
 
-
         //when
         restaurantUpdateService.update(request, beforeRestaurant.get());
 
@@ -108,7 +81,6 @@ class RestaurantUpdateServiceTest {
         assertThat(beforeRestaurant).isPresent();
         assertThat(beforeRestaurant.get().getActive()).isEqualTo(restaurant.getActive());
         assertThat(beforeRestaurant.get().getActive()).isNotEqualTo(request.getActive());
-
 
         //when
         restaurantUpdateService.update(request, beforeRestaurant.get());
@@ -135,7 +107,6 @@ class RestaurantUpdateServiceTest {
         assertThat(beforeRestaurant.get().getActive()).isEqualTo(restaurant.getActive());
         assertThat(beforeRestaurant.get().getActive()).isNotEqualTo(request.getActive());
 
-
         //when
         restaurantUpdateService.update(request, beforeRestaurant.get());
 
@@ -160,9 +131,8 @@ class RestaurantUpdateServiceTest {
         assertThat(beforeRestaurant.get().getName()).isEqualTo(restaurant.getName());
         assertThat(beforeRestaurant.get().getName()).isNotEqualTo(request.getName());
 
-
         //when, then
-        assertThatThrownBy(()->restaurantUpdateService.update(request, beforeRestaurant.get()))
+        assertThatThrownBy(() -> restaurantUpdateService.update(request, beforeRestaurant.get()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("레스토랑 이름은 비어있을 수 없습니다.");
     }

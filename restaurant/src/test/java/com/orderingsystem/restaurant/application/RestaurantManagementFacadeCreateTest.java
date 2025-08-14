@@ -13,10 +13,6 @@ import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
 import com.orderingsystem.restaurant.domain.model.outbox.RestaurantUpdateOutbox;
-import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
-import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
-import com.orderingsystem.restaurant.domain.repository.outbox.RestaurantUpdateOutboxRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,27 +20,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@ActiveProfiles("test")
-@SpringBootTest
-class RestaurantManagementFacadeCreateTest {
+class RestaurantManagementFacadeCreateTest extends ApplicationTestSupport {
 
     @Autowired
     private RestaurantManagementFacade restaurantManagementFacade;
-
-    @Autowired
-    private OwnerRepository ownerRepository;
-
-    @Autowired
-    private RestaurantOwnershipRepository restaurantOwnershipRepository;
-
-    @Autowired
-    private RestaurantRepository restaurantRepository;
-
-    @Autowired
-    private RestaurantUpdateOutboxRepository restaurantUpdateOutboxRepository;
 
     private final UUID ownerId = UUID.randomUUID();
 
@@ -103,7 +83,7 @@ class RestaurantManagementFacadeCreateTest {
                 .build();
 
         //when, then
-        assertThatThrownBy(()->restaurantManagementFacade.createRestaurant(request))
+        assertThatThrownBy(() -> restaurantManagementFacade.createRestaurant(request))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("레스토랑 오너 정보를 찾을 수 없습니다.");
 
