@@ -4,11 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @ControllerAdvice
 @Slf4j
@@ -88,6 +90,23 @@ public class GlobalExceptionHandler {
                         .code(HttpStatus.FORBIDDEN.getReasonPhrase())
                         .message(e.getMessage())
                         .build());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<String> handleResponseStatus(ResponseStatusException ex) {
+        if (ex.getStatusCode().is4xxClientError()) {
+            return ResponseEntity.status(ex.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(ex.getReason());
+        }
+
+        return ResponseEntity.status(ex.getStatusCode())
+                .body("""
+                {
+                  "code": "Internal Server Error",
+                  "message": "Unexpected error"
+                }
+                """);
     }
 
 }

@@ -24,14 +24,6 @@ public class RestaurantUpdateService {
             }
         }
 
-        if (request.getActive() != null) {
-            Boolean newActive = request.getActive();
-            if (!newActive.equals(restaurant.getActive())) {
-                restaurant.updateActive(newActive);
-                changed = true;
-            }
-        }
-
         return changed ? new UpdatedRestaurantEvent(restaurant, ZonedDateTime.now()) : null;
     }
 

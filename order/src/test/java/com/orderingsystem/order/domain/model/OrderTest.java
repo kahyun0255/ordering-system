@@ -114,7 +114,6 @@ class OrderTest {
                 .price(price)
                 .quantity(quantity)
                 .subTotal(subTotal)
-                .product(product)
                 .build();
 
         Order order = Order.builder()
@@ -633,7 +632,6 @@ class OrderTest {
                 .productId(productId)
                 .name("itemName")
                 .price(price)
-                .available(true)
                 .build();
 
         OrderItem orderItem = OrderItem.builder()
@@ -641,7 +639,6 @@ class OrderTest {
                 .price(price)
                 .quantity(quantity)
                 .subTotal(subTotal)
-                .product(product)
                 .build();
 
         return Order.builder()
@@ -659,19 +656,11 @@ class OrderTest {
         int quantity = 1;
         Money subTotal = price.multiply(quantity);
 
-        ProductInfo product = ProductInfo.builder()
-                .productId(productId)
-                .name("itemName")
-                .price(price)
-                .available(true)
-                .build();
-
         return OrderItem.builder()
                 .productId(productId)
                 .price(price)
                 .quantity(quantity)
                 .subTotal(subTotal)
-                .product(product)
                 .build();
     }
 

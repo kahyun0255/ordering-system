@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.orderingsystem.restaurant.domain.model.Restaurant;
+import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ class RestaurantControllerTest extends ControllerTestSupport {
         Restaurant restaurant = Restaurant.builder()
                 .restaurantId(UUID.randomUUID())
                 .name("레스토랑 이름")
-                .active(true)
+                .status(RestaurantStatus.ACTIVE)
                 .build();
         restaurantRepository.save(restaurant);
 
@@ -34,7 +35,7 @@ class RestaurantControllerTest extends ControllerTestSupport {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(restaurant.getName()))
-                .andExpect(jsonPath("$.active").value(restaurant.getActive()));
+                .andExpect(jsonPath("$.status").value(restaurant.getStatus().name()));
     }
 
     @DisplayName("레스토랑이 존재하지 않을 경우 404 Not Found 응답을 반환한다.")
@@ -46,7 +47,7 @@ class RestaurantControllerTest extends ControllerTestSupport {
         Restaurant restaurant = Restaurant.builder()
                 .restaurantId(UUID.randomUUID())
                 .name("레스토랑 이름")
-                .active(true)
+                .status(RestaurantStatus.ACTIVE)
                 .build();
 
         //when, then

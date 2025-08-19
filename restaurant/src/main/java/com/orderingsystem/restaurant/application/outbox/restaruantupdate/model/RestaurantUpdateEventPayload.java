@@ -16,7 +16,7 @@ public class RestaurantUpdateEventPayload {
     @JsonProperty
     private String name;
     @JsonProperty
-    private boolean active;
+    private String active;
     @JsonProperty
     private String type;
 

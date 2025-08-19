@@ -8,6 +8,7 @@ import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantInfoView;
 import com.orderingsystem.restaurant.domain.model.RestaurantProduct;
+import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -39,7 +40,7 @@ class RestaurantRepositoryTest {
     void setUp() {
         restaurantRepository.save(Restaurant.builder()
                 .restaurantId(restaurantId)
-                .active(true)
+                .status(RestaurantStatus.ACTIVE)
                 .name("restaurant")
                 .build());
 

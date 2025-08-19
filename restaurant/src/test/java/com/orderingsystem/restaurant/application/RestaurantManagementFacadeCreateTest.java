@@ -12,6 +12,7 @@ import com.orderingsystem.restaurant.application.dto.response.CreateRestaurantRe
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
+import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import com.orderingsystem.restaurant.domain.model.outbox.RestaurantUpdateOutbox;
 import java.util.List;
 import java.util.Optional;
@@ -60,7 +61,7 @@ class RestaurantManagementFacadeCreateTest extends ApplicationTestSupport {
         Optional<Restaurant> savedRestaurant =
                 restaurantRepository.findById(response.getRestaurantId());
         assertThat(savedRestaurant).isPresent();
-        assertThat(savedRestaurant.get().getActive()).isTrue();
+        assertThat(savedRestaurant.get().getStatus()).isEqualTo(RestaurantStatus.PENDING_APPROVAL);
         assertThat(savedRestaurant.get().getName()).isEqualTo(request.getName());
 
         List<RestaurantOwnership> savedRestaurantOwnership = restaurantOwnershipRepository.findByOwnerId(ownerId);

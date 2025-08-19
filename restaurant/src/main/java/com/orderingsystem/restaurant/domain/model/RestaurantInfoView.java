@@ -6,7 +6,7 @@ import java.util.UUID;
 public interface RestaurantInfoView {
     UUID getRestaurantId();
     String getRestaurantName();
-    Boolean getRestaurantActive();
+    RestaurantStatus getRestaurantStaus();
     UUID getProductId();
     String getProductName();
     Money getProductPrice();

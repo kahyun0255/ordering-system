@@ -52,9 +52,7 @@ public class RestaurantManagementFacade {
 
     @Transactional
     public UpdateRestaurantResponse updateRestaurant(
-            UpdateRestaurantApplicationRequest request, String restaurantIdString, UUID restaurantOwnerId) {
-        UUID restaurantId = UUID.fromString(restaurantIdString);
-
+            UpdateRestaurantApplicationRequest request, UUID restaurantId, UUID restaurantOwnerId) {
         Owner owner = restaurantAccessValidatorService.findOwner(restaurantOwnerId);
         Restaurant restaurant = restaurantAccessValidatorService.findRestaurant(restaurantId);
         restaurantAccessValidatorService.validateRestaurantOwnership(owner, restaurant);
@@ -65,7 +63,7 @@ public class RestaurantManagementFacade {
             return UpdateRestaurantResponse.builder()
                     .restaurantId(restaurantId)
                     .name(restaurant.getName())
-                    .active(restaurant.getActive())
+                    .status(restaurant.getStatus())
                     .message("변경된 내용이 없습니다.")
                     .build();
         }
@@ -77,15 +75,16 @@ public class RestaurantManagementFacade {
                 UUID.randomUUID()
         );
 
-        log.info("레스토랑 업데이트 완료. Restaurant Id : {}, Owner Id : {}, name : {}, active : {}",
+        log.info("레스토랑 업데이트 완료. Restaurant Id : {}, Owner Id : {}, name : {}, status : {}",
                 updatedRestaurantEvent.getRestaurant().getRestaurantId(), restaurantOwnerId,
-                updatedRestaurantEvent.getRestaurant().getName(), updatedRestaurantEvent.getRestaurant().getActive());
+                updatedRestaurantEvent.getRestaurant().getName(), updatedRestaurantEvent.getRestaurant().getStatus());
 
         return UpdateRestaurantResponse.builder()
                 .restaurantId(restaurantId)
                 .name(updatedRestaurantEvent.getRestaurant().getName())
-                .active(updatedRestaurantEvent.getRestaurant().getActive())
+                .status(updatedRestaurantEvent.getRestaurant().getStatus())
                 .message("성공적으로 변경 되었습니다.")
                 .build();
     }
+
 }

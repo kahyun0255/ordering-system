@@ -22,7 +22,7 @@ public class RestaurantInfo {
 
     private UUID restaurantId;
     private String restaurantName;
-    private Boolean restaurantActive;
+    private RestaurantStatus status;
     @Setter
     private OrderApproval orderApproval;
     @Setter
@@ -48,7 +48,7 @@ public class RestaurantInfo {
             failureMessages.add("해당 주문의 총 금액이 올바르지 않습니다. Order Id : " + orderDetail.getOrderId());
         }
 
-        if (!restaurantActive) {
+        if (!status.equals(RestaurantStatus.ACTIVE)) {
             log.error("레스토랑이 주문을 받을 수 없는 상태입니다. Order Id : {}", orderDetail.getOrderId());
             failureMessages.add("레스토랑이 주문을 받을 수 없는 상태입니다. Order Id : " + orderDetail.getOrderId());
         }
@@ -63,8 +63,8 @@ public class RestaurantInfo {
                 .build();
     }
 
-    public void updateActive(boolean active) {
-        this.restaurantActive = active;
+    public void updateStatus(RestaurantStatus status) {
+        this.status = status;
     }
 
 }

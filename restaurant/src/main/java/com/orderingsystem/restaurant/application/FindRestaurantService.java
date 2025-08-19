@@ -27,7 +27,7 @@ public class FindRestaurantService {
 
         return FindRestaurantResponse.builder()
                 .name(restaurant.getName())
-                .active(restaurant.getActive())
+                .status(restaurant.getStatus())
                 .build();
     }
 

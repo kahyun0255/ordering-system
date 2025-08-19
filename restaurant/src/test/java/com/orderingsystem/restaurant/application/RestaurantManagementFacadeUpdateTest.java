@@ -12,6 +12,7 @@ import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundExceptio
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
+import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -38,7 +39,7 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
         restaurantRepository.save(Restaurant.builder()
                 .restaurantId(restaurantId)
                 .name("레스토랑")
-                .active(true)
+                .status(RestaurantStatus.ACTIVE)
                 .build());
 
         restaurantOwnershipRepository.save(RestaurantOwnership.builder()
@@ -61,7 +62,6 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
         //given
         UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
                 .name("변경 할 이름")
-                .active(null)
                 .build();
 
         Optional<Restaurant> beforeRestaurant = restaurantRepository.findById(restaurantId);
@@ -69,69 +69,12 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
         assertThat(beforeRestaurant.get().getName()).isNotEqualTo(request.getName());
 
         //when
-        restaurantManagementFacade.updateRestaurant(request, restaurantId.toString(), ownerId);
+        restaurantManagementFacade.updateRestaurant(request, restaurantId, ownerId);
 
         //then
         Optional<Restaurant> afterRestaurant = restaurantRepository.findById(restaurantId);
         assertThat(afterRestaurant).isPresent();
         assertThat(afterRestaurant.get().getName()).isEqualTo(request.getName());
-
-        assertThat(restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME,
-                OutboxStatus.STARTED)).isNotEmpty();
-    }
-
-    @DisplayName("레스토랑 활성화 상태 업데이트에 성공한다.")
-    @Test
-    void updateRestaurantActivationSuccessfully() {
-        //given
-        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
-                .name(null)
-                .active(false)
-                .build();
-
-        Optional<Restaurant> beforeRestaurant = restaurantRepository.findById(restaurantId);
-        assertThat(beforeRestaurant).isPresent();
-        assertThat(beforeRestaurant.get().getActive()).isNotEqualTo(request.getActive());
-
-        //when
-        restaurantManagementFacade.updateRestaurant(request, restaurantId.toString(), ownerId);
-
-        //then
-        Optional<Restaurant> afterRestaurant = restaurantRepository.findById(restaurantId);
-        assertThat(afterRestaurant).isPresent();
-        assertThat(afterRestaurant.get().getActive()).isEqualTo(request.getActive());
-
-        assertThat(restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME,
-                OutboxStatus.STARTED)).isNotEmpty();
-    }
-
-    @DisplayName("레스토랑 활성화 상태 및 이름 업데이트에 성공한다.")
-    @Test
-    void updateRestaurantActivationAndNameSuccessfully() {
-        //given
-        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
-                .name("변경이름")
-                .active(false)
-                .build();
-
-        Optional<Restaurant> beforeRestaurant = restaurantRepository.findById(restaurantId);
-        assertThat(beforeRestaurant).isPresent();
-        assertThat(beforeRestaurant.get().getName()).isNotEqualTo(request.getName());
-        assertThat(beforeRestaurant.get().getActive()).isNotEqualTo(request.getActive());
-
-        //when
-        UpdateRestaurantResponse response = restaurantManagementFacade.updateRestaurant(request,
-                restaurantId.toString(), ownerId);
-
-        //then
-        Optional<Restaurant> afterRestaurant = restaurantRepository.findById(restaurantId);
-        assertThat(afterRestaurant).isPresent();
-        assertThat(afterRestaurant.get().getName()).isEqualTo(request.getName());
-        assertThat(afterRestaurant.get().getActive()).isEqualTo(request.getActive());
-
-        assertThat(response.getName()).isEqualTo(afterRestaurant.get().getName());
-        assertThat(response.getActive()).isEqualTo(afterRestaurant.get().getActive());
-        assertThat(response.getMessage()).isEqualTo("성공적으로 변경 되었습니다.");
 
         assertThat(restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME,
                 OutboxStatus.STARTED)).isNotEmpty();
@@ -146,12 +89,11 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
 
         UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
                 .name(beforeRestaurant.get().getName())
-                .active(beforeRestaurant.get().getActive())
                 .build();
 
         //when
         UpdateRestaurantResponse response = restaurantManagementFacade.updateRestaurant(request,
-                restaurantId.toString(), ownerId);
+                restaurantId, ownerId);
 
         //then
         assertThat(response.getMessage()).isEqualTo("변경된 내용이 없습니다.");
@@ -167,16 +109,14 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
         //given
         UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
                 .name(" ")
-                .active(false)
                 .build();
 
         Optional<Restaurant> beforeRestaurant = restaurantRepository.findById(restaurantId);
         assertThat(beforeRestaurant).isPresent();
         assertThat(beforeRestaurant.get().getName()).isNotEqualTo(request.getName());
-        assertThat(beforeRestaurant.get().getActive()).isNotEqualTo(request.getActive());
 
         //when, then
-        assertThatThrownBy(() -> restaurantManagementFacade.updateRestaurant(request, restaurantId.toString(), ownerId))
+        assertThatThrownBy(() -> restaurantManagementFacade.updateRestaurant(request, restaurantId, ownerId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("레스토랑 이름은 비어있을 수 없습니다.");
 
@@ -193,17 +133,15 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
 
         UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
                 .name("변경 할 이름")
-                .active(false)
                 .build();
 
         Optional<Restaurant> beforeRestaurant = restaurantRepository.findById(restaurantId);
         assertThat(beforeRestaurant).isPresent();
         assertThat(beforeRestaurant.get().getName()).isNotEqualTo(request.getName());
-        assertThat(beforeRestaurant.get().getActive()).isNotEqualTo(request.getActive());
 
         //when, then
         assertThatThrownBy(
-                () -> restaurantManagementFacade.updateRestaurant(request, restaurantId.toString(), notOwnerId))
+                () -> restaurantManagementFacade.updateRestaurant(request, restaurantId, notOwnerId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("레스토랑 오너 정보를 찾을 수 없습니다.");
 
@@ -220,12 +158,11 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
 
         UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
                 .name("변경 할 이름")
-                .active(false)
                 .build();
 
         //when, then
         assertThatThrownBy(
-                () -> restaurantManagementFacade.updateRestaurant(request, notRestaurantId.toString(), ownerId))
+                () -> restaurantManagementFacade.updateRestaurant(request, notRestaurantId, ownerId))
                 .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("레스토랑 정보를 찾을 수 없습니다.");
     }
@@ -243,12 +180,11 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
 
         UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
                 .name("변경 할 이름")
-                .active(false)
                 .build();
 
         //when, then
         assertThatThrownBy(
-                () -> restaurantManagementFacade.updateRestaurant(request, restaurantId.toString(),
+                () -> restaurantManagementFacade.updateRestaurant(request, restaurantId,
                         notOwnershipOwnerId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("레스토랑 정보를 수정 할 권한이 없습니다.");

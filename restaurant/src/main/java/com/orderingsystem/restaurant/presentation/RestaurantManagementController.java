@@ -48,12 +48,12 @@ public class RestaurantManagementController {
 
     @PatchMapping("/{restaurantId}")
     public ResponseEntity<UpdateRestaurantResponse> updateRestaurant(
-            @PathVariable String restaurantId,
+            @PathVariable UUID restaurantId,
             @RequestBody UpdateRestaurantRequest updateRestaurantRequest,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         UUID restaurantOwnerId = getRestaurantOwnerId(authorizationHeader);
 
-        log.info("레스토랑 정보 업데이트. restaurant Id : {}", restaurantId);
+        log.info("레스토랑 정보 업데이트. restaurant Id : {}, ownerId : {}", restaurantId, restaurantOwnerId);
 
         return ResponseEntity.ok(restaurantManagementFacade.updateRestaurant(
                 updateRestaurantRequest.toUpdateRestaurantApplicationRequest(), restaurantId, restaurantOwnerId));

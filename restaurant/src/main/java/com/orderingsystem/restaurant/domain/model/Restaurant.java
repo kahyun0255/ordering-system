@@ -3,6 +3,8 @@ package com.orderingsystem.restaurant.domain.model;
 import com.orderingsystem.common.domain.AggregateRoot;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
@@ -24,22 +26,20 @@ public class Restaurant extends AggregateRoot {
     @Column(columnDefinition = "varchar(36)")
     private UUID restaurantId;
     private String name;
-    private Boolean active;
+
+    @Enumerated(EnumType.STRING)
+    private RestaurantStatus status;
 
     public static Restaurant create(UUID restaurantId, String name) {
         return Restaurant.builder()
                 .restaurantId(restaurantId)
                 .name(normalizeAndValidateName(name))
-                .active(true)
+                .status(RestaurantStatus.PENDING_APPROVAL)
                 .build();
     }
 
     public void updateName(String name) {
         this.name = normalizeAndValidateName(name);
-    }
-
-    public void updateActive(boolean active) {
-        this.active = active;
     }
 
     private static String normalizeAndValidateName(String name) {

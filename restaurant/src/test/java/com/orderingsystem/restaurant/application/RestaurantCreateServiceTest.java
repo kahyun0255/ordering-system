@@ -8,6 +8,7 @@ import com.orderingsystem.restaurant.domain.event.restaruant.CreatedRestaurantEv
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
+import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,7 +57,7 @@ class RestaurantCreateServiceTest extends ApplicationTestSupport {
         Optional<Restaurant> savedRestaurant =
                 restaurantRepository.findById(createdRestaurantEvent.getRestaurant().getRestaurantId());
         assertThat(savedRestaurant).isPresent();
-        assertThat(savedRestaurant.get().getActive()).isTrue();
+        assertThat(savedRestaurant.get().getStatus()).isEqualTo(RestaurantStatus.PENDING_APPROVAL);
         assertThat(savedRestaurant.get().getName()).isEqualTo(request.getName());
 
         List<RestaurantOwnership> savedRestaurantOwnership = restaurantOwnershipRepository.findByOwnerId(ownerId);

@@ -25,7 +25,7 @@ public class RestaurantDataMapper {
         return RestaurantUpdateEventPayload.builder()
                 .restaurantId(restaurantEvent.getRestaurant().getRestaurantId().toString())
                 .name(restaurantEvent.getRestaurant().getName())
-                .active(restaurantEvent.getRestaurant().getActive())
+                .active(restaurantEvent.getRestaurant().getStatus().name())
                 .createdAt(restaurantEvent.getCreatedAt())
                 .type(outboxEventOperation.name())
                 .build();

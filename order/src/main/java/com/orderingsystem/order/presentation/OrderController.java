@@ -1,6 +1,7 @@
 package com.orderingsystem.order.presentation;
 
 import com.orderingsystem.common.util.CommonJwtUtil;
+import com.orderingsystem.order.application.OrderFacade;
 import com.orderingsystem.order.application.OrderService;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.dto.response.OrderStatusResponse;
@@ -25,6 +26,7 @@ public class OrderController {
 
     private final OrderService orderService;
     private final CommonJwtUtil commonJwtUtil;
+    private final OrderFacade orderFacade;
 
     @PostMapping
     public ResponseEntity<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest createOrderRequest,
@@ -34,7 +36,7 @@ public class OrderController {
         log.info("주문 생성 시작 customer : {}, restaurant : {}", customerId, createOrderRequest.getRestaurantId());
 
         CreateOrderResponse createOrderResponse =
-                orderService.createOrder(createOrderRequest.toApplicationRequest(customerId));
+                orderFacade.createOrder(createOrderRequest.toApplicationRequest(customerId));
 
         log.info("주문 생성 완료 tracking id : {}", createOrderResponse.getOrderTrackingId());
         return ResponseEntity.ok(createOrderResponse);

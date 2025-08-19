@@ -17,6 +17,7 @@ import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantProduct;
+import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -72,7 +73,7 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
     @Test
     void rejectOrder_whenRestaurantIsNotActive() throws JsonProcessingException {
         //given
-        saveRestaurant(false);
+        saveRestaurant(RestaurantStatus.PRE_OPEN);
         saveProduct();
         saveRestaurantProduct();
         ApprovalRequest request = getApprovalRequest();
@@ -338,16 +339,16 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
                 .hasMessageContaining("레스토랑을 찾을 수 없습니다");
     }
 
-    private void saveRestaurant(Boolean active) {
+    private void saveRestaurant(RestaurantStatus restaurantStatus) {
         restaurantRepository.save(Restaurant.builder()
                 .restaurantId(restaurantId)
                 .name("restaurant")
-                .active(active)
+                .status(restaurantStatus)
                 .build());
     }
 
     private void saveRestaurant() {
-        saveRestaurant(true);
+        saveRestaurant(RestaurantStatus.ACTIVE);
     }
 
     private void saveProduct() {

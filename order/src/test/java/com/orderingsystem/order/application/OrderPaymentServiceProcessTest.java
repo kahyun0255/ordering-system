@@ -8,7 +8,6 @@ import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.common.saga.SagaStatus;
-import com.orderingsystem.order.application.dto.ProductInfo;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
@@ -55,11 +54,6 @@ class OrderPaymentServiceProcessTest {
     private final UUID paymentOutboxId = UUID.randomUUID();
     private final OrderItem orderItem = OrderItem.builder()
             .productId(productId)
-            .product(ProductInfo.builder()
-                    .productId(productId)
-                    .name("product1")
-                    .price(new Money(new BigDecimal("25.00")))
-                    .build())
             .build();
 
     @BeforeEach

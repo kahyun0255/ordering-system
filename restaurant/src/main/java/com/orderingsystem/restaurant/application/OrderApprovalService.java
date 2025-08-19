@@ -112,7 +112,7 @@ public class OrderApprovalService {
             throw new RestaurantNotFoundException("레스토랑을 찾을 수 없습니다. Restaurant Id : " + restaurant.getRestaurantId());
         }
 
-        restaurant.updateActive(restaurantInfos.get(0).getRestaurantActive());
+        restaurant.updateStatus(restaurantInfos.get(0).getRestaurantStaus());
 
         List<Product> restaurantProducts = restaurantInfos.stream().map(r ->
                 Product.builder()

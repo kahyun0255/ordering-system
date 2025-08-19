@@ -15,7 +15,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
                 SELECT 
                     r.restaurantId AS restaurantId,
                     r.name AS restaurantName,
-                    r.active AS restaurantActive,
+                    r.status AS restaurantStaus,
                     p.productId AS productId,
                     p.name AS productName,
                     p.price AS productPrice,

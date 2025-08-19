@@ -11,6 +11,7 @@ import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,11 @@ class PaymentOutboxCleanerSchedulerTest {
 
     @Autowired
     private PaymentOutboxRepository paymentOutboxRepository;
+
+    @AfterEach
+    void tearDown() {
+        paymentOutboxRepository.deleteAllInBatch();
+    }
 
     @DisplayName("OutboxStatus가 COMPLETED이고, SagaStatus가 SUCCEDDED이거나 FAILED, COMPENSATED인 PaymentOutbox 메시지만 삭제한다.")
     @Test

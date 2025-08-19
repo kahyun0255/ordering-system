@@ -17,17 +17,6 @@ public class ProductInfo {
     private UUID productId;
     private String name;
     private Money price;
-    private boolean available;
-
-    public void updateWithConfirmedNameAndPrice(String name, Money price, boolean available) {
-        this.name = name;
-        this.price = price;
-        this.available = available;
-    }
-
-    public ProductInfo(UUID productId) {
-        this.productId = productId;
-    }
 
     @Override
     public boolean equals(Object o) {

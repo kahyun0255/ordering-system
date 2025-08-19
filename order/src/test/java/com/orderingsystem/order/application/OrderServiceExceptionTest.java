@@ -29,10 +29,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class OrderCreateHelperExceptionTest {
+class OrderServiceExceptionTest {
 
     @InjectMocks
-    private OrderCreateHelper orderCreateHelper;
+    private OrderService orderService;
 
     @Mock
     private OrderDataMapper orderDataMapper;
@@ -64,11 +64,11 @@ class OrderCreateHelperExceptionTest {
         given(customerRepository.findById(customerId)).willReturn(Optional.of(mock(Customer.class)));
         given(orderDataMapper.orderAddressToStreetAddress(any())).willReturn(orderAddress);
         given(orderDataMapper.createOrderRequestToOrder(any(), any())).willReturn(order);
-        given(orderValidateAndInitiateService.validateAndInitiate(any(), any(), any())).willReturn(orderCreateEvent);
+        given(orderValidateAndInitiateService.validateAndInitiate(any(), any())).willReturn(orderCreateEvent);
         given(orderRepository.save(any())).willReturn(new RuntimeException("DB 에러"));
 
         // when, then
-        assertThatThrownBy(() -> orderCreateHelper.persistOrder(request, restaurantInfo, new ArrayList<>()))
+        assertThatThrownBy(() -> orderService.createOrder(request, new ArrayList<>()))
                 .isInstanceOf(OrderDomainException.class)
                 .hasMessage("주문이 저장되지 않았습니다.");
     }
@@ -81,12 +81,12 @@ class OrderCreateHelperExceptionTest {
         given(customerRepository.findById(customerId)).willReturn(Optional.of(mock(Customer.class)));
         given(orderDataMapper.orderAddressToStreetAddress(any())).willReturn(orderAddress);
         given(orderDataMapper.createOrderRequestToOrder(any(), any())).willReturn(order);
-        given(orderValidateAndInitiateService.validateAndInitiate(any(), any(), any())).willReturn(orderCreateEvent);
+        given(orderValidateAndInitiateService.validateAndInitiate(any(), any())).willReturn(orderCreateEvent);
         given(orderRepository.save(any())).willReturn(order);
         doThrow(new RuntimeException("주소 저장 실패")).when(orderAddressRepository).save(any());
 
         // when, then
-        assertThatThrownBy(() -> orderCreateHelper.persistOrder(request, restaurantInfo, new ArrayList<>()))
+        assertThatThrownBy(() -> orderService.createOrder(request, new ArrayList<>()))
                 .isInstanceOf(OrderDomainException.class)
                 .hasMessage("주문 주소가 저장되지 않았습니다.");
     }

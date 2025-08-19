@@ -8,6 +8,5 @@ import lombok.Getter;
 public class UpdateRestaurantApplicationRequest {
 
     private String name;
-    private Boolean active;
 
 }

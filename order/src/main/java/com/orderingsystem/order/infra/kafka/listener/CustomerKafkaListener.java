@@ -39,7 +39,11 @@ public class CustomerKafkaListener implements KafkaConsumer<String> {
 
         messages.forEach(message -> {
             try {
-                CustomerMessage customerMessage = objectMapper.readValue(message, CustomerMessage.class);
+                String payload = message;
+                if (payload.startsWith("\"") && payload.endsWith("\"")) {
+                    payload = objectMapper.readValue(payload, String.class);
+                }
+                CustomerMessage customerMessage = objectMapper.readValue(payload, CustomerMessage.class);
 
                 if (customerMessage.getType().equals("INSERT")) {
                     log.info("customer 수신. customer Id : {}", customerMessage.getId());
