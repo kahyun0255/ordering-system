@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,6 +58,14 @@ public class RestaurantManagementController {
 
         return ResponseEntity.ok(restaurantManagementFacade.updateRestaurant(
                 updateRestaurantRequest.toUpdateRestaurantApplicationRequest(), restaurantId, restaurantOwnerId));
+    }
+
+    @DeleteMapping("/{restaurantId}")
+    public ResponseEntity<Void> deleteRestaurant(@PathVariable UUID restaurantId, @RequestHeader(value = "Authorization", required = false)String authorizationHeader){
+        UUID restaurantOwnerId = getRestaurantOwnerId(authorizationHeader);
+        log.info("레스토랑 삭제. Restaurant Id : {}, Owner Id : {}", restaurantId, restaurantOwnerId);
+        restaurantManagementFacade.deleteRestaurant(restaurantId, restaurantOwnerId);
+        return ResponseEntity.noContent().build();
     }
 
     private static void valid(BindingResult bindingResult) {

@@ -53,4 +53,8 @@ public class Restaurant extends AggregateRoot {
         return trimmed;
     }
 
+    public void delete() {
+        this.status = RestaurantStatus.DELETED;
+    }
+
 }

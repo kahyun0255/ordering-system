@@ -87,4 +87,12 @@ public class RestaurantManagementFacade {
                 .build();
     }
 
+    @Transactional
+    public void deleteRestaurant(UUID restaurantId, UUID restaurantOwnerId) {
+        Restaurant restaurant = restaurantAccessValidatorService.findRestaurant(restaurantId);
+        Owner owner = restaurantAccessValidatorService.findOwner(restaurantOwnerId);
+        restaurantAccessValidatorService.validateRestaurantOwnership(owner, restaurant);
+
+        restaurant.delete();
+    }
 }
