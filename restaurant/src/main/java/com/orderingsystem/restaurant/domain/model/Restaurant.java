@@ -57,4 +57,11 @@ public class Restaurant extends AggregateRoot {
         this.status = RestaurantStatus.DELETED;
     }
 
+    public void updateStatusByOwner(RestaurantStatus status) {
+        if (!this.status.ownerCanChangeTo(status)){
+            throw new IllegalArgumentException("해당 상태로 변경이 불가능합니다.");
+        }
+
+        this.status = status;
+    }
 }

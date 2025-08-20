@@ -24,6 +24,11 @@ public class RestaurantUpdateService {
             }
         }
 
+        if (request.getStatus() != null && !request.getStatus().equals(restaurant.getStatus())) {
+            changed = true;
+            restaurant.updateStatusByOwner(request.getStatus());
+        }
+
         return changed ? new UpdatedRestaurantEvent(restaurant, ZonedDateTime.now()) : null;
     }
 

@@ -7,6 +7,7 @@ import com.orderingsystem.restaurant.application.dto.request.UpdateRestaurantApp
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
+import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -83,6 +84,193 @@ class RestaurantUpdateServiceTest extends ApplicationTestSupport {
         assertThatThrownBy(() -> restaurantUpdateService.update(request, beforeRestaurant.get()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("레스토랑 이름은 비어있을 수 없습니다.");
+    }
+
+    @DisplayName("레스토랑 상태 변경에 성공한다.")
+    @Test
+    void shouldUpdateRestaurantStatusSuccessfully() {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .status(RestaurantStatus.PRE_OPEN)
+                .name("레스토랑 이름")
+                .build();
+
+        restaurantRepository.save(restaurant);
+
+        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
+                .name(null)
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+
+        assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.PRE_OPEN);
+
+        //when
+        restaurantUpdateService.update(request, restaurant);
+
+        //then
+        assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.ACTIVE);
+    }
+
+    @DisplayName("오너가 레스토랑 상태 변경을 요청하며, 현재 레스토랑 상태가 PENDING_APPROVAL이라면 변경이 불가능하다.")
+    @Test
+    void shouldThrowException_whenStatusIsPendingApproval() {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .status(RestaurantStatus.PENDING_APPROVAL)
+                .name("레스토랑 이름")
+                .build();
+
+        restaurantRepository.save(restaurant);
+
+        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
+                .name(null)
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+
+        //when, then
+        assertThatThrownBy(() -> restaurantUpdateService.update(request, restaurant))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 상태로 변경이 불가능합니다.");
+    }
+
+    @DisplayName("오너가 레스토랑 상태 변경을 요청하며, 현재 레스토랑 상태가 SUSPENDED라면 변경이 불가능하다.")
+    @Test
+    void shouldThrowException_whenStatusIsSuspended() {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .status(RestaurantStatus.SUSPENDED)
+                .name("레스토랑 이름")
+                .build();
+
+        restaurantRepository.save(restaurant);
+
+        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
+                .name(null)
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+
+        //when, then
+        assertThatThrownBy(() -> restaurantUpdateService.update(request, restaurant))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 상태로 변경이 불가능합니다.");
+    }
+
+    @DisplayName("오너가 레스토랑 상태 변경을 요청하며, 현재 레스토랑 상태가 DELETED라면 변경이 불가능하다.")
+    @Test
+    void shouldThrowException_whenStatusIsDeleted() {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .status(RestaurantStatus.DELETED)
+                .name("레스토랑 이름")
+                .build();
+
+        restaurantRepository.save(restaurant);
+
+        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
+                .name(null)
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+
+        //when, then
+        assertThatThrownBy(() -> restaurantUpdateService.update(request, restaurant))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 상태로 변경이 불가능합니다.");
+    }
+
+    @DisplayName("오너가 레스토랑 상태 변경을 요청하며, 현재 레스토랑 상태가 PERM_CLOSED라면 변경이 불가능하다.")
+    @Test
+    void shouldThrowException_whenStatusIsPermClosed() {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .status(RestaurantStatus.PERM_CLOSED)
+                .name("레스토랑 이름")
+                .build();
+
+        restaurantRepository.save(restaurant);
+
+        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
+                .name(null)
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+
+        //when, then
+        assertThatThrownBy(() -> restaurantUpdateService.update(request, restaurant))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 상태로 변경이 불가능합니다.");
+    }
+
+    @DisplayName("오너가 레스토랑 상태 변경을 요청하며, 변경할 상태가 PENDING_APPROVAL 상태라면 변경이 불가능하다.")
+    @Test
+    void shouldThrowException_whenTargetStatusIsPendingApproval() {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .status(RestaurantStatus.ACTIVE)
+                .name("레스토랑 이름")
+                .build();
+
+        restaurantRepository.save(restaurant);
+
+        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
+                .name(null)
+                .status(RestaurantStatus.PENDING_APPROVAL)
+                .build();
+
+        //when, then
+        assertThatThrownBy(() -> restaurantUpdateService.update(request, restaurant))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 상태로 변경이 불가능합니다.");
+    }
+
+    @DisplayName("오너가 레스토랑 상태 변경을 요청하며, 변경할 상태가 SUSPENDED 상태라면 변경이 불가능하다.")
+    @Test
+    void shouldThrowException_whenTargetStatusIsSuspended() {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .status(RestaurantStatus.ACTIVE)
+                .name("레스토랑 이름")
+                .build();
+
+        restaurantRepository.save(restaurant);
+
+        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
+                .name(null)
+                .status(RestaurantStatus.SUSPENDED)
+                .build();
+
+        //when, then
+        assertThatThrownBy(() -> restaurantUpdateService.update(request, restaurant))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 상태로 변경이 불가능합니다.");
+    }
+
+    @DisplayName("오너가 레스토랑 상태 변경을 요청하며, 변경할 상태가 DELETED 상태라면 변경이 불가능하다.")
+    @Test
+    void shouldThrowException_whenTargetStatusIsDeleted() {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .status(RestaurantStatus.ACTIVE)
+                .name("레스토랑 이름")
+                .build();
+
+        restaurantRepository.save(restaurant);
+
+        UpdateRestaurantApplicationRequest request = UpdateRestaurantApplicationRequest.builder()
+                .name(null)
+                .status(RestaurantStatus.DELETED)
+                .build();
+
+        //when, then
+        assertThatThrownBy(() -> restaurantUpdateService.update(request, restaurant))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 상태로 변경이 불가능합니다.");
     }
 
 }
