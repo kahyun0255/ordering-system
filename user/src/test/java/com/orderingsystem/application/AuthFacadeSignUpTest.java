@@ -7,11 +7,13 @@ import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.domain.model.outbox.UserOutbox;
 import com.orderingsystem.domain.repository.UserRepository;
-import com.orderingsystem.domain.repository.outbox.CustomerOutboxRepository;
+import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
 import com.orderingsystem.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -37,7 +39,7 @@ class AuthFacadeSignUpTest {
     private UserRepository userRepository;
 
     @Autowired
-    private CustomerOutboxRepository customerOutboxRepository;
+    private UserOutboxRepository userOutboxRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -48,7 +50,7 @@ class AuthFacadeSignUpTest {
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        customerOutboxRepository.deleteAllInBatch();
+        userOutboxRepository.deleteAllInBatch();
     }
 
     @DisplayName("회원가입에 성공한다.")
@@ -114,9 +116,9 @@ class AuthFacadeSignUpTest {
         assertThat(jwtUtil.isValidRefreshToken(tokenResponse.getRefreshToken())).isTrue();
     }
 
-    @DisplayName("UserType이 Customer일 때, CustomerOutbox에 저장된다.")
+    @DisplayName("UserType이 CUSTOMER일 때, UserOutbox UserType이 CUSTOMER로 저장된다.")
     @Test
-    void saveToCustomerOutbox_whenUserTypeIsCustomer() {
+    void saveToOrderOutbox_whenUserTypeIsCustomer() {
         //given
         SignUpApplicationRequest signUpApplicationRequest = getSignUpApplicationRequest();
 
@@ -124,12 +126,13 @@ class AuthFacadeSignUpTest {
         authFacade.signUp(signUpApplicationRequest);
 
         //then
-        assertThat(customerOutboxRepository.count()).isEqualTo(1L);
+        List<UserOutbox> userOutboxes = userOutboxRepository.findAll();
+        assertThat(userOutboxes.get(0).getUserType()).isEqualTo(UserType.CUSTOMER);
     }
 
-    @DisplayName("UserType이 Customer가 아닐 경우, CustomerOutbox에 저장되지 않는다.")
+    @DisplayName("UserType이 RESTAURANT_OWNER일 때,  UserOutbox UserType이 RESTAURANT_OWNER로 저장된다.")
     @Test
-    void doNotSaveToCustomerOutbox_whenUserTypeIsNotCustomer() {
+    void saveToOrderOutbox_whenUserTypeIsRestaurantOwner() {
         //given
         SignUpApplicationRequest signUpApplicationRequest = SignUpApplicationRequest.builder()
                 .username("테스트 유저")
@@ -140,13 +143,13 @@ class AuthFacadeSignUpTest {
                 .phoneNumber("010-1234-5678")
                 .type(UserType.RESTAURANT_OWNER)
                 .build();
-        ;
 
         //when
         authFacade.signUp(signUpApplicationRequest);
 
         //then
-        assertThat(customerOutboxRepository.count()).isEqualTo(0L);
+        List<UserOutbox> userOutboxes = userOutboxRepository.findAll();
+        assertThat(userOutboxes.get(0).getUserType()).isEqualTo(UserType.RESTAURANT_OWNER);
     }
 
     @DisplayName("아이디가 중복되면 예외가 발생한다.")

@@ -8,7 +8,6 @@ import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
-import com.orderingsystem.order.application.dto.ProductInfo;
 import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Order;
@@ -59,11 +58,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
     private final UUID paymentOutboxId = UUID.randomUUID();
     private final OrderItem orderItem = OrderItem.builder()
             .productId(productId)
-            .product(ProductInfo.builder()
-                    .productId(productId)
-                    .name("product1")
-                    .price(new Money(new BigDecimal("25.00")))
-                    .build())
             .build();
 
     @DisplayName("레스토랑에서 REJECT 되었고, 해당 주문이 PAID 상태라면 주문 취소를 시작한다.")

@@ -18,6 +18,7 @@ public class CustomerService {
     @Transactional
     public void createCustomer(CreateCustomerApplicationRequest createCustomerApplicationRequest) {
         log.info("Customer 생성. Customer Id : {}", createCustomerApplicationRequest.getId());
+
         customerRepository.save(Customer.builder()
                 .id(createCustomerApplicationRequest.getId())
                 .name(createCustomerApplicationRequest.getUsername())

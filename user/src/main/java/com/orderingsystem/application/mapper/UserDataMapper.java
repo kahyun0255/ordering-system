@@ -1,6 +1,7 @@
 package com.orderingsystem.application.mapper;
 
-import com.orderingsystem.application.outbox.customer.model.CustomerEventPayload;
+import com.orderingsystem.application.outbox.UserCreatedEventPayload;
+import com.orderingsystem.common.domain.status.OutboxEventOperation;
 import com.orderingsystem.domain.model.User;
 import java.time.ZonedDateTime;
 import org.springframework.stereotype.Component;
@@ -8,11 +9,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserDataMapper {
 
-    public CustomerEventPayload userCreatedToUserCreateEventPayload(User user) {
-        return CustomerEventPayload.builder()
+    public UserCreatedEventPayload userCreatedToUserCreateEventPayload(User user) {
+        return UserCreatedEventPayload.builder()
                 .username(user.getUsername())
                 .id(user.getUserId().toString())
                 .createdAt(ZonedDateTime.now())
+                .type(OutboxEventOperation.INSERT.name())
                 .build();
     }
 

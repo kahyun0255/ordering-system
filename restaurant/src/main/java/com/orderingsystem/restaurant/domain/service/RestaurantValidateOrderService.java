@@ -1,9 +1,9 @@
 package com.orderingsystem.restaurant.domain.service;
 
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
-import com.orderingsystem.restaurant.domain.event.OrderApprovalEvent;
-import com.orderingsystem.restaurant.domain.event.OrderApprovedEvent;
-import com.orderingsystem.restaurant.domain.event.OrderRejectedEvent;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovalEvent;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
 import com.orderingsystem.restaurant.domain.model.RestaurantInfo;
 import java.time.ZonedDateTime;
 import java.util.List;

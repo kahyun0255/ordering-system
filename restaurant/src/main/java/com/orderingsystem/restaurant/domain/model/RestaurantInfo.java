@@ -1,6 +1,5 @@
 package com.orderingsystem.restaurant.domain.model;
 
-import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
@@ -19,11 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
-public class RestaurantInfo extends AggregateRoot {
+public class RestaurantInfo {
 
     private UUID restaurantId;
     private String restaurantName;
-    private Boolean restaurantActive;
+    private RestaurantStatus status;
     @Setter
     private OrderApproval orderApproval;
     @Setter
@@ -49,7 +48,7 @@ public class RestaurantInfo extends AggregateRoot {
             failureMessages.add("해당 주문의 총 금액이 올바르지 않습니다. Order Id : " + orderDetail.getOrderId());
         }
 
-        if (!restaurantActive) {
+        if (!status.equals(RestaurantStatus.ACTIVE)) {
             log.error("레스토랑이 주문을 받을 수 없는 상태입니다. Order Id : {}", orderDetail.getOrderId());
             failureMessages.add("레스토랑이 주문을 받을 수 없는 상태입니다. Order Id : " + orderDetail.getOrderId());
         }
@@ -64,8 +63,8 @@ public class RestaurantInfo extends AggregateRoot {
                 .build();
     }
 
-    public void updateActive(boolean active) {
-        this.restaurantActive = active;
+    public void updateStatus(RestaurantStatus status) {
+        this.status = status;
     }
 
 }

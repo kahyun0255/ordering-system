@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.kafka.KafkaConsumer;
-import com.orderingsystem.restaurant.application.RestaurantService;
+import com.orderingsystem.restaurant.application.OrderApprovalService;
 import com.orderingsystem.restaurant.application.exception.RestaurantApplicationException;
 import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalRequestDebeziumMessage;
 import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalRequestMessage;
@@ -27,10 +27,10 @@ import org.springframework.stereotype.Component;
 public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final RestaurantService restaurantService;
+    private final OrderApprovalService orderApprovalService;
 
     @Override
-    @KafkaListener(id = "${kafka-consumer-config.restaurant-consumer-group-id}",
+    @KafkaListener(id = "${kafka-consumer-config.restaurant-consumer-user-group-id}",
             topics = "${restaurant-topic.restaurant-approval-request-topic-name}")
     public void receive(@Payload List<String> messages,
                         @Header(KafkaHeaders.RECEIVED_KEY) List<String> keys,
@@ -52,7 +52,7 @@ public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<Str
                                     RestaurantApprovalRequestMessage.class);
 
                     log.info("주문 승인 시작. Order Id : {}", requestMessage.getOrderId());
-                    restaurantService.approveOrder(requestMessage.toApprovalRequest());
+                    orderApprovalService.approveOrder(requestMessage.toApprovalRequest());
                 }
             } catch (JsonMappingException e) {
                 log.info("Json 매핑에 실패했습니다. error : {}", e.getMessage());

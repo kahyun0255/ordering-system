@@ -13,12 +13,13 @@ public class CustomerMessage {
     private UUID id;
     private String username;
     private Instant createdAt;
+    private String type;
 
     public CreateCustomerApplicationRequest toCreateCustomerApplicationRequest(){
         return CreateCustomerApplicationRequest.builder()
-                .id(id)
-                .username(username)
-                .createdAt(createdAt)
+                .id(this.id)
+                .username(this.username)
+                .createdAt(this.createdAt)
                 .build();
     }
 

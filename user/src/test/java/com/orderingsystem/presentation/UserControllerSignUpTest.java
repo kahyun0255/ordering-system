@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.repository.UserRepository;
-import com.orderingsystem.domain.repository.outbox.CustomerOutboxRepository;
+import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
 import com.orderingsystem.presentation.request.SignUpRequest;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,12 +43,12 @@ class UserControllerSignUpTest {
     private UserRepository userRepository;
 
     @Autowired
-    private CustomerOutboxRepository customerOutboxRepository;
+    private UserOutboxRepository userOutboxRepository;
 
     @AfterEach
     void tearDown() {
         userRepository.deleteAllInBatch();
-        customerOutboxRepository.deleteAllInBatch();
+        userOutboxRepository.deleteAllInBatch();
     }
 
     @DisplayName("회원가입에 성공한다.")
@@ -75,7 +75,7 @@ class UserControllerSignUpTest {
         assertThat(user.get().getEmail()).isEqualTo(signUpRequest.getEmail());
         assertThat(user.get().getType()).isEqualTo(signUpRequest.getType());
 
-        assertThat(customerOutboxRepository.count()).isEqualTo(1L);
+        assertThat(userOutboxRepository.count()).isEqualTo(1L);
     }
 
     @DisplayName("RequestBody 검증에 실패할 경우, 회원가입에 실패한다.")

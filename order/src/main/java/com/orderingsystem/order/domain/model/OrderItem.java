@@ -2,7 +2,6 @@ package com.orderingsystem.order.domain.model;
 
 import com.orderingsystem.common.domain.BaseEntity;
 import com.orderingsystem.common.domain.Money;
-import com.orderingsystem.order.application.dto.ProductInfo;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CascadeType;
@@ -15,7 +14,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -57,8 +55,8 @@ public class OrderItem extends BaseEntity {
 
     private Integer quantity;
 
-    @Transient
-    private ProductInfo product;
+//    @Transient
+//    private ProductInfo product;
 
     @Override
     public boolean equals(Object o) {
@@ -80,7 +78,6 @@ public class OrderItem extends BaseEntity {
 
     boolean isPriceValid() {
         return price.isGreaterThanZero() &&
-                price.equals(product.getPrice()) &&
                 price.multiply(quantity).equals(subTotal);
     }
 

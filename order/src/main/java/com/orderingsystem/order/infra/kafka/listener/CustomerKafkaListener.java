@@ -2,11 +2,9 @@ package com.orderingsystem.order.infra.kafka.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.CustomerService;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
-import com.orderingsystem.order.infra.kafka.message.CustomerDebeziumMessage;
 import com.orderingsystem.order.infra.kafka.message.CustomerMessage;
 import java.sql.SQLException;
 import java.util.List;
@@ -36,26 +34,24 @@ public class CustomerKafkaListener implements KafkaConsumer<String> {
                         @Header(KafkaHeaders.RECEIVED_PARTITION) List<Integer> partitions,
                         @Header(KafkaHeaders.OFFSET) List<Long> offsets) {
 
-        log.info("{}개의 payment request 메시지를 받았습니다. keys : {}, partitions : {}, offsets : {}",
+        log.info("{}개의 customer request 메시지를 받았습니다. keys : {}, partitions : {}, offsets : {}",
                 messages.size(), keys.toString(), partitions.toString(), offsets.toString());
 
         messages.forEach(message -> {
             try {
-                CustomerDebeziumMessage debeziumMessage =
-                        objectMapper.readValue(message, CustomerDebeziumMessage.class);
+                String payload = message;
+                if (payload.startsWith("\"") && payload.endsWith("\"")) {
+                    payload = objectMapper.readValue(payload, String.class);
+                }
+                CustomerMessage customerMessage = objectMapper.readValue(payload, CustomerMessage.class);
 
-                if (debeziumMessage.getBefore() == null &&
-                        debeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
-
-                    CustomerMessage customerMessage = objectMapper.readValue(
-                            debeziumMessage.getAfter().getPayload(), CustomerMessage.class);
-
+                if (customerMessage.getType().equals("INSERT")) {
                     log.info("customer 수신. customer Id : {}", customerMessage.getId());
 
                     customerService.createCustomer(customerMessage.toCreateCustomerApplicationRequest());
                 }
             } catch (JsonProcessingException e) {
-                log.error("PaymentRequestMessage Json 파싱에 실패했습니다.");
+                log.error("CustomerMessage Json 파싱에 실패했습니다. error : {}", e.getMessage());
             } catch (OptimisticLockingFailureException e) {
                 //NO-OP
                 log.error("Caught optimistic locking exception in CustomerKafkaListener");

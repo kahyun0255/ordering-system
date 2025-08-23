@@ -3,7 +3,6 @@ package com.orderingsystem.order.application.mapper;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
-import com.orderingsystem.order.application.dto.ProductInfo;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
@@ -19,7 +18,6 @@ import com.orderingsystem.order.domain.model.OrderAddress;
 import com.orderingsystem.order.domain.model.OrderItem;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -53,13 +51,12 @@ public class OrderDataMapper {
         return items.stream().map(orderItem ->
                         OrderItem.builder()
                                 .order(order)
-                                .product(new ProductInfo(orderItem.getProductId()))
                                 .price(new Money(orderItem.getPrice()))
                                 .quantity(orderItem.getQuantity())
                                 .subTotal(new Money(orderItem.getSubTotal()))
                                 .productId(orderItem.getProductId())
                                 .build())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public CreateOrderResponse orderToCreateOrderResponse(Order order, String massage) {

@@ -116,7 +116,6 @@ public class Order extends AggregateRoot {
     private void validateItems(List<String> failureMessages) {
         Money orderItemsTotal = items.stream().map(orderItem -> {
             validateItemPrice(orderItem, failureMessages);
-            validateItemAvailability(orderItem, failureMessages);
             return orderItem.getSubTotal();
         }).reduce(Money.ZERO, Money::add);
 
@@ -130,18 +129,10 @@ public class Order extends AggregateRoot {
 
     private void validateItemPrice(OrderItem orderItem, List<String> failureMessages) {
         if (!orderItem.isPriceValid()) {
-            log.warn("상품 : {}의 항목 가격 : {}이 유효하지 않습니다. Order Id : {}", orderItem.getProduct().getProductId(),
-                    orderItem.getProduct().getPrice().getAmount(), this.id);
-            failureMessages.add("상품 : " + orderItem.getProduct().getProductId() +
-                    "의 항목 가격 : " + orderItem.getProduct().getPrice().getAmount() + "이 유효하지 않습니다.");
-        }
-    }
-
-    private void validateItemAvailability(OrderItem orderItem, List<String> failureMessages) {
-        if (!orderItem.getProduct().isAvailable()) {
-            log.warn("상품 : {}이 판매할 수 없는 상태입니다. Order Id : {}", orderItem.getProduct().getProductId(),
-                    orderItem.getOrder().getId());
-            failureMessages.add("상품 : " + orderItem.getProduct().getProductId() + "이 판매할 수 없는 상태입니다.");
+            log.warn("상품 : {}의 항목 가격 : {}이 유효하지 않습니다. Order Id : {}", orderItem.getProductId(),
+                    orderItem.getPrice().getAmount(), this.id);
+            failureMessages.add("상품 : " + orderItem.getProductId() +
+                    "의 항목 가격 : " + orderItem.getPrice().getAmount() + "이 유효하지 않습니다.");
         }
     }
 

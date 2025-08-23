@@ -1,17 +1,18 @@
 package com.orderingsystem.order.application;
 
-import com.orderingsystem.order.application.dto.RestaurantInfo;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
-import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.dto.response.OrderStatusResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
-import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
+import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
+import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.model.Order;
+import com.orderingsystem.order.domain.model.OrderAddress;
+import com.orderingsystem.order.domain.repository.CustomerRepository;
+import com.orderingsystem.order.domain.repository.OrderAddressRepository;
 import com.orderingsystem.order.domain.repository.OrderRepository;
-import com.orderingsystem.outbox.OutboxStatus;
-import java.util.ArrayList;
+import com.orderingsystem.order.domain.service.OrderValidateAndInitiateService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,43 +26,32 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class OrderService {
 
-    private final OrderCreateHelper orderCreateHelper;
     private final OrderDataMapper orderDataMapper;
     private final OrderRepository orderRepository;
-    private final PaymentOutboxHelper paymentOutboxHelper;
-    private final RestaurantValidationService restaurantValidationService;
+    private final OrderValidateAndInitiateService orderValidateAndInitiateService;
+    private final CustomerRepository customerRepository;
+    private final OrderAddressRepository orderAddressRepository;
 
     @Transactional
-    public CreateOrderResponse createOrder(CreateOrderApplicationRequest createOrderRequest) {
-        List<String> failureMessages = new ArrayList<>();
+    public OrderCreateEvent createOrder(CreateOrderApplicationRequest createOrderRequest, List<String> failureMessages) {
+        checkCustomer(createOrderRequest.getCustomerId());
 
-        RestaurantInfo restaurantInfo = restaurantValidationService.getRestaurantInfo(createOrderRequest.getRestaurantId(),
-                orderDataMapper.itemsToItemIdList(createOrderRequest.getItems()));
+        OrderAddress orderAddress = orderDataMapper.orderAddressToStreetAddress(createOrderRequest.getAddress());
+        Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest, orderAddress.getId());
 
-        OrderCreateEvent orderCreateEvent = orderCreateHelper.persistOrder(createOrderRequest, restaurantInfo,
-                failureMessages);
-        log.info("주문이 생성되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
+        OrderCreateEvent orderCreateEvent = orderValidateAndInitiateService.validateAndInitiate(order, failureMessages);
 
-        String resultMessage = "주문이 성공적으로 생성되었습니다.";
+        Order savedOrder = saveOrder(order);
+        saveOrderAddress(orderAddress, order);
 
-        if (!failureMessages.isEmpty()) {
+        if (failureMessages.isEmpty()) {
+            log.info("주문이 생성되었습니다. Order Id : {}", savedOrder.getId());
+        }else {
             log.warn("주문이 취소되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
-            Order order = orderCreateEvent.getOrder();
             order.cancel(failureMessages);
-            orderRepository.save(order);
-            resultMessage = "주문 요청이 유효하지 않아 주문이 완료되지 않았습니다.";
-        } else {
-            UUID sagaId = UUID.randomUUID();
-            paymentOutboxHelper.savePaymentOutboxMessage(
-                    orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent, sagaId),
-                    orderCreateEvent.getOrder().getOrderStatus(),
-                    OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
-                    OutboxStatus.STARTED,
-                    sagaId
-            );
         }
 
-        return orderDataMapper.orderToCreateOrderResponse(orderCreateEvent.getOrder(), resultMessage);
+        return orderCreateEvent;
     }
 
     @Transactional(readOnly = true)
@@ -77,5 +67,34 @@ public class OrderService {
                 .orderStatus(order.get().getOrderStatus())
                 .failureMessages(order.get().getFailureMessageList())
                 .build();
+    }
+
+    private void checkCustomer(UUID customerId) {
+        Optional<Customer> customer = customerRepository.findById(customerId);
+        if (customer.isEmpty()) {
+            log.warn("주문자를 찾을 수 없습니다. Customer Id : {}", customerId);
+            throw new OrderNotFoundException("주문자를 찾을 수 없습니다.");
+        }
+    }
+
+    private Order saveOrder(Order order) {
+        try {
+            Order savedOrder = orderRepository.save(order);
+            log.info("주문이 저장되었습니다. Order Id : {}", savedOrder.getId());
+            return savedOrder;
+        } catch (Exception e) {
+            log.warn("주문이 저장되지 않았습니다.");
+            throw new OrderDomainException("주문이 저장되지 않았습니다.");
+        }
+    }
+
+    private void saveOrderAddress(OrderAddress orderAddress, Order order) {
+        try {
+            orderAddress.updateOrderId(order.getId());
+            orderAddressRepository.save(orderAddress);
+        } catch (Exception e) {
+            log.warn("주문 주소가 저장되지 않았습니다.");
+            throw new OrderDomainException("주문 주소가 저장되지 않았습니다.");
+        }
     }
 }
