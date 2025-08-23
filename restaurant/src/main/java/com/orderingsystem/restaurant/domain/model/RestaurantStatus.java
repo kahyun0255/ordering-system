@@ -26,5 +26,9 @@ public enum RestaurantStatus {
         return true;
     }
 
+    public boolean ownerCanFind(RestaurantStatus restaurantStatus){
+        return !OWNER_TARGETS.contains(restaurantStatus);
+    }
+
 }
 
