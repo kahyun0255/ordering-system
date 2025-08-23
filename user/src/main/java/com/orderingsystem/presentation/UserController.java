@@ -2,11 +2,13 @@ package com.orderingsystem.presentation;
 
 import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.dto.response.TokenResponse;
+import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.presentation.request.SignInRequest;
 import com.orderingsystem.presentation.request.SignUpRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.Duration;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final AuthFacade authFacade;
+    private final CommonJwtUtil commonJwtUtil;
 
     @PostMapping("/sign-up")
     public ResponseEntity<TokenResponse> signUp(@Valid @RequestBody SignUpRequest signUpRequest,
@@ -66,6 +70,27 @@ public class UserController {
         httpServletResponse.addHeader("Set-Cookie", responseCookie.toString());
 
         return ResponseEntity.ok(rotated);
+    }
+
+    @PostMapping("/sign-out")
+    public ResponseEntity<Void> signOut(@RequestHeader("Authorization") String authorizationHeader,
+                                        @CookieValue(value = "refreshToken", required = false) String refreshToken,
+                                        HttpServletResponse httpServletResponse) {
+        UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        if (refreshToken != null && !refreshToken.isBlank()){
+            authFacade.signOut(userId, refreshToken);
+        }
+
+        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .maxAge(0)
+                .build();
+        httpServletResponse.addHeader("Set-Cookie", deleteCookie.toString());
+
+        return ResponseEntity.noContent().build();
     }
 
     private static void valid(BindingResult bindingResult) {

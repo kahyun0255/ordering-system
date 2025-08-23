@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.dto.response.TokenResponse;
+import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.presentation.request.SignUpRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +41,9 @@ class UserControllerSignUpWebMvcTest {
 
     @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;
+
+    @MockitoBean
+    private CommonJwtUtil commonJwtUtil;
 
     @DisplayName("회원가입에 성공한다.")
     @Test

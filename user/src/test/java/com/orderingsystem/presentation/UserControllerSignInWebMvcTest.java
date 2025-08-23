@@ -13,6 +13,7 @@ import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.UserService;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
+import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.domain.exception.UserNotFoundException;
 import com.orderingsystem.presentation.request.SignInRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +45,9 @@ class UserControllerSignInWebMvcTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private CommonJwtUtil commonJwtUtil;
 
     @DisplayName("로그인에 성공한다.")
     @Test
