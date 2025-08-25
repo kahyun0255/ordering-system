@@ -64,10 +64,12 @@ public class UserService {
     @Transactional
     public UserProfileResponse updateUser(UUID userId, UpdateUserApplicationRequest updateUserApplicationRequest) {
         User user = findUserByUserId(userId);
+        log.info("유저 정보 업데이트. User Id : {}, nicknameBefore : {}, nicknameAfter : {}",
+                userId, user.getNickname(), updateUserApplicationRequest.getNickname());
 
         if (updateUserApplicationRequest.getNickname() != null &&
-                !user.getNickname().equals(updateUserApplicationRequest.getNickname())){
-        user.updateNickname(updateUserApplicationRequest.getNickname());
+                !user.getNickname().equals(updateUserApplicationRequest.getNickname())) {
+            user.updateNickname(updateUserApplicationRequest.getNickname());
         }
 
         return UserProfileResponse.builder()
