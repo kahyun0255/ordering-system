@@ -1,6 +1,6 @@
 package com.orderingsystem.order.application;
 
-import com.orderingsystem.order.application.dto.request.CreateCustomerApplicationRequest;
+import com.orderingsystem.order.application.dto.request.CustomerApplicationRequest;
 import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,13 +16,20 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
 
     @Transactional
-    public void createCustomer(CreateCustomerApplicationRequest createCustomerApplicationRequest) {
-        log.info("Customer 생성. Customer Id : {}", createCustomerApplicationRequest.getId());
+    public void createCustomer(CustomerApplicationRequest customerApplicationRequest) {
+        log.info("Customer 생성. Customer Id : {}", customerApplicationRequest.getId());
 
         customerRepository.save(Customer.builder()
-                .id(createCustomerApplicationRequest.getId())
-                .name(createCustomerApplicationRequest.getUsername())
+                .id(customerApplicationRequest.getId())
+                .name(customerApplicationRequest.getUsername())
                 .build());
+    }
+
+    @Transactional
+    public void deleteCustomer(CustomerApplicationRequest customerApplicationRequest) {
+        log.info("Customer 삭제. Customer Id : {}", customerApplicationRequest.getId());
+
+        customerRepository.deleteById(customerApplicationRequest.getId());
     }
 
 }

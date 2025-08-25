@@ -37,8 +37,8 @@ import org.springframework.test.web.servlet.MvcResult;
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-@DisplayName("UserController 로그인 통합 테스트")
-class UserControllerSignInTest {
+@DisplayName("AuthController 로그인 통합 테스트")
+class AuthControllerSignInTest {
 
     @Autowired
     private MockMvc mockMvc;

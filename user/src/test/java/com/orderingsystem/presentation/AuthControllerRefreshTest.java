@@ -43,8 +43,8 @@ import org.springframework.test.web.servlet.MvcResult;
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-@DisplayName("UserController 리프레시 토큰 통합 테스트")
-class UserControllerRefreshTest {
+@DisplayName("AuthController 리프레시 토큰 통합 테스트")
+class AuthControllerRefreshTest {
 
     @Autowired
     private MockMvc mockMvc;

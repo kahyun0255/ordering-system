@@ -2,6 +2,7 @@ package com.orderingsystem.order.infra.kafka.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orderingsystem.common.domain.status.OutboxEventOperation;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.CustomerService;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
@@ -45,11 +46,15 @@ public class CustomerKafkaListener implements KafkaConsumer<String> {
                 }
                 CustomerMessage customerMessage = objectMapper.readValue(payload, CustomerMessage.class);
 
-                if (customerMessage.getType().equals("INSERT")) {
-                    log.info("customer 수신. customer Id : {}", customerMessage.getId());
-
-                    customerService.createCustomer(customerMessage.toCreateCustomerApplicationRequest());
+                if (customerMessage.getType().equals(OutboxEventOperation.INSERT.name())) {
+                    log.info("customer 생성 메시지 수신. customer Id : {}", customerMessage.getId());
+                    customerService.createCustomer(customerMessage.toCustomerApplicationRequest());
+                }else if(customerMessage.getType().equals(OutboxEventOperation.DELETE.name())){
+                    log.info("customer 삭제 메시지 수신. customer Id : {}", customerMessage.getId());
+                    customerService.deleteCustomer(customerMessage.toCustomerApplicationRequest());
                 }
+
+
             } catch (JsonProcessingException e) {
                 log.error("CustomerMessage Json 파싱에 실패했습니다. error : {}", e.getMessage());
             } catch (OptimisticLockingFailureException e) {

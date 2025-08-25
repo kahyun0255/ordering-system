@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name="users")
+@Table(name = "users")
 public class User extends AggregateRoot {
 
     @Id
@@ -46,4 +46,14 @@ public class User extends AggregateRoot {
     @Enumerated(EnumType.STRING)
     private UserType type;
 
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void withdraw() {
+        this.status = UserStatus.WITHDRAWN;
+    }
 }

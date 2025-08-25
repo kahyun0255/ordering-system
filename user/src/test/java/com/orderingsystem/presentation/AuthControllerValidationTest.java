@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.application.AuthFacade;
+import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.presentation.request.SignInRequest;
 import com.orderingsystem.presentation.request.SignUpRequest;
@@ -22,10 +23,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = UserController.class)
+@WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("RequestBody 검증 테스트")
-class UserControllerValidationTest {
+@DisplayName("AuthController RequestBody 검증 테스트")
+class AuthControllerValidationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -38,6 +39,9 @@ class UserControllerValidationTest {
 
     @MockitoBean
     private JpaMetamodelMappingContext jpaMetamodelMappingContext;
+
+    @MockitoBean
+    private CommonJwtUtil commonJwtUtil;
 
     @DisplayName("회원가입에 성공한다.")
     @Test

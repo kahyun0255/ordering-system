@@ -13,6 +13,7 @@ import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.UserService;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
+import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.domain.exception.UserNotFoundException;
 import com.orderingsystem.presentation.request.SignInRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -25,10 +26,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(UserController.class)
+@WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("UserController 로그인 단위테스트")
-class UserControllerSignInWebMvcTest {
+@DisplayName("AuthController 로그인 단위테스트")
+class AuthControllerSignInWebMvcTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -44,6 +45,9 @@ class UserControllerSignInWebMvcTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private CommonJwtUtil commonJwtUtil;
 
     @DisplayName("로그인에 성공한다.")
     @Test

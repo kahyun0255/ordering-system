@@ -7,7 +7,6 @@ import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.model.User;
-import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -23,7 +22,6 @@ public class AuthFacade {
 
     private final JwtUtil jwtUtil;
     private final UserService userService;
-    private final UserRepository userRepository;
     private final CommonJwtUtil commonJwtUtil;
     private final RefreshTokenService refreshTokenService;
 
@@ -78,4 +76,24 @@ public class AuthFacade {
         }
     }
 
+    public void signOut(UUID userId, String refreshToken) {
+        if (!commonJwtUtil.isValidRefreshToken(refreshToken)) {
+            throw new InvalidCredentialsException("Refresh Token이 유효하지 않습니다.");
+        }
+
+        Claims claims = commonJwtUtil.getClaims(refreshToken);
+        if (!UUID.fromString(claims.getSubject()).equals(userId)) {
+            throw new InvalidCredentialsException("올바르지 않은 Refresh Token입니다.");
+        }
+
+        String storedRefreshToken = refreshTokenService.findRefreshToken(userId);
+        if (storedRefreshToken == null) {
+            return;
+        }
+        if (!storedRefreshToken.equals(refreshToken)) {
+            throw new InvalidCredentialsException("세션 정보가 일치하지 않습니다.");
+        }
+
+        refreshTokenService.revoke(userId);
+    }
 }
