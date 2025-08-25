@@ -12,7 +12,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,16 +28,13 @@ public class AuthController {
     private final CommonJwtUtil commonJwtUtil;
 
     @PostMapping("/sign-up")
-    public ResponseEntity<TokenResponse> signUp(@Valid @RequestBody SignUpRequest signUpRequest,
-                                                BindingResult bindingResult) {
-        valid(bindingResult);
+    public ResponseEntity<TokenResponse> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         return ResponseEntity.ok(authFacade.signUp(signUpRequest.toSignUpApplicationRequest()));
     }
 
     @PostMapping("/sign-in")
     public ResponseEntity<TokenResponse> signIn(@Valid @RequestBody SignInRequest signInRequest,
-                                                BindingResult bindingResult, HttpServletResponse httpServletResponse) {
-        valid(bindingResult);
+                                                HttpServletResponse httpServletResponse) {
         TokenResponse tokenResponse = authFacade.signIn(signInRequest.toSignInApplicationRequest());
 
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken", tokenResponse.getRefreshToken())
@@ -77,7 +73,7 @@ public class AuthController {
                                         @CookieValue(value = "refreshToken", required = false) String refreshToken,
                                         HttpServletResponse httpServletResponse) {
         UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
-        if (refreshToken != null && !refreshToken.isBlank()){
+        if (refreshToken != null && !refreshToken.isBlank()) {
             authFacade.signOut(userId, refreshToken);
         }
 
@@ -91,16 +87,6 @@ public class AuthController {
         httpServletResponse.addHeader("Set-Cookie", deleteCookie.toString());
 
         return ResponseEntity.noContent().build();
-    }
-
-    private static void valid(BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            String message = bindingResult.getFieldErrors().stream()
-                    .map(e -> e.getField() + ": " + e.getDefaultMessage())
-                    .reduce((a, b) -> a + ", " + b)
-                    .orElse("잘못된 요청입니다.");
-            throw new IllegalArgumentException(message);
-        }
     }
 
 }
