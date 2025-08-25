@@ -1,6 +1,7 @@
 package com.orderingsystem.application;
 
 import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
+import com.orderingsystem.application.dto.response.UserProfileResponse;
 import com.orderingsystem.application.mapper.UserDataMapper;
 import com.orderingsystem.application.outbox.UserOutboxHelper;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
@@ -45,13 +46,27 @@ public class UserService {
         return new UserCreatedEvent(user, ZonedDateTime.now());
     }
 
+    @Transactional(readOnly = true)
+    public UserProfileResponse getProfile(UUID userId) {
+        User user = findUserByUserId(userId);
+
+        return UserProfileResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .username(user.getUsername())
+                .phoneNumber(user.getPhoneNumber())
+                .type(user.getType())
+                .build();
+    }
+
     public void verifyPassword(String rowPassword, String userPassword) {
         if (!passwordEncoder.matches(rowPassword, userPassword)) {
             throw new InvalidCredentialsException("비밀번호가 일치하지 않습니다.");
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public User findUserByUserId(UUID userId) {
         Optional<User> user = userRepository.findById(userId);
 
@@ -63,7 +78,7 @@ public class UserService {
         return user.get();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public User findUser(String id) {
         Optional<User> user = userRepository.findById(id);
 
@@ -104,5 +119,4 @@ public class UserService {
                 .phoneNumber(signUpApplicationRequest.getPhoneNumber())
                 .build();
     }
-
 }

@@ -23,10 +23,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = UserController.class)
+@WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("RequestBody 검증 테스트")
-class UserControllerValidationTest {
+@DisplayName("AuthController RequestBody 검증 테스트")
+class AuthControllerValidationTest {
 
     @Autowired
     private MockMvc mockMvc;

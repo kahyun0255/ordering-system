@@ -25,10 +25,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(UserController.class)
+@WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("UserController 회원가입 단위테스트")
-class UserControllerSignUpWebMvcTest {
+@DisplayName("AuthController 회원가입 단위테스트")
+class AuthControllerSignUpWebMvcTest {
 
     @Autowired
     private MockMvc mockMvc;
