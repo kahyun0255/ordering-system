@@ -2,7 +2,7 @@ package com.orderingsystem.restaurant.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.orderingsystem.restaurant.application.dto.request.CreateRestaurantOwnerApplicationRequest;
+import com.orderingsystem.restaurant.application.dto.request.RestaurantOwnerApplicationRequest;
 import com.orderingsystem.restaurant.domain.model.Owner;
 import java.time.Instant;
 import java.util.Optional;
@@ -12,10 +12,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-class OwnerCreateServiceTest extends ApplicationTestSupport {
+class OwnerServiceTest extends ApplicationTestSupport {
 
     @Autowired
-    private OwnerCreateService ownerCreateService;
+    private OwnerService ownerService;
 
     private final UUID ownerId = UUID.randomUUID();
 
@@ -28,14 +28,14 @@ class OwnerCreateServiceTest extends ApplicationTestSupport {
     @Test
     void createOwner() {
         //given
-        CreateRestaurantOwnerApplicationRequest request = CreateRestaurantOwnerApplicationRequest.builder()
+        RestaurantOwnerApplicationRequest request = RestaurantOwnerApplicationRequest.builder()
                 .id(ownerId)
                 .username("테스트유저")
                 .createdAt(Instant.now())
                 .build();
 
         //when
-        ownerCreateService.createOwner(request);
+        ownerService.createOwner(request);
 
         //then
         Optional<Owner> savedOwner = ownerRepository.findById(ownerId);

@@ -1,4 +1,4 @@
-package com.orderingsystem.restaurant.application.dto.request;
+package com.orderingsystem.order.application.dto.request;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class CreateRestaurantOwnerApplicationRequest {
+public class CustomerApplicationRequest {
 
     private UUID id;
     private String username;

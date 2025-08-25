@@ -11,6 +11,6 @@ public class RestaurantMessageConfigData {
 
     private String restaurantApprovalRequestTopicName;
     private String restaurantApprovalResponseTopicName;
-    private String restaurantOwnerCreateTopicName;
+    private String restaurantOwnerTopicName;
 
 }

@@ -9,6 +9,7 @@ import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.exception.UserNotFoundException;
 import com.orderingsystem.domain.model.User;
+import com.orderingsystem.domain.model.UserStatus;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
@@ -34,7 +35,7 @@ public class UserService {
     @Transactional
     public UserCreatedEvent persistUser(SignUpApplicationRequest signUpApplicationRequest) {
         validSignUp(signUpApplicationRequest);
-        User user = getUser(signUpApplicationRequest);
+        User user = createUser(signUpApplicationRequest);
         userRepository.save(user);
 
         userOutboxHelper.saveUserOutboxMessage(
@@ -64,7 +65,7 @@ public class UserService {
     @Transactional
     public UserProfileResponse updateUser(UUID userId, UpdateUserApplicationRequest updateUserApplicationRequest) {
         User user = findUserByUserId(userId);
-        log.info("유저 정보 업데이트. User Id : {}, nicknameBefore : {}, nicknameAfter : {}",
+        log.info("유저 업데이트. User Id : {}, nicknameBefore : {}, nicknameAfter : {}",
                 userId, user.getNickname(), updateUserApplicationRequest.getNickname());
 
         if (updateUserApplicationRequest.getNickname() != null &&
@@ -80,6 +81,21 @@ public class UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .type(user.getType())
                 .build();
+    }
+
+    @Transactional
+    public void withDrawUser(UUID userId) {
+        log.info("회원 탈퇴. User Id : {}", userId);
+        User user = findUserByUserId(userId);
+        user.withdraw();
+
+        UUID eventId = UUID.randomUUID();
+        userOutboxHelper.deleteUserOutboxMessage(
+                userDataMapper.userDeleteToUserDeleteEventPayload(user),
+                OutboxStatus.STARTED,
+                eventId,
+                user.getType()
+        );
     }
 
     public void verifyPassword(String rowPassword, String userPassword) {
@@ -129,7 +145,7 @@ public class UserService {
         }
     }
 
-    private User getUser(SignUpApplicationRequest signUpApplicationRequest) {
+    private User createUser(SignUpApplicationRequest signUpApplicationRequest) {
         return User.builder()
                 .userId(UUID.randomUUID())
                 .id(signUpApplicationRequest.getId())
@@ -139,6 +155,8 @@ public class UserService {
                 .email(signUpApplicationRequest.getEmail())
                 .nickname(signUpApplicationRequest.getNickname())
                 .phoneNumber(signUpApplicationRequest.getPhoneNumber())
+                .status(UserStatus.ACTIVE)
                 .build();
     }
+
 }

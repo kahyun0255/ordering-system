@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,6 +35,13 @@ public class UserController {
                                                           @Valid @RequestBody UpdateUserRequest updateUserRequest){
         UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
         return ResponseEntity.ok(userService.updateUser(userId, updateUserRequest.toUpdateUserApplicationRequest()));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withDrawUser(@RequestHeader("Authorization") String authorizationHeader){
+        UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        userService.withDrawUser(userId);
+        return ResponseEntity.noContent().build();
     }
 
 }

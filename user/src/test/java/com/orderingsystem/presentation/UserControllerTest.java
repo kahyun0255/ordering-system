@@ -1,5 +1,6 @@
 package com.orderingsystem.presentation;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -217,6 +218,54 @@ class UserControllerTest {
                         patch("/api/users/me")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("존재하지 않는 사용자입니다."))
+                .andReturn();
+    }
+
+    @DisplayName("회원 탈퇴에 성공하면 User의 status가 WITHDRAWN이 된다.")
+    @Test
+    void shouldUpdateUserStatusToWithdrawn_whenUserSuccessfullyWithdraws() throws Exception {
+        //given
+        User user = User.builder()
+                .userId(UUID.randomUUID())
+                .id("testID")
+                .password("testPassword")
+                .email("test@test.com")
+                .username("테스트 유저")
+                .nickname("테스트 유저 닉네임")
+                .phoneNumber("010-1234-5678")
+                .type(UserType.CUSTOMER)
+                .build();
+        userRepository.save(user);
+
+        String token = buildToken(user.getUserId(), "access", issuer, Instant.now().plusSeconds(100000));
+
+        //when, then
+        mockMvc.perform(
+                        delete("/api/users/me")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
+    @DisplayName("accessToken에 해당하는 사용자가 없으면 회원 탈퇴에 실패하고 404를 반환한다.")
+    @Test
+    void shouldReturnNotFound_whenAccessTokenUserDoesNotExistOnWithdrawal() throws Exception {
+        //given
+        String token = buildToken(UUID.randomUUID(), "access", issuer, Instant.now().plusSeconds(100000));
+
+        //when, then
+        mockMvc.perform(
+                        delete("/api/users/me")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andDo(print())

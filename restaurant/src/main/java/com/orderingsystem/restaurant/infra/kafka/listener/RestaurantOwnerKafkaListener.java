@@ -3,10 +3,11 @@ package com.orderingsystem.restaurant.infra.kafka.listener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orderingsystem.common.domain.status.OutboxEventOperation;
 import com.orderingsystem.kafka.KafkaConsumer;
-import com.orderingsystem.restaurant.application.OwnerCreateService;
+import com.orderingsystem.restaurant.application.OwnerService;
 import com.orderingsystem.restaurant.application.exception.RestaurantApplicationException;
-import com.orderingsystem.restaurant.infra.kafka.message.CreateRestaurantOwnerMessage;
+import com.orderingsystem.restaurant.infra.kafka.message.RestaurantOwnerMessage;
 import java.sql.SQLException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,28 +23,36 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 @Slf4j
-public class RestaurantOwnerCreateKafkaListener implements KafkaConsumer<String> {
+public class RestaurantOwnerKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final OwnerCreateService ownerCreateService;
+    private final OwnerService ownerService;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.restaurant-consumer-group-id}",
-            topics = "${restaurant-topic.restaurant-owner-create-topic-name}")
+            topics = "${restaurant-topic.restaurant-owner-topic-name}")
     public void receive(@Payload List<String> messages,
                         @Header(KafkaHeaders.RECEIVED_KEY) List<String> keys,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) List<Integer> partitions,
                         @Header(KafkaHeaders.OFFSET) List<Long> offsets) {
-        log.info("{}개의 Restaurant Owner Create 메시지를 받았습니다. keys : {}, partitions : {}, offsets : {}",
+        log.info("{}개의 Restaurant Owner 메시지를 받았습니다. keys : {}, partitions : {}, offsets : {}",
                 messages.size(), keys.toString(), partitions.toString(), offsets.toString());
 
         messages.forEach(message -> {
             try {
-                CreateRestaurantOwnerMessage createRestaurantOwner = objectMapper.readValue(message,
-                        CreateRestaurantOwnerMessage.class);
+                String payload = message;
+                if (payload.startsWith("\"") && payload.endsWith("\"")) {
+                    payload = objectMapper.readValue(payload, String.class);
+                }
+                RestaurantOwnerMessage restaurantOwnerMessage =
+                        objectMapper.readValue(payload, RestaurantOwnerMessage.class);
 
-                if (createRestaurantOwner.getType().equals("INSERT")){
-                    ownerCreateService.createOwner(createRestaurantOwner.toCreateRestaurantOwnerApplicationRequest());
+                if (restaurantOwnerMessage.getType().equals(OutboxEventOperation.INSERT.name())) {
+                    log.info("레스토랑 오너 생성 메시지 수신. Owner Id : {}", restaurantOwnerMessage.getId());
+                    ownerService.createOwner(restaurantOwnerMessage.toRestaurantOwnerApplicationRequest());
+                }else if(restaurantOwnerMessage.getType().equals(OutboxEventOperation.DELETE.name())){
+                    log.info("레스토랑 오너 삭제 메시지 수신. Onwer Id : {}", restaurantOwnerMessage.getId());
+                    ownerService.deleteOwner(restaurantOwnerMessage.toRestaurantOwnerApplicationRequest());
                 }
 
             } catch (JsonMappingException e) {

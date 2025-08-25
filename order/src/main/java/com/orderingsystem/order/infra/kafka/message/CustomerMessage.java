@@ -1,6 +1,6 @@
 package com.orderingsystem.order.infra.kafka.message;
 
-import com.orderingsystem.order.application.dto.request.CreateCustomerApplicationRequest;
+import com.orderingsystem.order.application.dto.request.CustomerApplicationRequest;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.Builder;
@@ -15,8 +15,8 @@ public class CustomerMessage {
     private Instant createdAt;
     private String type;
 
-    public CreateCustomerApplicationRequest toCreateCustomerApplicationRequest(){
-        return CreateCustomerApplicationRequest.builder()
+    public CustomerApplicationRequest toCustomerApplicationRequest(){
+        return CustomerApplicationRequest.builder()
                 .id(this.id)
                 .username(this.username)
                 .createdAt(this.createdAt)

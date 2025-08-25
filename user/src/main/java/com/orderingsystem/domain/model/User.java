@@ -46,7 +46,14 @@ public class User extends AggregateRoot {
     @Enumerated(EnumType.STRING)
     private UserType type;
 
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
+
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public void withdraw() {
+        this.status = UserStatus.WITHDRAWN;
     }
 }

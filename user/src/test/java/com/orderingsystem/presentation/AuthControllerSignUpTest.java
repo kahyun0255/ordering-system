@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.domain.model.User;
+import com.orderingsystem.domain.model.UserStatus;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
@@ -74,6 +75,7 @@ class AuthControllerSignUpTest {
         assertThat(user).isPresent();
         assertThat(user.get().getEmail()).isEqualTo(signUpRequest.getEmail());
         assertThat(user.get().getType()).isEqualTo(signUpRequest.getType());
+        assertThat(user.get().getStatus()).isEqualTo(UserStatus.ACTIVE);
 
         assertThat(userOutboxRepository.count()).isEqualTo(1L);
     }
