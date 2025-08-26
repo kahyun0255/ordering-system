@@ -59,6 +59,7 @@ public class UserService {
                 .username(user.getUsername())
                 .phoneNumber(user.getPhoneNumber())
                 .type(user.getType())
+                .userStatus(user.getStatus())
                 .build();
     }
 
@@ -80,6 +81,7 @@ public class UserService {
                 .username(user.getUsername())
                 .phoneNumber(user.getPhoneNumber())
                 .type(user.getType())
+                .userStatus(user.getStatus())
                 .build();
     }
 

@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
-class OrderServiceTrackOrderTest {
+class OrderServiceTrackOrderCreateTest {
 
     @Autowired
     private OrderService orderService;
@@ -67,7 +67,7 @@ class OrderServiceTrackOrderTest {
         UUID trackingId = UUID.randomUUID();
 
         //when, then
-        assertThatThrownBy(()->orderService.trackOrder(trackingId))
+        assertThatThrownBy(()-> orderService.trackOrder(trackingId))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessage("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : " + trackingId);
     }

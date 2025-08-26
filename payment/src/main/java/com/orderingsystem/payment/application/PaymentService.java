@@ -71,7 +71,8 @@ public class PaymentService {
         persistCompleteDataBase(payment, creditEntry, creditInfo, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
-                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId()),
+                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(),
+                        paymentRequest.getFailureMessages()),
                 paymentEvent.getPayment().getStatus(),
                 OutboxStatus.STARTED,
                 paymentRequest.getSagaId());
@@ -102,7 +103,7 @@ public class PaymentService {
         persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
-                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId()),
+                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(), paymentRequest.getFailureMessages()),
                 paymentEvent.getPayment().getStatus(),
                 OutboxStatus.STARTED,
                 paymentRequest.getSagaId());

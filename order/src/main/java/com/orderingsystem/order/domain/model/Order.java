@@ -3,6 +3,7 @@ package com.orderingsystem.order.domain.model;
 import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
+import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
@@ -15,6 +16,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -150,12 +152,14 @@ public class Order extends AggregateRoot {
         orderStatus = OrderStatus.APPROVED;
     }
 
-    public void initCancel(List<String> failureMessages) {
+    public OrderCancelledEvent initCancel(List<String> failureMessages) {
         if (orderStatus != OrderStatus.PAID) {
             throw new OrderDomainException("주문을 취소할 수 없는 상태입니다.");
         }
         orderStatus = OrderStatus.CANCELLING;
         updateFailureMessages(failureMessages);
+
+        return new OrderCancelledEvent(this, ZonedDateTime.now());
     }
 
     public void cancel(List<String> failureMessages) {

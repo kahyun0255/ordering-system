@@ -4,6 +4,7 @@ import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,7 @@ public class PaymentRequestMessage {
     private BigDecimal price;
     private OffsetDateTime createdAt;
     private PaymentOrderStatus paymentOrderStatus;
+    private List<String> failureMessage;
 
     public PaymentRequest toPaymentRequest() {
         return PaymentRequest.builder()
@@ -31,6 +33,7 @@ public class PaymentRequestMessage {
                 .price(this.getPrice())
                 .createdAt(this.getCreatedAt().toInstant())
                 .paymentOrderStatus(this.getPaymentOrderStatus())
+                .failureMessages(failureMessage)
                 .build();
     }
 }
