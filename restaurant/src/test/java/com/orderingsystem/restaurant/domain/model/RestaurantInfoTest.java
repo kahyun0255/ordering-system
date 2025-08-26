@@ -466,7 +466,7 @@ class RestaurantInfoTest {
                 .build();
 
         //when
-        restaurantInfo.constructOrderApproval(OrderApprovalStatus.REJECTED);
+        restaurantInfo.rejectOrder(failureMessages);
 
         //then
         assertThat(restaurantInfo.getOrderApproval().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);

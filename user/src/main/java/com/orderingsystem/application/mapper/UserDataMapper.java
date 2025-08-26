@@ -3,26 +3,27 @@ package com.orderingsystem.application.mapper;
 import com.orderingsystem.application.outbox.UserCreatedEventPayload;
 import com.orderingsystem.application.outbox.UserDeletedEventPayload;
 import com.orderingsystem.common.domain.status.OutboxEventOperation;
-import com.orderingsystem.domain.model.User;
+import com.orderingsystem.domain.event.UserCreatedEvent;
+import com.orderingsystem.domain.event.UserDeletedEvent;
 import java.time.ZonedDateTime;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserDataMapper {
 
-    public UserCreatedEventPayload userCreatedToUserCreateEventPayload(User user) {
+    public UserCreatedEventPayload userCreatedEventToUserCreateEventPayload(UserCreatedEvent userCreatedEvent) {
         return UserCreatedEventPayload.builder()
-                .username(user.getUsername())
-                .id(user.getUserId().toString())
+                .username(userCreatedEvent.getUser().getUsername())
+                .id(userCreatedEvent.getUser().getUserId().toString())
                 .createdAt(ZonedDateTime.now())
                 .type(OutboxEventOperation.INSERT.name())
                 .build();
     }
 
-    public UserDeletedEventPayload userDeleteToUserDeleteEventPayload(User user) {
+    public UserDeletedEventPayload userDeletedEventToUserDeleteEventPayload(UserDeletedEvent userDeletedEvent) {
         return UserDeletedEventPayload.builder()
-                .username(user.getUsername())
-                .id(user.getUserId().toString())
+                .username(userDeletedEvent.getUser().getUsername())
+                .id(userDeletedEvent.getUser().getUserId().toString())
                 .type(OutboxEventOperation.DELETE.name())
                 .build();
     }

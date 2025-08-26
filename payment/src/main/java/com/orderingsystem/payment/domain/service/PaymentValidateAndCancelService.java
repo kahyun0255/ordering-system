@@ -1,9 +1,7 @@
 package com.orderingsystem.payment.domain.service;
 
-import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.payment.domain.event.PaymentCancelledEvent;
 import com.orderingsystem.payment.domain.event.PaymentEvent;
-import com.orderingsystem.payment.domain.event.PaymentFailedEvent;
 import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
 import com.orderingsystem.payment.domain.model.Payment;
@@ -25,17 +23,16 @@ public class PaymentValidateAndCancelService {
         payment.validatePayment(failureMessages);
 
         if (!failureMessages.isEmpty()) {
-            payment.updateStatus(PaymentStatus.FAILED);
             log.error("결제 취소에 실패했습니다. Order Id : {}", payment.getOrderId());
-            return new PaymentFailedEvent(payment, ZonedDateTime.now(), failureMessages);
+            return payment.fail(failureMessages);
         }
 
         addCreditEntry(payment, creditEntry);
         updateCreditHistory(payment, creditHistories, TransactionType.CREDIT);
-        payment.updateStatus(PaymentStatus.CANCELLED);
-        log.info("결제가 취소되었습니다. Order Id : {}", payment.getOrderId());
 
-        return new PaymentCancelledEvent(payment, ZonedDateTime.now());
+        PaymentCancelledEvent paymentCancelledEvent = payment.cancel();
+        log.info("결제가 취소되었습니다. Order Id : {}", payment.getOrderId());
+        return paymentCancelledEvent;
     }
 
     private void addCreditEntry(Payment payment, CreditEntry creditEntry) {

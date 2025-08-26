@@ -4,6 +4,7 @@ import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
+import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
@@ -138,11 +139,13 @@ public class Order extends AggregateRoot {
         }
     }
 
-    public void pay() {
+    public OrderPaidEvent pay() {
         if (orderStatus != OrderStatus.PENDING) {
             throw new OrderDomainException("결제를 진행할 수 없는 주문 상태입니다.");
         }
         orderStatus = OrderStatus.PAID;
+
+        return new OrderPaidEvent(this, ZonedDateTime.now());
     }
 
     public void approve() {
