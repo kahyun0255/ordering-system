@@ -29,10 +29,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class OrderServiceExceptionTest {
+class OrderCreateServiceExceptionTest {
 
     @InjectMocks
-    private OrderService orderService;
+    private OrderCreateService orderCreateService;
 
     @Mock
     private OrderDataMapper orderDataMapper;
@@ -68,7 +68,7 @@ class OrderServiceExceptionTest {
         given(orderRepository.save(any())).willReturn(new RuntimeException("DB 에러"));
 
         // when, then
-        assertThatThrownBy(() -> orderService.createOrder(request, new ArrayList<>()))
+        assertThatThrownBy(() -> orderCreateService.createOrder(request, new ArrayList<>()))
                 .isInstanceOf(OrderDomainException.class)
                 .hasMessage("주문이 저장되지 않았습니다.");
     }
@@ -86,7 +86,7 @@ class OrderServiceExceptionTest {
         doThrow(new RuntimeException("주소 저장 실패")).when(orderAddressRepository).save(any());
 
         // when, then
-        assertThatThrownBy(() -> orderService.createOrder(request, new ArrayList<>()))
+        assertThatThrownBy(() -> orderCreateService.createOrder(request, new ArrayList<>()))
                 .isInstanceOf(OrderDomainException.class)
                 .hasMessage("주문 주소가 저장되지 않았습니다.");
     }

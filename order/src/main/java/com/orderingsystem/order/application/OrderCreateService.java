@@ -1,7 +1,6 @@
 package com.orderingsystem.order.application;
 
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
-import com.orderingsystem.order.application.dto.response.OrderStatusResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
@@ -24,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OrderService {
+public class OrderCreateService {
 
     private final OrderDataMapper orderDataMapper;
     private final OrderRepository orderRepository;
@@ -52,21 +51,6 @@ public class OrderService {
         }
 
         return orderCreateEvent;
-    }
-
-    @Transactional(readOnly = true)
-    public OrderStatusResponse trackOrder(UUID trackingId) {
-        Optional<Order> order = orderRepository.findByTrackingId(trackingId);
-
-        if (order.isEmpty()) {
-            log.warn("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : {}", trackingId);
-            throw new OrderNotFoundException("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : " + trackingId);
-        }
-        return OrderStatusResponse.builder()
-                .orderTrackingId(order.get().getTrackingId())
-                .orderStatus(order.get().getOrderStatus())
-                .failureMessages(order.get().getFailureMessageList())
-                .build();
     }
 
     private void checkCustomer(UUID customerId) {

@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 public class OrderFacade {
 
     private final RestaurantApi restaurantApi;
-    private final OrderService orderService;
+    private final OrderCreateService orderCreateService;
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final OrderDataMapper orderDataMapper;
 
@@ -29,7 +29,7 @@ public class OrderFacade {
         UUID sagaId = UUID.randomUUID();
         restaurantApi.validRestaurantAndProducts(createOrderRequest, sagaId);
 
-        OrderCreateEvent orderCreateEvent = orderService.createOrder(createOrderRequest, failureMessages);
+        OrderCreateEvent orderCreateEvent = orderCreateService.createOrder(createOrderRequest, failureMessages);
 
         log.info("주문이 생성되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
 
