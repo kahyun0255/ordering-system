@@ -47,7 +47,7 @@ public class Order extends AggregateRoot {
     @Column(columnDefinition = "varchar(36)")
     private UUID restaurantId;
 
-    @Column(columnDefinition = "varchar(36)")
+    @Column(columnDefinition = "varchar(36)", unique = true)
     private UUID trackingId;
 
     @Embedded
