@@ -3,6 +3,8 @@ package com.orderingsystem.restaurant.domain.model;
 import com.orderingsystem.common.domain.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
@@ -21,8 +23,8 @@ import lombok.NoArgsConstructor;
 public class RestaurantProduct extends BaseEntity {
 
     @Id
-    @Column(columnDefinition = "varchar(36)")
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     @Column(columnDefinition = "varchar(36)")
     private UUID restaurantId;
     @Column(columnDefinition = "varchar(36)")
