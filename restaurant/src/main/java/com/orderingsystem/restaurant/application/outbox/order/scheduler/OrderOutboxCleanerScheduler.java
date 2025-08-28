@@ -1,7 +1,6 @@
 package com.orderingsystem.restaurant.application.outbox.order.scheduler;
 
 import com.orderingsystem.outbox.OutboxScheduler;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
 import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
 import java.util.List;
@@ -25,12 +24,12 @@ public class OrderOutboxCleanerScheduler implements OutboxScheduler {
     @Transactional
     public void processOutboxMessage() {
         Optional<List<OrderOutbox>> outboxMessageResponse =
-                orderOutboxHelper.getOrderOutboxMessageByOutboxStatus(OutboxStatus.COMPLETED);
+                orderOutboxHelper.getOrderOutboxMessageByOutboxStatus();
 
         if (outboxMessageResponse.isPresent() && !outboxMessageResponse.get().isEmpty()) {
             List<OrderOutbox> outboxMessages = outboxMessageResponse.get();
 
-            orderOutboxHelper.deleteAllOrderOutboxByOutboxStatus(OutboxStatus.COMPLETED);
+            orderOutboxHelper.deleteAllOrderOutboxByOutboxStatus();
 
             log.info("{}개의 Order RestaurantApprovalOutbox Message를 삭제했습니다. payloads : {}", outboxMessages.size(),
                     outboxMessages.stream().map(OrderOutbox::getPayload).collect(Collectors.joining("\n")));

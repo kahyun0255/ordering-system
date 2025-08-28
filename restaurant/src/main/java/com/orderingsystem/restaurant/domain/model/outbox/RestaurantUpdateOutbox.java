@@ -1,10 +1,7 @@
 package com.orderingsystem.restaurant.domain.model.outbox;
 
-import com.orderingsystem.outbox.OutboxStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -31,9 +28,6 @@ public class RestaurantUpdateOutbox {
     private ZonedDateTime createdAt;
     private ZonedDateTime processedAt;
     private String type;
-
-    @Enumerated(EnumType.STRING)
-    private OutboxStatus outboxStatus;
 
     @Column(name = "payload", columnDefinition = "TEXT", nullable = false)
     private String payload;

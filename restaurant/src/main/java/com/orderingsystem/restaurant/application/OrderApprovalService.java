@@ -1,10 +1,7 @@
 package com.orderingsystem.restaurant.application;
 
-import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
-
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
 import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
 import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
@@ -16,11 +13,12 @@ import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantInfo;
 import com.orderingsystem.restaurant.domain.model.RestaurantInfoView;
-import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
+import com.orderingsystem.restaurant.domain.model.outbox.MessageType;
 import com.orderingsystem.restaurant.domain.repository.OrderApprovalRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
-import com.orderingsystem.restaurant.domain.repository.outbox.OrderOutboxRepository;
+import com.orderingsystem.restaurant.domain.repository.outbox.ProcessedMessageRepository;
 import com.orderingsystem.restaurant.domain.service.RestaurantValidateOrderService;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -38,15 +36,21 @@ public class OrderApprovalService {
     private final RestaurantRepository restaurantRepository;
     private final RestaurantValidateOrderService restaurantValidateOrderService;
     private final OrderApprovalRepository orderApprovalRepository;
-    private final OrderOutboxRepository orderOutboxRepository;
     private final OrderOutboxHelper orderOutboxHelper;
     private final RestaurantDataMapper restaurantDataMapper;
+    private final ProcessedMessageRepository processedMessageRepository;
 
     @Transactional
     public void approveOrder(ApprovalRequest approvalRequest) {
-        if (isOutboxMessageProcessedForApproval(approvalRequest)) {
-            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
-                    approvalRequest.getSagaId());
+        int inserted = processedMessageRepository.insertIgnore(
+                approvalRequest.getId(),
+                MessageType.ORDER_APPROVAL.name(),
+                ZonedDateTime.now()
+        );
+
+        if (inserted == 0) {
+            log.info("이미 처리된 Order Approval 메시지입니다. Saga Id : {}, Message Id : {}",
+                    approvalRequest.getSagaId(), approvalRequest.getId());
             return;
         }
 
@@ -64,15 +68,7 @@ public class OrderApprovalService {
         orderOutboxHelper.saveOrderOutboxMessage(
                 restaurantDataMapper.restaurantApprovalEventToOrderEventPayload(orderApprovalEvent),
                 orderApprovalEvent.getOrderApproval().getStatus(),
-                OutboxStatus.STARTED,
                 approvalRequest.getSagaId());
-    }
-
-    private boolean isOutboxMessageProcessedForApproval(ApprovalRequest approvalRequest) {
-        List<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndOutboxStatus(
-                ORDER_SAGA_NAME, approvalRequest.getSagaId(), OutboxStatus.COMPLETED);
-
-        return !orderOutboxMessage.isEmpty();
     }
 
     private Restaurant findRestaurant(UUID restaurantId) {
@@ -135,7 +131,7 @@ public class OrderApprovalService {
 
     private void orderApprovalSave(OrderApproval orderApproval) {
         if (!orderApprovalRepository.existsByOrderIdAndRestaurantIdAndStatus(orderApproval.getOrderId(),
-                orderApproval.getRestaurantId(), orderApproval.getStatus())){
+                orderApproval.getRestaurantId(), orderApproval.getStatus())) {
             orderApprovalRepository.save(orderApproval);
         }
     }

@@ -6,7 +6,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 
 import com.orderingsystem.common.exception.AccessDeniedException;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.CreateRestaurantApplicationRequest;
 import com.orderingsystem.restaurant.application.dto.response.CreateRestaurantResponse;
 import com.orderingsystem.restaurant.domain.model.Owner;
@@ -69,8 +68,7 @@ class RestaurantManagementFacadeCreateTest extends ApplicationTestSupport {
                 .extracting("restaurantId", "ownerId")
                 .containsExactlyInAnyOrder(tuple(response.getRestaurantId(), ownerId));
 
-        List<RestaurantUpdateOutbox> outbox = restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(
-                RESTAURANT_CREATE_NAME, OutboxStatus.STARTED);
+        List<RestaurantUpdateOutbox> outbox = restaurantUpdateOutboxRepository.findByType(RESTAURANT_CREATE_NAME);
         assertThat(outbox).isNotEmpty();
     }
 

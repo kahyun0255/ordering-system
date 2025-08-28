@@ -79,19 +79,16 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
                 .build());
 
         restaurantProductRepository.save(RestaurantProduct.builder()
-                .id(UUID.randomUUID())
                 .restaurantId(restaurantId)
                 .productId(productId1)
                 .build());
 
         restaurantProductRepository.save(RestaurantProduct.builder()
-                .id(UUID.randomUUID())
                 .restaurantId(restaurantId)
                 .productId(productId2)
                 .build());
 
         restaurantProductRepository.save(RestaurantProduct.builder()
-                .id(UUID.randomUUID())
                 .restaurantId(restaurantId)
                 .productId(productId3)
                 .build());

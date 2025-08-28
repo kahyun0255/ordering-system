@@ -1,11 +1,9 @@
 package com.orderingsystem.restaurant.application.outbox.order.scheduler;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -32,14 +30,13 @@ class OrderOutboxCleanerSchedulerMockTest {
     void doNotion_whenNoDeleteMessages() {
         // given
         when(orderOutboxHelper.getOrderOutboxMessageByOutboxStatus(
-                OutboxStatus.COMPLETED
         )).thenReturn(Optional.empty());
 
         // when
         orderOutboxCleanerScheduler.processOutboxMessage();
 
         // then
-        verify(orderOutboxHelper, never()).deleteAllOrderOutboxByOutboxStatus(any());
+        verify(orderOutboxHelper, never()).deleteAllOrderOutboxByOutboxStatus();
     }
 
 }

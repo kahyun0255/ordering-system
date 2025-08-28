@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.orderingsystem.common.exception.AccessDeniedException;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.UpdateRestaurantApplicationRequest;
 import com.orderingsystem.restaurant.application.dto.response.UpdateRestaurantResponse;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
@@ -76,8 +75,7 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
         assertThat(afterRestaurant).isPresent();
         assertThat(afterRestaurant.get().getName()).isEqualTo(request.getName());
 
-        assertThat(restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME,
-                OutboxStatus.STARTED)).isNotEmpty();
+        assertThat(restaurantUpdateOutboxRepository.findByType(RESTAURANT_CREATE_NAME)).isNotEmpty();
     }
 
     @DisplayName("변경 사항이 없으면 변경된 내용이 없다는 메시지를 반환하고, outbox에 저장되지 않는다.")
@@ -99,8 +97,7 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
         assertThat(response.getMessage()).isEqualTo("변경된 내용이 없습니다.");
 
         assertThat(restaurantUpdateOutboxRepository.count()).isEqualTo(0L);
-        assertThat(restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME,
-                OutboxStatus.STARTED)).isEmpty();
+        assertThat(restaurantUpdateOutboxRepository.findByType(RESTAURANT_CREATE_NAME)).isEmpty();
     }
 
     @DisplayName("레스토랑 이름이 공백이라면 업데이트에 실패하고, 예외가 발생한다.")
@@ -121,8 +118,7 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
                 .hasMessage("레스토랑 이름은 비어있을 수 없습니다.");
 
         assertThat(restaurantUpdateOutboxRepository.count()).isEqualTo(0L);
-        assertThat(restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME,
-                OutboxStatus.STARTED)).isEmpty();
+        assertThat(restaurantUpdateOutboxRepository.findByType(RESTAURANT_CREATE_NAME)).isEmpty();
     }
 
     @DisplayName("레스토랑 오너가 아니면 정보 업데이트에 실패하고, 예외가 발생한다.")
@@ -146,8 +142,7 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
                 .hasMessage("레스토랑 오너 정보를 찾을 수 없습니다.");
 
         assertThat(restaurantUpdateOutboxRepository.count()).isEqualTo(0L);
-        assertThat(restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME,
-                OutboxStatus.STARTED)).isEmpty();
+        assertThat(restaurantUpdateOutboxRepository.findByType(RESTAURANT_CREATE_NAME)).isEmpty();
     }
 
     @DisplayName("레스토랑 정보를 찾을 수 없으면 정보 업데이트에 실패하고, 예외가 발생한다.")

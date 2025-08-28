@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
 import com.orderingsystem.restaurant.application.outbox.order.model.OrderEventPayload;
 import com.orderingsystem.restaurant.domain.exception.RestaurantDomainException;
@@ -50,15 +49,14 @@ class OrderOutboxHelperTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .createdAt(ZonedDateTime.now())
                 .processedAt(ZonedDateTime.now())
                 .type(ORDER_SAGA_NAME)
                 .payload("payload")
                 .build();
 
-        given(orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus(
-                anyString(), any(), any(), any())).willReturn(true);
+        given(orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatus(
+                anyString(), any(), any())).willReturn(true);
 
         // when
         orderOutboxHelper.save(existingOutbox);
@@ -83,7 +81,7 @@ class OrderOutboxHelperTest {
 
         //when, then
         assertThatThrownBy(() -> orderOutboxHelper.saveOrderOutboxMessage(
-                payload, OrderApprovalStatus.APPROVED, OutboxStatus.STARTED, UUID.randomUUID()))
+                payload, OrderApprovalStatus.APPROVED, UUID.randomUUID()))
                 .isInstanceOf(RestaurantDomainException.class)
                 .hasMessageContaining("OrderEventPayload 생성에 실패했습니다");
     }

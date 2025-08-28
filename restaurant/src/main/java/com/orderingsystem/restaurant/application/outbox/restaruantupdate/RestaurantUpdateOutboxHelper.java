@@ -11,7 +11,6 @@ import com.orderingsystem.restaurant.domain.model.outbox.RestaurantUpdateOutbox;
 import com.orderingsystem.restaurant.domain.repository.outbox.RestaurantUpdateOutboxRepository;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +27,8 @@ public class RestaurantUpdateOutboxHelper {
 
     @Transactional
     public void save(RestaurantUpdateOutbox restaurantUpdateOutbox) {
-        if (!restaurantUpdateOutboxRepository.existsByTypeAndEventIdAndOutboxStatus(RESTAURANT_CREATE_NAME,
-                restaurantUpdateOutbox.getEventId(), restaurantUpdateOutbox.getOutboxStatus())) {
+        if (!restaurantUpdateOutboxRepository.existsByTypeAndEventId(RESTAURANT_CREATE_NAME,
+                restaurantUpdateOutbox.getEventId())) {
             restaurantUpdateOutboxRepository.save(restaurantUpdateOutbox);
             log.info("Restaurant Update Outbox 저장했습니다. Outbox Id : {}", restaurantUpdateOutbox.getId());
         } else {
@@ -47,7 +46,6 @@ public class RestaurantUpdateOutboxHelper {
                 .createdAt(restaurantUpdateEventPayload.getCreatedAt())
                 .processedAt(ZonedDateTime.now())
                 .type(RESTAURANT_CREATE_NAME)
-                .outboxStatus(outboxStatus)
                 .payload(createPayload(restaurantUpdateEventPayload))
                 .build());
     }
@@ -65,13 +63,13 @@ public class RestaurantUpdateOutboxHelper {
     }
 
     @Transactional(readOnly = true)
-    public List<RestaurantUpdateOutbox> getOrderOutboxMessageByOutboxStatus(OutboxStatus outboxStatus) {
-        return restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME, outboxStatus);
+    public List<RestaurantUpdateOutbox> getOrderOutboxMessage() {
+        return restaurantUpdateOutboxRepository.findByType(RESTAURANT_CREATE_NAME);
     }
 
     @Transactional
-    public void deleteAllOrderOutboxByOutboxStatus(OutboxStatus outboxStatus) {
-        restaurantUpdateOutboxRepository.deleteAllByTypeAndOutboxStatus(RESTAURANT_CREATE_NAME, outboxStatus);
+    public void deleteAllOrderOutboxByOutboxStatus() {
+        restaurantUpdateOutboxRepository.deleteAllByType(RESTAURANT_CREATE_NAME);
     }
 
 }

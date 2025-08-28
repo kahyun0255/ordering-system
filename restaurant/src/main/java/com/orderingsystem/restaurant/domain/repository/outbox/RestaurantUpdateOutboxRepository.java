@@ -1,6 +1,5 @@
 package com.orderingsystem.restaurant.domain.repository.outbox;
 
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.domain.model.outbox.RestaurantUpdateOutbox;
 import java.util.List;
 import java.util.UUID;
@@ -10,9 +9,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RestaurantUpdateOutboxRepository extends JpaRepository<RestaurantUpdateOutbox, UUID> {
 
-    boolean existsByTypeAndEventIdAndOutboxStatus(String type, UUID eventId, OutboxStatus outboxStatus);
+    boolean existsByTypeAndEventId(String type, UUID eventId);
 
-    List<RestaurantUpdateOutbox> findByTypeAndOutboxStatus(String type, OutboxStatus outboxStatus);
+    List<RestaurantUpdateOutbox> findByType(String type);
 
-    void deleteAllByTypeAndOutboxStatus(String type, OutboxStatus outboxStatus);
+    void deleteAllByType(String type);
 }
