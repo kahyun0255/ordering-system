@@ -4,7 +4,6 @@ import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.orderingsystem.common.domain.status.PaymentStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.payment.domain.repository.outbox.OrderOutboxRepository;
 import java.time.ZonedDateTime;
@@ -15,11 +14,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
+@TestPropertySource(properties = "outbox.delete-ttl=3")
 class OrderOutboxCleanerSchedulerTest {
 
     @Autowired
@@ -28,16 +29,16 @@ class OrderOutboxCleanerSchedulerTest {
     @Autowired
     private OrderOutboxRepository orderOutboxRepository;
 
-    @DisplayName("OutboxStatus가 COMPLETED인 Order Outbox 메시지들을 삭제한다.")
+    @DisplayName("Delete TTL 이전에 생성한 Outbox Message를 삭제한다.")
     @Test
-    void deleteCompletedPaymentOutboxMessages() {
+    void shouldDeleteOutboxMessagesCreatedBeforeDeleteTTL() {
         //given
-        OrderOutbox orderOutbox1 = getOrderOutbox(OutboxStatus.COMPLETED);
-        OrderOutbox orderOutbox2 = getOrderOutbox(OutboxStatus.COMPLETED);
-        OrderOutbox orderOutbox3 = getOrderOutbox(OutboxStatus.COMPLETED);
+        OrderOutbox orderOutbox1 = getOrderOutbox(ZonedDateTime.now().minusDays(4));
+        OrderOutbox orderOutbox2 = getOrderOutbox(ZonedDateTime.now().minusDays(3));
+        OrderOutbox orderOutbox3 = getOrderOutbox(ZonedDateTime.now().minusDays(3));
 
-        OrderOutbox orderOutbox4 = getOrderOutbox(OutboxStatus.STARTED);
-        OrderOutbox orderOutbox5 = getOrderOutbox(OutboxStatus.STARTED);
+        OrderOutbox orderOutbox4 = getOrderOutbox(ZonedDateTime.now().minusDays(1));
+        OrderOutbox orderOutbox5 = getOrderOutbox(ZonedDateTime.now().minusDays(2));
 
         orderOutboxRepository.saveAll(
                 List.of(orderOutbox1, orderOutbox2, orderOutbox3, orderOutbox4, orderOutbox5));
@@ -53,25 +54,11 @@ class OrderOutboxCleanerSchedulerTest {
         assertThat(afterCount).isEqualTo(2L);
     }
 
-    @DisplayName("삭제할 COMPLETED 상태의 메시지가 없으면 아무 동작도 하지 않는다.")
-    @Test
-    void doNothing_whenNoCompletedMessagesExist() {
-        //given
-        assertThat(orderOutboxRepository.count()).isZero();
-
-        //when
-        orderOutboxCleanerScheduler.processOutboxMessage();
-
-        //then
-        long afterCount = orderOutboxRepository.count();
-        assertThat(afterCount).isZero();
-    }
-
-    private static OrderOutbox getOrderOutbox(OutboxStatus outboxStatus) {
+    private static OrderOutbox getOrderOutbox(ZonedDateTime threshold) {
         return OrderOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(UUID.randomUUID())
-                .createdAt(ZonedDateTime.now())
+                .createdAt(threshold)
                 .type(ORDER_SAGA_NAME)
                 .payload("payload")
                 .paymentStatus(PaymentStatus.COMPLETED)

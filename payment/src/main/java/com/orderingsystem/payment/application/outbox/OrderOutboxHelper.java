@@ -10,8 +10,6 @@ import com.orderingsystem.payment.domain.exception.PaymentDomainException;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.payment.domain.repository.outbox.OrderOutboxRepository;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,13 +58,8 @@ public class OrderOutboxHelper {
         }
     }
 
-    @Transactional(readOnly = true)
-    public Optional<List<OrderOutbox>> getOrderOutboxMessage() {
-        return orderOutboxRepository.findByType(ORDER_SAGA_NAME);
-    }
-
     @Transactional
-    public void deleteAllOrderOutbox() {
-        orderOutboxRepository.deleteAllByType(ORDER_SAGA_NAME);
+    public int deleteOlderThan(ZonedDateTime threshold) {
+        return orderOutboxRepository.deleteOlderThan(threshold);
     }
 }
