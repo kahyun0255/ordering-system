@@ -15,7 +15,6 @@ import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
-import com.orderingsystem.order.domain.service.PayOrderService;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -31,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderPaymentService implements SagaStep<PaymentResponse> {
 
     private final OrderRepository orderRepository;
-    private final PayOrderService payOrderService;
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
     private final OrderDataMapper orderDataMapper;
@@ -61,7 +59,8 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
             return;
         }
 
-        OrderPaidEvent orderPaidEvent = completedPaymentForOrder(order);
+        OrderPaidEvent orderPaidEvent = order.pay();
+        log.info("주문 결제가 완료되었습니다. Order Id : {}", paymentResponse.getOrderId());
 
         SagaStatus sagaStatus =
                 OrderStatusToSagaStatus.orderStatusToSagaStatus(orderPaidEvent.getOrder().getOrderStatus());
@@ -114,11 +113,6 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         }
 
         log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", paymentResponse.getOrderId());
-    }
-
-    private OrderPaidEvent completedPaymentForOrder(Order order) {
-        log.info("결제 처리 시작. Order Id : {}", order.getId());
-        return payOrderService.payOrder(order);
     }
 
     private SagaStatus[] getCurrentSagaStatus(PaymentStatus paymentStatus) {

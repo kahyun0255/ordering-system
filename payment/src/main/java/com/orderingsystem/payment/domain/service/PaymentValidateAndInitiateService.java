@@ -1,16 +1,12 @@
 package com.orderingsystem.payment.domain.service;
 
 import com.orderingsystem.common.domain.Money;
-import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
-import com.orderingsystem.payment.domain.event.PaymentCompletedEvent;
 import com.orderingsystem.payment.domain.event.PaymentEvent;
-import com.orderingsystem.payment.domain.event.PaymentFailedEvent;
 import com.orderingsystem.payment.domain.model.CreditHistory;
 import com.orderingsystem.payment.domain.model.CreditInfo;
 import com.orderingsystem.payment.domain.model.Payment;
 import com.orderingsystem.payment.domain.model.TransactionType;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -36,12 +32,10 @@ public class PaymentValidateAndInitiateService {
 
         if (failureMessages.isEmpty()) {
             log.info("Order Id에 대한 결제가 준비되었습니다. Order Id : {}", payment.getOrderId());
-            payment.updateStatus(PaymentStatus.COMPLETED);
-            return new PaymentCompletedEvent(payment, ZonedDateTime.now());
+            return payment.complete();
         } else {
             log.info("Order Id에 대한 결제 준비가 실패했습니다. Order Id : {}", payment.getOrderId());
-            payment.updateStatus(PaymentStatus.FAILED);
-            return new PaymentFailedEvent(payment, ZonedDateTime.now(), failureMessages);
+            return payment.fail(failureMessages);
         }
     }
 

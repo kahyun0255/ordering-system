@@ -22,10 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
-class OrderServiceTrackOrderTest {
+class OrderTrackingServiceTest {
 
     @Autowired
-    private OrderService orderService;
+    private OrderTrackingService orderTrackingService;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -52,7 +52,7 @@ class OrderServiceTrackOrderTest {
                 .build());
 
         //when
-        OrderStatusResponse response = orderService.trackOrder(trackingId);
+        OrderStatusResponse response = orderTrackingService.trackOrder(trackingId);
 
         //then
         assertThat(response.getOrderStatus()).isEqualTo(orderStatus);
@@ -67,7 +67,7 @@ class OrderServiceTrackOrderTest {
         UUID trackingId = UUID.randomUUID();
 
         //when, then
-        assertThatThrownBy(()->orderService.trackOrder(trackingId))
+        assertThatThrownBy(()-> orderTrackingService.trackOrder(trackingId))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessage("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : " + trackingId);
     }

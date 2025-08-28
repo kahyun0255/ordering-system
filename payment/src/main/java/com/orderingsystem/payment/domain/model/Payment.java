@@ -3,6 +3,9 @@ package com.orderingsystem.payment.domain.model;
 import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.PaymentStatus;
+import com.orderingsystem.payment.domain.event.PaymentCancelledEvent;
+import com.orderingsystem.payment.domain.event.PaymentCompletedEvent;
+import com.orderingsystem.payment.domain.event.PaymentFailedEvent;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -11,6 +14,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -69,5 +73,20 @@ public class Payment extends AggregateRoot {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    public PaymentCompletedEvent complete() {
+        this.status = PaymentStatus.COMPLETED;
+        return new PaymentCompletedEvent(this, ZonedDateTime.now());
+    }
+
+    public PaymentFailedEvent fail(List<String> failureMessages) {
+        this.status = PaymentStatus.FAILED;
+        return new PaymentFailedEvent(this, ZonedDateTime.now(), failureMessages);
+    }
+
+    public PaymentCancelledEvent cancel() {
+        this.status = PaymentStatus.CANCELLED;
+        return new PaymentCancelledEvent(this, ZonedDateTime.now());
     }
 }

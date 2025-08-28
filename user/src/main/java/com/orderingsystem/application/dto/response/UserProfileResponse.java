@@ -1,5 +1,6 @@
 package com.orderingsystem.application.dto.response;
 
+import com.orderingsystem.domain.model.UserStatus;
 import com.orderingsystem.domain.model.UserType;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,5 +15,6 @@ public class UserProfileResponse {
     private final String nickname;
     private final String phoneNumber;
     private final UserType type;
+    private final UserStatus userStatus;
 
 }

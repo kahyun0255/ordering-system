@@ -5,6 +5,7 @@ import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.payment.domain.model.Payment;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,7 @@ public class PaymentRequest {
     private BigDecimal price;
     private Instant createdAt;
     private PaymentOrderStatus paymentOrderStatus;
+    private List<String> failureMessages;
 
     public Payment toPayment(){
         return Payment.builder()

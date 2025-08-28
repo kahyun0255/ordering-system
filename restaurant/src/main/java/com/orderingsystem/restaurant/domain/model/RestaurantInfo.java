@@ -3,6 +3,9 @@ package com.orderingsystem.restaurant.domain.model;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -54,17 +57,36 @@ public class RestaurantInfo {
         }
     }
 
-    public void constructOrderApproval(OrderApprovalStatus orderApprovalStatus) {
+    public void updateStatus(RestaurantStatus status) {
+        this.status = status;
+    }
+
+    public OrderApprovedEvent approveOrder(List<String> failureMessages) {
         this.orderApproval = OrderApproval.builder()
                 .id(UUID.randomUUID())
                 .restaurantId(this.getRestaurantId())
                 .orderId(this.orderDetail.getOrderId())
-                .status(orderApprovalStatus)
+                .status(OrderApprovalStatus.APPROVED)
                 .build();
+
+        log.info("주문이 승인되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
+
+        return new OrderApprovedEvent(this.getOrderApproval(), this.getRestaurantId(), failureMessages,
+                ZonedDateTime.now());
     }
 
-    public void updateStatus(RestaurantStatus status) {
-        this.status = status;
+    public OrderRejectedEvent rejectOrder(List<String> failureMessages) {
+        this.orderApproval = OrderApproval.builder()
+                .id(UUID.randomUUID())
+                .restaurantId(this.getRestaurantId())
+                .orderId(this.orderDetail.getOrderId())
+                .status(OrderApprovalStatus.REJECTED)
+                .build();
+
+        log.info("주문이 거절되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
+
+        return new OrderRejectedEvent(this.getOrderApproval(), this.getRestaurantId(), failureMessages,
+                ZonedDateTime.now());
     }
 
 }

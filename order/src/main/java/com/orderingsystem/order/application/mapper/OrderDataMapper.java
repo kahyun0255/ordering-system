@@ -102,6 +102,7 @@ public class OrderDataMapper {
 
     public OrderPaymentEventPayload orderCancelledEventToOrderPaymentEventPayload(
             OrderCancelledEvent orderCancelledEvent, UUID sagaId) {
+        System.out.println(orderCancelledEvent.getOrder().getFailureMessageList());
         return OrderPaymentEventPayload.builder()
                 .orderId(orderCancelledEvent.getOrder().getId().toString())
                 .sagaId(sagaId.toString())
@@ -109,6 +110,7 @@ public class OrderDataMapper {
                 .price(orderCancelledEvent.getOrder().getPrice().getAmount())
                 .createdAt(orderCancelledEvent.getCreatedAt())
                 .paymentOrderStatus(PaymentOrderStatus.CANCELLED.name())
+                .failureMessage(orderCancelledEvent.getOrder().getFailureMessageList())
                 .build();
     }
 }

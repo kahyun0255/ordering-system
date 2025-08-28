@@ -7,12 +7,12 @@ import com.orderingsystem.application.mapper.UserDataMapper;
 import com.orderingsystem.application.outbox.UserOutboxHelper;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
+import com.orderingsystem.domain.event.UserDeletedEvent;
 import com.orderingsystem.domain.exception.UserNotFoundException;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserStatus;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.outbox.OutboxStatus;
-import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -33,19 +33,23 @@ public class UserService {
     private final UserDataMapper userDataMapper;
 
     @Transactional
-    public UserCreatedEvent persistUser(SignUpApplicationRequest signUpApplicationRequest) {
-        validSignUp(signUpApplicationRequest);
-        User user = createUser(signUpApplicationRequest);
-        userRepository.save(user);
+    public UserCreatedEvent persistUser(SignUpApplicationRequest request) {
+        validSignUp(request);
+
+        UserCreatedEvent userCreatedEvent = User.createUser(request.getId(), request.getUsername(), request.getType(),
+                passwordEncoder.encode(request.getPassword()), request.getEmail(), request.getNickname(),
+                request.getPhoneNumber());
+
+        userRepository.save(userCreatedEvent.getUser());
 
         userOutboxHelper.saveUserOutboxMessage(
-                userDataMapper.userCreatedToUserCreateEventPayload(user),
+                userDataMapper.userCreatedEventToUserCreateEventPayload(userCreatedEvent),
                 OutboxStatus.STARTED,
                 UUID.randomUUID(),
-                signUpApplicationRequest.getType()
+                request.getType()
         );
 
-        return new UserCreatedEvent(user, ZonedDateTime.now());
+        return userCreatedEvent;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +63,7 @@ public class UserService {
                 .username(user.getUsername())
                 .phoneNumber(user.getPhoneNumber())
                 .type(user.getType())
+                .userStatus(user.getStatus())
                 .build();
     }
 
@@ -80,6 +85,7 @@ public class UserService {
                 .username(user.getUsername())
                 .phoneNumber(user.getPhoneNumber())
                 .type(user.getType())
+                .userStatus(user.getStatus())
                 .build();
     }
 
@@ -87,11 +93,11 @@ public class UserService {
     public void withDrawUser(UUID userId) {
         log.info("회원 탈퇴. User Id : {}", userId);
         User user = findUserByUserId(userId);
-        user.withdraw();
+        UserDeletedEvent userDeletedEvent = user.withdraw();
 
         UUID eventId = UUID.randomUUID();
         userOutboxHelper.deleteUserOutboxMessage(
-                userDataMapper.userDeleteToUserDeleteEventPayload(user),
+                userDataMapper.userDeletedEventToUserDeleteEventPayload(userDeletedEvent),
                 OutboxStatus.STARTED,
                 eventId,
                 user.getType()
@@ -145,13 +151,13 @@ public class UserService {
         }
     }
 
-    private User createUser(SignUpApplicationRequest signUpApplicationRequest) {
+    private static User createUser(SignUpApplicationRequest signUpApplicationRequest) {
         return User.builder()
                 .userId(UUID.randomUUID())
                 .id(signUpApplicationRequest.getId())
                 .username(signUpApplicationRequest.getUsername())
                 .type(signUpApplicationRequest.getType())
-                .password(passwordEncoder.encode(signUpApplicationRequest.getPassword()))
+                .password(signUpApplicationRequest.getPassword())
                 .email(signUpApplicationRequest.getEmail())
                 .nickname(signUpApplicationRequest.getNickname())
                 .phoneNumber(signUpApplicationRequest.getPhoneNumber())

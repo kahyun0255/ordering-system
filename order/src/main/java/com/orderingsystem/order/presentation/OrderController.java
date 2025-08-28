@@ -2,7 +2,8 @@ package com.orderingsystem.order.presentation;
 
 import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.order.application.OrderFacade;
-import com.orderingsystem.order.application.OrderService;
+import com.orderingsystem.order.application.OrderCreateService;
+import com.orderingsystem.order.application.OrderTrackingService;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.dto.response.OrderStatusResponse;
 import com.orderingsystem.order.presentation.request.CreateOrderRequest;
@@ -24,9 +25,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final OrderService orderService;
+    private final OrderCreateService orderCreateService;
     private final CommonJwtUtil commonJwtUtil;
     private final OrderFacade orderFacade;
+    private final OrderTrackingService orderTrackingService;
 
     @PostMapping
     public ResponseEntity<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest createOrderRequest,
@@ -45,6 +47,6 @@ public class OrderController {
     @GetMapping("/{trackingId}")
     public ResponseEntity<OrderStatusResponse> getOrderByTrackingId(@PathVariable UUID trackingId) {
         log.info("주문 추적 시작 : {}", trackingId);
-        return ResponseEntity.ok(orderService.trackOrder(trackingId));
+        return ResponseEntity.ok(orderTrackingService.trackOrder(trackingId));
     }
 }

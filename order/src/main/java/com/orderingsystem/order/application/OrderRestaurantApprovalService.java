@@ -14,7 +14,6 @@ import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
-import com.orderingsystem.order.domain.service.OrderPaymentCancelService;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -30,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprovalResponse> {
 
     private final OrderRepository orderRepository;
-    private final OrderPaymentCancelService orderPaymentCancelService;
     private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final OrderDataMapper orderDataMapper;
@@ -103,8 +101,7 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
             return;
         }
 
-        OrderCancelledEvent orderCancelledEvent = orderPaymentCancelService.cancelOrderPayment(order,
-                restaurantApprovalResponse.getFailureMessages());
+        OrderCancelledEvent orderCancelledEvent = order.initCancel(restaurantApprovalResponse.getFailureMessages());
 
         SagaStatus sagaStatus =
                 OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCancelledEvent.getOrder().getOrderStatus());
