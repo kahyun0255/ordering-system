@@ -9,7 +9,6 @@ import com.orderingsystem.restaurant.domain.repository.RestaurantProductReposito
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
 import com.orderingsystem.restaurant.domain.repository.outbox.OrderOutboxRepository;
 import com.orderingsystem.restaurant.domain.repository.outbox.ProcessedMessageRepository;
-import com.orderingsystem.restaurant.domain.repository.outbox.RestaurantUpdateOutboxRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -46,9 +45,6 @@ public abstract class ApplicationTestSupport {
 
     @Autowired
     protected OrderOutboxRepository orderOutboxRepository;
-
-    @Autowired
-    protected RestaurantUpdateOutboxRepository restaurantUpdateOutboxRepository;
 
     @Autowired
     protected ProcessedMessageRepository processedMessageRepository;

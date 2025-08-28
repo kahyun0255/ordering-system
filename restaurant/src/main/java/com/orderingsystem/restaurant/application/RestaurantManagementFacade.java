@@ -1,13 +1,10 @@
 package com.orderingsystem.restaurant.application;
 
-import com.orderingsystem.common.domain.status.OutboxEventOperation;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.CreateRestaurantApplicationRequest;
 import com.orderingsystem.restaurant.application.dto.request.UpdateRestaurantApplicationRequest;
 import com.orderingsystem.restaurant.application.dto.response.CreateRestaurantResponse;
 import com.orderingsystem.restaurant.application.dto.response.UpdateRestaurantResponse;
 import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
-import com.orderingsystem.restaurant.application.outbox.restaruantupdate.RestaurantUpdateOutboxHelper;
 import com.orderingsystem.restaurant.domain.event.restaruant.CreatedRestaurantEvent;
 import com.orderingsystem.restaurant.domain.event.restaruant.UpdatedRestaurantEvent;
 import com.orderingsystem.restaurant.domain.model.Owner;
@@ -25,7 +22,6 @@ public class RestaurantManagementFacade {
 
     private final RestaurantCreateService restaurantCreateService;
     private final RestaurantAccessValidatorService restaurantAccessValidatorService;
-    private final RestaurantUpdateOutboxHelper restaurantUpdateOutboxHelper;
     private final RestaurantDataMapper restaurantDataMapper;
     private final RestaurantUpdateService restaurantUpdateService;
 
@@ -33,13 +29,6 @@ public class RestaurantManagementFacade {
     public CreateRestaurantResponse createRestaurant(CreateRestaurantApplicationRequest request) {
         Owner owner = restaurantAccessValidatorService.findOwner(request.getOwnerId());
         CreatedRestaurantEvent createdRestaurantEvent = restaurantCreateService.create(request, owner);
-
-        restaurantUpdateOutboxHelper.saveRestaurantUpdateOutboxMessage(
-                restaurantDataMapper.restaurantEventToRestaurantUpdateEventPayload(
-                        createdRestaurantEvent, OutboxEventOperation.INSERT),
-                OutboxStatus.STARTED,
-                UUID.randomUUID()
-        );
 
         log.info("레스토랑 생성 완료. Restaurant Id : {}, Owner Id : {}",
                 createdRestaurantEvent.getRestaurant().getRestaurantId(), request.getOwnerId());
@@ -67,13 +56,6 @@ public class RestaurantManagementFacade {
                     .message("변경된 내용이 없습니다.")
                     .build();
         }
-
-        restaurantUpdateOutboxHelper.saveRestaurantUpdateOutboxMessage(
-                restaurantDataMapper.restaurantEventToRestaurantUpdateEventPayload(
-                        updatedRestaurantEvent, OutboxEventOperation.UPDATE),
-                OutboxStatus.STARTED,
-                UUID.randomUUID()
-        );
 
         log.info("레스토랑 업데이트 완료. Restaurant Id : {}, Owner Id : {}, name : {}, status : {}",
                 updatedRestaurantEvent.getRestaurant().getRestaurantId(), restaurantOwnerId,

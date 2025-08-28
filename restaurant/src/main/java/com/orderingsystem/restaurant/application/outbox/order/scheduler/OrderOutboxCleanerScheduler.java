@@ -2,15 +2,12 @@ package com.orderingsystem.restaurant.application.outbox.order.scheduler;
 
 import com.orderingsystem.outbox.OutboxScheduler;
 import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
-import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.time.ZonedDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -19,20 +16,15 @@ public class OrderOutboxCleanerScheduler implements OutboxScheduler {
 
     private final OrderOutboxHelper orderOutboxHelper;
 
+    @Value("${outbox.delete-ttl}")
+    private Long deleteTtl;
+
     @Override
     @Scheduled(cron = "@midnight")
-    @Transactional
     public void processOutboxMessage() {
-        Optional<List<OrderOutbox>> outboxMessageResponse =
-                orderOutboxHelper.getOrderOutboxMessageByOutboxStatus();
+        ZonedDateTime threshold = ZonedDateTime.now().minusDays(deleteTtl);
+        int deleted = orderOutboxHelper.deleteOlderThan(threshold);
 
-        if (outboxMessageResponse.isPresent() && !outboxMessageResponse.get().isEmpty()) {
-            List<OrderOutbox> outboxMessages = outboxMessageResponse.get();
-
-            orderOutboxHelper.deleteAllOrderOutboxByOutboxStatus();
-
-            log.info("{}개의 Order RestaurantApprovalOutbox Message를 삭제했습니다. payloads : {}", outboxMessages.size(),
-                    outboxMessages.stream().map(OrderOutbox::getPayload).collect(Collectors.joining("\n")));
-        }
+        log.info("{}개의 Restaurant OrderOutbox Message 삭제", deleted);
     }
 }

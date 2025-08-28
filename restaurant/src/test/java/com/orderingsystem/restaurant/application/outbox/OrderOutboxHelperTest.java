@@ -1,6 +1,7 @@
 package com.orderingsystem.restaurant.application.outbox;
 
 import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -26,9 +27,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 @ActiveProfiles("test")
 @SpringBootTest
+@Transactional
 class OrderOutboxHelperTest {
 
     @Mock
@@ -84,6 +87,20 @@ class OrderOutboxHelperTest {
                 payload, OrderApprovalStatus.APPROVED, UUID.randomUUID()))
                 .isInstanceOf(RestaurantDomainException.class)
                 .hasMessageContaining("OrderEventPayload 생성에 실패했습니다");
+    }
+
+    @DisplayName("정해진 threshold보다 짧은 시간 동안 저장된 Outbox 메시지를 삭제한다.")
+    @Test
+    void shouldDeleteOutboxMessagesStoredShorterThanThreshold() {
+        // given
+        ZonedDateTime threshold = ZonedDateTime.now().minusDays(3);
+        given(orderOutboxRepository.deleteOlderThan(threshold)).willReturn(5);
+
+        // when
+        int deleted = orderOutboxHelper.deleteOlderThan(threshold);
+
+        // then
+        assertThat(deleted).isEqualTo(5);
     }
 
 }

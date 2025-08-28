@@ -48,7 +48,6 @@ class RestaurantManagementControllerCreateTest extends ControllerTestSupport {
 
         assertThat(restaurantRepository.count()).isEqualTo(1L);
         assertThat(restaurantOwnershipRepository.count()).isEqualTo(1L);
-        assertThat(restaurantUpdateOutboxRepository.count()).isEqualTo(1L);
     }
 
     @DisplayName("저장된 레스토랑 오너가 없으면 레스토랑 생성에 실패하고, 예외가 발생한다.")
@@ -74,7 +73,6 @@ class RestaurantManagementControllerCreateTest extends ControllerTestSupport {
 
         assertThat(restaurantRepository.count()).isEqualTo(0L);
         assertThat(restaurantOwnershipRepository.count()).isEqualTo(0L);
-        assertThat(restaurantUpdateOutboxRepository.count()).isEqualTo(0L);
     }
 
     @DisplayName("액세스 토큰이 없으면 레스토랑 생성에 실패하고, 예외가 발생한다.")
@@ -97,7 +95,6 @@ class RestaurantManagementControllerCreateTest extends ControllerTestSupport {
 
         assertThat(restaurantRepository.count()).isEqualTo(0L);
         assertThat(restaurantOwnershipRepository.count()).isEqualTo(0L);
-        assertThat(restaurantUpdateOutboxRepository.count()).isEqualTo(0L);
     }
 
     @DisplayName("레스토랑 이름이 없으면 레스토랑 생성에 실패하고, 예외가 발생한다.")
@@ -127,7 +124,6 @@ class RestaurantManagementControllerCreateTest extends ControllerTestSupport {
 
         assertThat(restaurantRepository.count()).isEqualTo(0L);
         assertThat(restaurantOwnershipRepository.count()).isEqualTo(0L);
-        assertThat(restaurantUpdateOutboxRepository.count()).isEqualTo(0L);
     }
 
 }
