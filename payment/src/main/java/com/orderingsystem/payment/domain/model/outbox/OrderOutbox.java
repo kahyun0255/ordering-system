@@ -1,7 +1,6 @@
 package com.orderingsystem.payment.domain.model.outbox;
 
 import com.orderingsystem.common.domain.status.PaymentStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,9 +37,6 @@ public class OrderOutbox {
     private String payload;
 
     @Enumerated(EnumType.STRING)
-    private OutboxStatus outboxStatus;
-
-    @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
 
     @Version
@@ -60,7 +56,4 @@ public class OrderOutbox {
         return Objects.hashCode(id);
     }
 
-    public void updateOutboxStatus(OutboxStatus outboxStatus) {
-        this.outboxStatus = outboxStatus;
-    }
 }

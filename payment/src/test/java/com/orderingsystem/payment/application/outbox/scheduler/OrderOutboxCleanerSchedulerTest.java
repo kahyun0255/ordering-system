@@ -75,7 +75,6 @@ class OrderOutboxCleanerSchedulerTest {
                 .type(ORDER_SAGA_NAME)
                 .payload("payload")
                 .paymentStatus(PaymentStatus.COMPLETED)
-                .outboxStatus(outboxStatus)
                 .build();
     }
 }

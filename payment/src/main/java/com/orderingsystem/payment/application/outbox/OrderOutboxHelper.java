@@ -5,7 +5,6 @@ import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.PaymentStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.payment.application.outbox.model.OrderEventPayload;
 import com.orderingsystem.payment.domain.exception.PaymentDomainException;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
@@ -28,8 +27,8 @@ public class OrderOutboxHelper {
 
     @Transactional
     public void save(OrderOutbox orderOutbox) {
-        if (!orderOutboxRepository.existsByTypeAndSagaIdAndPaymentStatusAndOutboxStatus(ORDER_SAGA_NAME,
-                orderOutbox.getSagaId(), orderOutbox.getPaymentStatus(), orderOutbox.getOutboxStatus())) {
+        if (!orderOutboxRepository.existsByTypeAndSagaIdAndPaymentStatus(ORDER_SAGA_NAME,
+                orderOutbox.getSagaId(), orderOutbox.getPaymentStatus())) {
             orderOutboxRepository.save(orderOutbox);
             log.info("Payment OrderOutbox 저장했습니다. Outbox Id : {}", orderOutbox.getId());
         } else {
@@ -39,8 +38,7 @@ public class OrderOutboxHelper {
     }
 
     @Transactional
-    public void saveOrderOutboxMessage(OrderEventPayload orderEventPayload, PaymentStatus paymentStatus,
-                                       OutboxStatus outboxStatus, UUID sagaId) {
+    public void saveOrderOutboxMessage(OrderEventPayload orderEventPayload, PaymentStatus paymentStatus, UUID sagaId) {
         save(OrderOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
@@ -48,7 +46,6 @@ public class OrderOutboxHelper {
                 .createdAt(orderEventPayload.getCreatedAt())
                 .type(ORDER_SAGA_NAME)
                 .payload(createPayload(orderEventPayload))
-                .outboxStatus(outboxStatus)
                 .paymentStatus(paymentStatus)
                 .build());
     }
@@ -64,12 +61,12 @@ public class OrderOutboxHelper {
     }
 
     @Transactional(readOnly = true)
-    public Optional<List<OrderOutbox>> getOrderOutboxMessageByOutboxStatus(OutboxStatus outboxStatus) {
-        return orderOutboxRepository.findByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
+    public Optional<List<OrderOutbox>> getOrderOutboxMessage() {
+        return orderOutboxRepository.findByType(ORDER_SAGA_NAME);
     }
 
     @Transactional
-    public void deleteAllOrderOutboxByOutboxStatus(OutboxStatus outboxStatus) {
-        orderOutboxRepository.deleteAllByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
+    public void deleteAllOrderOutbox() {
+        orderOutboxRepository.deleteAllByType(ORDER_SAGA_NAME);
     }
 }
