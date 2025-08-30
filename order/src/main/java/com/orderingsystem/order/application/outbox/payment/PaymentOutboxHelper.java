@@ -10,9 +10,8 @@ import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEve
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +29,8 @@ public class PaymentOutboxHelper {
 
     @Transactional
     public void save(PaymentOutbox paymentOutbox) {
-        if (!paymentOutboxRepository.existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus(ORDER_SAGA_NAME,
-                paymentOutbox.getSagaId(),
-                paymentOutbox.getSagaStatus(), paymentOutbox.getOutboxStatus())) {
+        if (!paymentOutboxRepository.existsByTypeAndSagaIdAndSagaStatus(ORDER_SAGA_NAME,
+                paymentOutbox.getSagaId(), paymentOutbox.getSagaStatus())) {
             paymentOutboxRepository.save(paymentOutbox);
             log.info("Order PaymentOutbox 저장했습니다. Outbox Id : {}", paymentOutbox.getId());
         } else {
@@ -43,7 +41,7 @@ public class PaymentOutboxHelper {
 
     @Transactional
     public void savePaymentOutboxMessage(OrderPaymentEventPayload orderPaymentEventPayload, OrderStatus orderStatus,
-                                         SagaStatus sagaStatus, OutboxStatus outboxStatus, UUID sagaId) {
+                                         SagaStatus sagaStatus, UUID sagaId) {
         save(PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
@@ -52,7 +50,6 @@ public class PaymentOutboxHelper {
                 .payload(createPayload(orderPaymentEventPayload))
                 .orderStatus(orderStatus)
                 .sagaStatus(sagaStatus)
-                .outboxStatus(outboxStatus)
                 .build());
     }
 
@@ -66,24 +63,14 @@ public class PaymentOutboxHelper {
         }
     }
 
-    @Transactional(readOnly = true)
-    public Optional<List<PaymentOutbox>> getPaymentOutboxMessagesByOutboxStatusAndOutboxSagaStatus(
-            OutboxStatus outboxStatus, SagaStatus... sagaStatus) {
-        return paymentOutboxRepository.findByTypeAndOutboxStatusAndSagaStatusIn(
-                ORDER_SAGA_NAME, outboxStatus,
-                Arrays.asList(sagaStatus));
-    }
-
-    @Transactional
-    public void deleteAllPaymentOutboxMessageByOutboxStatusAndSagaStatus(OutboxStatus outboxStatus,
-                                                                         SagaStatus... sagaStatus) {
-        paymentOutboxRepository.deleteAllByTypeAndOutboxStatusAndSagaStatusIn(
-                ORDER_SAGA_NAME, outboxStatus, Arrays.asList(sagaStatus));
-    }
-
     @Transactional
     public Optional<PaymentOutbox> getPaymentOutboxBySagaIdAndSagaStatus(UUID sagaId, SagaStatus... sagaStatus) {
         return paymentOutboxRepository.findByTypeAndSagaIdAndSagaStatusIn(ORDER_SAGA_NAME, sagaId,
                 Arrays.asList(sagaStatus));
+    }
+
+    @Transactional
+    public int deleteOlderThan(ZonedDateTime threshold) {
+        return paymentOutboxRepository.deleteOlderThan(threshold);
     }
 }

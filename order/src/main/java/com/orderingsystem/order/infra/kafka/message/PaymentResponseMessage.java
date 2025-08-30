@@ -21,8 +21,9 @@ public class PaymentResponseMessage {
     private String paymentStatus;
     private List<String> failureMessages;
 
-    public PaymentResponse toPaymentResponse() {
+    public PaymentResponse toPaymentResponse(UUID id) {
         return PaymentResponse.builder()
+                .id(id)
                 .sagaId(this.sagaId)
                 .paymentId(this.paymentId)
                 .orderId(this.orderId)

@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,46 +23,6 @@ class PaymentOutboxRepositoryTest {
     private PaymentOutboxRepository paymentOutboxRepository;
 
     private final String type = "ORDER_SAGA";
-
-    @DisplayName("Type, OutboxStatus, SagaStatus 조건에 맞는 Payment Outbox 객체들을 조회한다.")
-    @Test
-    void findByTypeAndOutboxStatusAndSagaStatusIn() {
-        //given
-        PaymentOutbox paymentOutbox1 = getPaymentOutbox(OutboxStatus.COMPLETED, SagaStatus.STARTED);
-        PaymentOutbox paymentOutbox2 = getPaymentOutbox(OutboxStatus.COMPLETED, SagaStatus.COMPENSATING);
-        PaymentOutbox paymentOutbox3 = getPaymentOutbox(OutboxStatus.COMPLETED, SagaStatus.SUCCEEDED);
-
-        paymentOutboxRepository.saveAll(List.of(paymentOutbox1, paymentOutbox2, paymentOutbox3));
-
-        //when
-        Optional<List<PaymentOutbox>> result = paymentOutboxRepository.findByTypeAndOutboxStatusAndSagaStatusIn(
-                type, OutboxStatus.COMPLETED, List.of(SagaStatus.STARTED, SagaStatus.COMPENSATING));
-
-        //then
-        assertThat(result).isPresent();
-        assertThat(result.get()).hasSize(2)
-                .extracting("sagaStatus")
-                .containsExactlyInAnyOrder(SagaStatus.STARTED, SagaStatus.COMPENSATING);
-    }
-
-    @DisplayName("조건에 맞는 Payment Outbox 객체들을 삭제한다.")
-    @Test
-    void deleteOutboxByConditions() {
-        //given
-        PaymentOutbox paymentOutbox1 = getPaymentOutbox(OutboxStatus.COMPLETED, SagaStatus.STARTED);
-        PaymentOutbox paymentOutbox2 = getPaymentOutbox(OutboxStatus.COMPLETED, SagaStatus.COMPENSATING);
-        PaymentOutbox paymentOutbox3 = getPaymentOutbox(OutboxStatus.COMPLETED, SagaStatus.SUCCEEDED);
-
-        paymentOutboxRepository.saveAll(List.of(paymentOutbox1, paymentOutbox2, paymentOutbox3));
-
-        //when
-        assertThat(paymentOutboxRepository.count()).isEqualTo(3);
-        paymentOutboxRepository.deleteAllByTypeAndOutboxStatusAndSagaStatusIn(
-                type, OutboxStatus.COMPLETED, List.of(SagaStatus.STARTED, SagaStatus.COMPENSATING));
-
-        //then
-        assertThat(paymentOutboxRepository.count()).isEqualTo(1);
-    }
 
     @DisplayName("Type, SagaId, SagaStatus 조건에 맞는 Payment Outbox 객체들을 조회한다.")
     @Test
@@ -89,13 +48,13 @@ class PaymentOutboxRepositoryTest {
     void existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus_True() {
         //given
         UUID sagaId = UUID.randomUUID();
-        PaymentOutbox paymentOutbox = getPaymentOutbox(sagaId, OutboxStatus.STARTED, SagaStatus.STARTED);
+        PaymentOutbox paymentOutbox = getPaymentOutbox(sagaId, SagaStatus.STARTED);
 
         paymentOutboxRepository.saveAll(List.of(paymentOutbox));
 
         //when
-        boolean result = paymentOutboxRepository.existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus(
-                type, sagaId, SagaStatus.STARTED, OutboxStatus.STARTED);
+        boolean result = paymentOutboxRepository.existsByTypeAndSagaIdAndSagaStatus(
+                type, sagaId, SagaStatus.STARTED);
 
         //then
         assertThat(result).isTrue();
@@ -106,27 +65,19 @@ class PaymentOutboxRepositoryTest {
     void existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus_False() {
         //given
         UUID sagaId = UUID.randomUUID();
-        PaymentOutbox paymentOutbox = getPaymentOutbox(sagaId, OutboxStatus.STARTED, SagaStatus.COMPENSATING);
+        PaymentOutbox paymentOutbox = getPaymentOutbox(sagaId, SagaStatus.COMPENSATING);
 
         paymentOutboxRepository.saveAll(List.of(paymentOutbox));
 
         //when
-        boolean result = paymentOutboxRepository.existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus(
-                type, sagaId, SagaStatus.STARTED, OutboxStatus.STARTED);
+        boolean result = paymentOutboxRepository.existsByTypeAndSagaIdAndSagaStatus(
+                type, sagaId, SagaStatus.STARTED);
 
         //then
         assertThat(result).isFalse();
     }
 
     private PaymentOutbox getPaymentOutbox(UUID sagaId, SagaStatus sagaStatus) {
-        return getPaymentOutbox(sagaId, OutboxStatus.COMPLETED, sagaStatus);
-    }
-
-    private PaymentOutbox getPaymentOutbox(OutboxStatus outboxStatus, SagaStatus sagaStatus) {
-        return getPaymentOutbox(UUID.randomUUID(), outboxStatus, sagaStatus);
-    }
-
-    private PaymentOutbox getPaymentOutbox(UUID sagaId, OutboxStatus outboxStatus, SagaStatus sagaStatus) {
         return PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
@@ -136,7 +87,6 @@ class PaymentOutboxRepositoryTest {
                 .payload("payload")
                 .sagaStatus(sagaStatus)
                 .orderStatus(OrderStatus.APPROVED)
-                .outboxStatus(outboxStatus)
                 .build();
     }
 

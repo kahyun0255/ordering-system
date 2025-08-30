@@ -14,7 +14,6 @@ import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -113,7 +112,6 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
                         restaurantApprovalResponse.getSagaId()),
                 orderCancelledEvent.getOrder().getOrderStatus(),
                 sagaStatus,
-                OutboxStatus.STARTED,
                 restaurantApprovalResponse.getSagaId());
 
         log.info("레스토랑 승인 거절로 인해 주문 ID: {} 의 주문을 취소 처리했습니다. failureMessages : {}",

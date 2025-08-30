@@ -12,9 +12,11 @@ import com.orderingsystem.order.application.outbox.restaurant.RestaurantApproval
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
+import com.orderingsystem.order.domain.model.outbox.MessageType;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
+import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
 import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -33,6 +35,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
     private final OrderDataMapper orderDataMapper;
+    private final ProcessedMessageRepository processedMessageRepository;
 
     @Override
     @Transactional
@@ -44,10 +47,10 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
                 SagaStatus.STARTED);
 
         if (paymentOutboxMessageResponse.isEmpty()) {
-            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
-                    paymentResponse.getSagaId());
+            log.info("STARTED 상태의 PaymentOutbox 없음. SagaId: {}", paymentResponse.getSagaId());
             return;
         }
+
         PaymentOutbox paymentOutboxMessage = paymentOutboxMessageResponse.get();
 
         Order order = findOrder(paymentResponse.getOrderId());
@@ -56,6 +59,12 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
                 || order.getOrderStatus() == OrderStatus.CANCELLED
                 || order.getOrderStatus() == OrderStatus.CANCELLING) {
             log.info("주문이 이미 승인/취소 처리된 상태입니다. 결제 처리를 생략합니다. Order Id : {}", paymentResponse.getOrderId());
+            return;
+        }
+
+        if (checkAndMarkProcessed(paymentResponse, MessageType.PAYMENT_COMPLETE)) {
+            log.info("해당 Saga Id : {}, Order Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
+                    paymentResponse.getSagaId(), paymentResponse.getOrderId());
             return;
         }
 
@@ -103,6 +112,12 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
             return;
         }
 
+        if (checkAndMarkProcessed(paymentResponse, MessageType.PAYMENT_ROLLBACK)) {
+            log.info("해당 Saga Id : {}, Order Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
+                    paymentResponse.getSagaId(), paymentResponse.getOrderId());
+            return;
+        }
+
         rollbackPaymentForOrder(order, paymentResponse);
 
         SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
@@ -113,6 +128,16 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         }
 
         log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", paymentResponse.getOrderId());
+    }
+
+    private boolean checkAndMarkProcessed(PaymentResponse paymentRequest, MessageType messageType) {
+        int inserted = processedMessageRepository.insertIgnore(
+                paymentRequest.getId(),
+                messageType.name(),
+                ZonedDateTime.now()
+        );
+
+        return inserted == 0;
     }
 
     private SagaStatus[] getCurrentSagaStatus(PaymentStatus paymentStatus) {
