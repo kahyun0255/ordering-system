@@ -25,55 +25,6 @@ class RestaurantApprovalOutboxRepositoryTest {
 
     private final String type = "ORDER_SAGA";
 
-    @DisplayName("Type, OutboxStatus, SagaStatus 조건에 맞는 RestaurantApprovalOutbox 객체들을 조회한다.")
-    @Test
-    void findByTypeAndOutboxStatusAndSagaStatusIn() {
-        //given
-        RestaurantApprovalOutbox restaurantApprovalOutbox1 =
-                getRestaurantApprovalOutbox(OutboxStatus.COMPLETED, SagaStatus.STARTED);
-        RestaurantApprovalOutbox restaurantApprovalOutbox2 =
-                getRestaurantApprovalOutbox(OutboxStatus.COMPLETED, SagaStatus.COMPENSATING);
-        RestaurantApprovalOutbox restaurantApprovalOutbox3 =
-                getRestaurantApprovalOutbox(OutboxStatus.COMPLETED, SagaStatus.SUCCEEDED);
-
-        restaurantApprovalOutboxRepository.saveAll(
-                List.of(restaurantApprovalOutbox1, restaurantApprovalOutbox2, restaurantApprovalOutbox3));
-
-        //when
-        Optional<List<RestaurantApprovalOutbox>> result =
-                restaurantApprovalOutboxRepository.findByTypeAndOutboxStatusAndSagaStatusIn(
-                        type, OutboxStatus.COMPLETED, List.of(SagaStatus.STARTED, SagaStatus.COMPENSATING));
-
-        //then
-        assertThat(result).isPresent();
-        assertThat(result.get()).hasSize(2)
-                .extracting("sagaStatus")
-                .containsExactlyInAnyOrder(SagaStatus.STARTED, SagaStatus.COMPENSATING);
-    }
-
-    @DisplayName("조건에 맞는 RestaurantApprovalOutbox 객체들을 삭제한다.")
-    @Test
-    void deleteOutboxByConditions() {
-        //given
-        RestaurantApprovalOutbox restaurantApprovalOutbox1 = getRestaurantApprovalOutbox(OutboxStatus.COMPLETED,
-                SagaStatus.STARTED);
-        RestaurantApprovalOutbox restaurantApprovalOutbox2 = getRestaurantApprovalOutbox(OutboxStatus.COMPLETED,
-                SagaStatus.COMPENSATING);
-        RestaurantApprovalOutbox restaurantApprovalOutbox3 = getRestaurantApprovalOutbox(OutboxStatus.COMPLETED,
-                SagaStatus.SUCCEEDED);
-
-        restaurantApprovalOutboxRepository.saveAll(
-                List.of(restaurantApprovalOutbox1, restaurantApprovalOutbox2, restaurantApprovalOutbox3));
-
-        //when
-        assertThat(restaurantApprovalOutboxRepository.count()).isEqualTo(3);
-        restaurantApprovalOutboxRepository.deleteAllByTypeAndOutboxStatusAndSagaStatusIn(
-                type, OutboxStatus.COMPLETED, List.of(SagaStatus.STARTED, SagaStatus.COMPENSATING));
-
-        //then
-        assertThat(restaurantApprovalOutboxRepository.count()).isEqualTo(1);
-    }
-
     @DisplayName("Type, SagaId, SagaStatus 조건에 맞는 RestaurantApprovalOutbox 객체들을 조회한다.")
     @Test
     void findByTypeAndSagaIdAndSagaStatusIn() {
@@ -153,7 +104,6 @@ class RestaurantApprovalOutboxRepositoryTest {
                 .payload("payload")
                 .sagaStatus(sagaStatus)
                 .orderStatus(orderStatus)
-                .outboxStatus(outboxStatus)
                 .build();
     }
 }

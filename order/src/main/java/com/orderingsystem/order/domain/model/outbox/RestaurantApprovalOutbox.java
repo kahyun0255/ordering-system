@@ -2,7 +2,6 @@ package com.orderingsystem.order.domain.model.outbox;
 
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -43,9 +42,6 @@ public class RestaurantApprovalOutbox {
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
-
-    @Enumerated(EnumType.STRING)
-    private OutboxStatus outboxStatus;
 
     @Version
     private Long version;

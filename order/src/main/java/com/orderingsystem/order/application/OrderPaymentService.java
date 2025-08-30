@@ -17,7 +17,6 @@ import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,8 +62,6 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         }
 
         if (checkAndMarkProcessed(paymentResponse, MessageType.PAYMENT_COMPLETE)) {
-            log.info("해당 Saga Id : {}, Order Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
-                    paymentResponse.getSagaId(), paymentResponse.getOrderId());
             return;
         }
 
@@ -81,7 +78,6 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
                         paymentResponse.getSagaId()),
                 orderPaidEvent.getOrder().getOrderStatus(),
                 sagaStatus,
-                OutboxStatus.STARTED,
                 paymentResponse.getSagaId()
         );
 
@@ -113,8 +109,6 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         }
 
         if (checkAndMarkProcessed(paymentResponse, MessageType.PAYMENT_ROLLBACK)) {
-            log.info("해당 Saga Id : {}, Order Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
-                    paymentResponse.getSagaId(), paymentResponse.getOrderId());
             return;
         }
 
@@ -136,6 +130,9 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
                 messageType.name(),
                 ZonedDateTime.now()
         );
+
+        log.info("이미 {} 메시지가 처리되었습니다. Order Id : {}, Saga Id : {}", messageType, paymentRequest.getOrderId(),
+                paymentRequest.getSagaId());
 
         return inserted == 0;
     }

@@ -17,7 +17,6 @@ import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
 import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -101,7 +100,6 @@ class OrderPaymentServiceRollbackTest {
                 .sagaStatus(SagaStatus.COMPENSATING)
                 .payload("{}")
                 .orderStatus(OrderStatus.CANCELLING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .build());
 
         //when
@@ -125,7 +123,6 @@ class OrderPaymentServiceRollbackTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-//                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -140,7 +137,6 @@ class OrderPaymentServiceRollbackTest {
                 .sagaStatus(SagaStatus.COMPENSATING)
                 .payload("{}")
                 .orderStatus(OrderStatus.CANCELLING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .build());
 
         //when
@@ -215,7 +211,6 @@ class OrderPaymentServiceRollbackTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-//                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -230,7 +225,6 @@ class OrderPaymentServiceRollbackTest {
                 .sagaStatus(SagaStatus.STARTED)
                 .payload("{}")
                 .orderStatus(OrderStatus.CANCELLING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .build());
 
         //when, then
@@ -253,7 +247,6 @@ class OrderPaymentServiceRollbackTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.STARTED)
-//                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -268,7 +261,6 @@ class OrderPaymentServiceRollbackTest {
                 .sagaStatus(SagaStatus.COMPENSATING)
                 .payload("{}")
                 .orderStatus(OrderStatus.CANCELLING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .build());
 
         // when
@@ -293,7 +285,6 @@ class OrderPaymentServiceRollbackTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.STARTED)
-//                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -308,7 +299,6 @@ class OrderPaymentServiceRollbackTest {
                 .sagaStatus(SagaStatus.COMPENSATING)
                 .payload("{}")
                 .orderStatus(OrderStatus.CANCELLING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .build());
 
         // when

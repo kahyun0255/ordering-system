@@ -11,9 +11,11 @@ import com.orderingsystem.order.application.outbox.restaurant.RestaurantApproval
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
+import com.orderingsystem.order.domain.model.outbox.MessageType;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
+import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,11 +33,16 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
     private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final OrderDataMapper orderDataMapper;
+    private final ProcessedMessageRepository processedMessageRepository;
 
     @Override
     @Transactional
     public void process(RestaurantApprovalResponse restaurantApprovalResponse) {
         log.info("주문 승인 처리 중. Order Id : {}", restaurantApprovalResponse.getOrderId());
+
+        if (checkAndMarkProcessed(restaurantApprovalResponse, MessageType.RESTAURANT_APPROVAL)) {
+            return;
+        }
 
         Optional<RestaurantApprovalOutbox> restaurantApprovalOutboxResponse =
                 restaurantApprovalOutboxHelper.getRestaurantApprovalOutboxBySagaIdAndSagaStatus(
@@ -75,6 +82,10 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
     @Transactional
     public void rollback(RestaurantApprovalResponse restaurantApprovalResponse) {
         log.info("주문 취소 처리 중. Order Id : {}", restaurantApprovalResponse.getOrderId());
+
+        if (checkAndMarkProcessed(restaurantApprovalResponse, MessageType.RESTAURANT_REJECT)) {
+            return;
+        }
 
         Optional<RestaurantApprovalOutbox> restaurantApprovalOutboxResponse =
                 restaurantApprovalOutboxHelper.getRestaurantApprovalOutboxBySagaIdAndSagaStatus(
@@ -117,6 +128,20 @@ public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprov
         log.info("레스토랑 승인 거절로 인해 주문 ID: {} 의 주문을 취소 처리했습니다. failureMessages : {}",
                 restaurantApprovalResponse.getOrderId(),
                 String.join(",", restaurantApprovalResponse.getFailureMessages()));
+    }
+
+    private boolean checkAndMarkProcessed(RestaurantApprovalResponse restaurantApprovalResponse,
+                                          MessageType messageType) {
+        int inserted = processedMessageRepository.insertIgnore(
+                restaurantApprovalResponse.getId(),
+                messageType.name(),
+                ZonedDateTime.now()
+        );
+
+        log.info("이미 {} 메시지가 처리되었습니다. Order Id : {}, Saga Id : {}", messageType,
+                restaurantApprovalResponse.getOrderId(), restaurantApprovalResponse.getSagaId());
+
+        return inserted == 0;
     }
 
     private void approvalOrder(Order order) {

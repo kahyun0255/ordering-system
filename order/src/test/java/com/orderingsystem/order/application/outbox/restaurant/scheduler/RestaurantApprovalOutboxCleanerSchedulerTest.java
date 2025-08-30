@@ -7,7 +7,6 @@ import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -16,11 +15,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
+@TestPropertySource(properties = "outbox.delete-ttl=3")
 class RestaurantApprovalOutboxCleanerSchedulerTest {
 
     @Autowired
@@ -29,24 +30,23 @@ class RestaurantApprovalOutboxCleanerSchedulerTest {
     @Autowired
     private RestaurantApprovalOutboxRepository restaurantApprovalOutboxRepository;
 
-    @DisplayName("OutboxStatus가 COMPLETED이고, SagaStatus가 SUCCEEDED이거나 FAILED, COMPENSATED인 메시지만 삭제한다.")
+    @DisplayName("Delete TTL 이전에 생성한 Outbox Message를 삭제한다.")
     @Test
-    void deleteCompletedRestaurantApprovalOutboxMessages() {
+    void shouldDeleteOutboxMessagesCreatedBeforeDeleteTTL() {
         //given
-        RestaurantApprovalOutbox restaurantApprovalOutbox1 = getRestaurantApprovalOutbox(SagaStatus.SUCCEEDED);
-        RestaurantApprovalOutbox restaurantApprovalOutbox2 = getRestaurantApprovalOutbox(SagaStatus.FAILED);
-        RestaurantApprovalOutbox restaurantApprovalOutbox3 = getRestaurantApprovalOutbox(SagaStatus.COMPENSATED);
+        RestaurantApprovalOutbox outbox1 = getRestaurantApprovalOutbox(ZonedDateTime.now().minusDays(4));
+        RestaurantApprovalOutbox outbox2 = getRestaurantApprovalOutbox(ZonedDateTime.now().minusDays(3));
+        RestaurantApprovalOutbox outbox3 = getRestaurantApprovalOutbox(ZonedDateTime.now().minusDays(3));
 
-        RestaurantApprovalOutbox restaurantApprovalOutbox4 = getRestaurantApprovalOutbox(SagaStatus.STARTED);
-        RestaurantApprovalOutbox restaurantApprovalOutbox5 = getRestaurantApprovalOutbox(SagaStatus.COMPENSATING);
+        RestaurantApprovalOutbox outbox4 = getRestaurantApprovalOutbox(ZonedDateTime.now().minusDays(1));
+        RestaurantApprovalOutbox outbox5 = getRestaurantApprovalOutbox(ZonedDateTime.now().minusDays(2));
 
-        restaurantApprovalOutboxRepository.saveAll(
-                List.of(restaurantApprovalOutbox1, restaurantApprovalOutbox2, restaurantApprovalOutbox3,
-                        restaurantApprovalOutbox4, restaurantApprovalOutbox5));
+        restaurantApprovalOutboxRepository.saveAll(List.of(outbox1, outbox2, outbox3, outbox4, outbox5));
 
-        //when
         long beforeCount = restaurantApprovalOutboxRepository.count();
         assertThat(beforeCount).isEqualTo(5L);
+
+        //when
         restaurantApprovalOutboxCleanerScheduler.processOutboxMessage();
 
         //then
@@ -54,17 +54,15 @@ class RestaurantApprovalOutboxCleanerSchedulerTest {
         assertThat(afterCount).isEqualTo(2L);
     }
 
-    private static RestaurantApprovalOutbox getRestaurantApprovalOutbox(SagaStatus sagaStatus) {
+    private RestaurantApprovalOutbox getRestaurantApprovalOutbox(ZonedDateTime threshold) {
         return RestaurantApprovalOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(UUID.randomUUID())
-                .createdAt(ZonedDateTime.now())
-                .processedAt(ZonedDateTime.now())
+                .createdAt(threshold)
                 .type(ORDER_SAGA_NAME)
+                .sagaStatus(SagaStatus.PROCESSING)
+                .orderStatus(OrderStatus.PAID)
                 .payload("payload")
-                .sagaStatus(sagaStatus)
-                .orderStatus(OrderStatus.APPROVED)
-                .outboxStatus(OutboxStatus.COMPLETED)
                 .build();
     }
 

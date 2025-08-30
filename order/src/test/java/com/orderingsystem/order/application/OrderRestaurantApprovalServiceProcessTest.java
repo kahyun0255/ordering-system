@@ -14,14 +14,17 @@ import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
+import com.orderingsystem.order.domain.model.outbox.MessageType;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
+import com.orderingsystem.order.domain.model.outbox.ProcessedMessage;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
+import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
 import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +52,9 @@ class OrderRestaurantApprovalServiceProcessTest {
 
     @Autowired
     private PaymentOutboxRepository paymentOutboxRepository;
+
+    @Autowired
+    private ProcessedMessageRepository processedMessageRepository;
 
     private final UUID sagaId = UUID.randomUUID();
     private final UUID customerId = UUID.randomUUID();
@@ -96,9 +102,9 @@ class OrderRestaurantApprovalServiceProcessTest {
         RestaurantApprovalResponse request = getRestaurantApprovalResponse();
 
         //when, then
-        assertThatThrownBy(()->orderRestaurantApprovalService.process(request))
+        assertThatThrownBy(() -> orderRestaurantApprovalService.process(request))
                 .isInstanceOf(OrderNotFoundException.class)
-                        .hasMessage("주문 정보를 찾을 수 없습니다. Order Id : " + orderId);
+                .hasMessage("주문 정보를 찾을 수 없습니다. Order Id : " + orderId);
     }
 
     @DisplayName("PaymentOutbox에서 SagaStatus가 PROCESSING인 Outbox Message 정보를 찾을 수 없으면 예외가 발생한다.")
@@ -110,7 +116,6 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -118,7 +123,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         RestaurantApprovalResponse request = getRestaurantApprovalResponse();
 
         //when, then
-        assertThatThrownBy(()->orderRestaurantApprovalService.process(request))
+        assertThatThrownBy(() -> orderRestaurantApprovalService.process(request))
                 .isInstanceOf(OrderApplicationException.class)
                 .hasMessage("SagaStatus가 " + SagaStatus.PROCESSING.name() + " 상태인 PaymentOutbox를 찾지 못했습니다.");
     }
@@ -218,7 +223,6 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.STARTED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -251,7 +255,6 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -283,8 +286,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
-                .sagaStatus(SagaStatus.FAILED)
-                .outboxStatus(OutboxStatus.STARTED)
+                .sagaStatus(SagaStatus.SUCCEEDED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -316,8 +318,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
-                .sagaStatus(SagaStatus.FAILED)
-                .outboxStatus(OutboxStatus.STARTED)
+                .sagaStatus(SagaStatus.COMPENSATING)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -349,8 +350,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
-                .sagaStatus(SagaStatus.FAILED)
-                .outboxStatus(OutboxStatus.STARTED)
+                .sagaStatus(SagaStatus.COMPENSATED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -374,8 +374,32 @@ class OrderRestaurantApprovalServiceProcessTest {
         assertThat(after.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
     }
 
+    @DisplayName("해당 Outbox 메시지가 ProcessedMessage에 저장되어 있다면 레스토랑 승인을 처리하지 않는다.")
+    @Test
+    void shouldNotProcessRestaurantApproval_whenMessageAlreadyProcessed() {
+        //given
+        saveOrder(OrderStatus.PAID);
+        saveOutbox();
+        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+
+        processedMessageRepository.save(ProcessedMessage.builder()
+                .messageId(request.getId())
+                .messageType(MessageType.RESTAURANT_APPROVAL)
+                .processedAt(ZonedDateTime.now())
+                .build());
+
+        //when
+        orderRestaurantApprovalService.process(request);
+
+        //then
+        Optional<Order> order = orderRepository.findById(orderId);
+        assertThat(order).isPresent();
+        assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PAID);
+    }
+
     private RestaurantApprovalResponse getRestaurantApprovalResponse() {
         return RestaurantApprovalResponse.builder()
+                .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .orderId(orderId)
                 .restaurantId(restaurantId)
@@ -404,7 +428,6 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -414,7 +437,6 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .id(paymentOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-//                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -426,7 +448,6 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .id(paymentOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-//                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
