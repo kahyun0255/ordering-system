@@ -17,7 +17,6 @@ import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
 import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;

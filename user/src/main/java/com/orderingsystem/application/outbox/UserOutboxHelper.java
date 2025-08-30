@@ -5,6 +5,9 @@ import static com.orderingsystem.common.saga.SagaConstants.USER_DELETE_NAME;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orderingsystem.application.outbox.model.UserCreatedEventPayload;
+import com.orderingsystem.application.outbox.model.UserDeletedEventPayload;
+import com.orderingsystem.application.outbox.model.UserEventPayload;
 import com.orderingsystem.domain.exception.UserDomainException;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.model.outbox.UserOutbox;
@@ -69,5 +72,9 @@ public class UserOutboxHelper {
             throw new UserDomainException(
                     "CustomerEventPayload 생성에 실패했습니다. User Id : " + userEventPayload.getId());
         }
+    }
+
+    public int deleteOlderThan(ZonedDateTime threshold) {
+        return userOutboxRepository.deleteOlderThan(threshold);
     }
 }

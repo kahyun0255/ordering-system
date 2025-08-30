@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -81,20 +80,10 @@ class RestaurantApprovalOutboxRepositoryTest {
     }
 
     private RestaurantApprovalOutbox getRestaurantApprovalOutbox(UUID sagaId, SagaStatus sagaStatus) {
-        return getRestaurantApprovalOutbox(sagaId, OutboxStatus.COMPLETED, OrderStatus.APPROVED, sagaStatus);
+        return getRestaurantApprovalOutbox(sagaId, OrderStatus.APPROVED, sagaStatus);
     }
 
-    private RestaurantApprovalOutbox getRestaurantApprovalOutbox(OutboxStatus outboxStatus, SagaStatus sagaStatus) {
-        return getRestaurantApprovalOutbox(UUID.randomUUID(), outboxStatus, OrderStatus.APPROVED, sagaStatus);
-    }
-
-    private RestaurantApprovalOutbox getRestaurantApprovalOutbox(UUID sagaId, OrderStatus orderStatus,
-                                                                 SagaStatus sagaStatus) {
-        return getRestaurantApprovalOutbox(sagaId, OutboxStatus.COMPLETED, orderStatus, sagaStatus);
-    }
-
-    private RestaurantApprovalOutbox getRestaurantApprovalOutbox(UUID sagaId, OutboxStatus outboxStatus,
-                                                                 OrderStatus orderStatus, SagaStatus sagaStatus) {
+    private RestaurantApprovalOutbox getRestaurantApprovalOutbox(UUID sagaId, OrderStatus orderStatus, SagaStatus sagaStatus) {
         return RestaurantApprovalOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
