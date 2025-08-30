@@ -1,7 +1,6 @@
 package com.orderingsystem.domain.model.outbox;
 
 import com.orderingsystem.domain.model.UserType;
-import com.orderingsystem.outbox.OutboxStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -39,14 +38,7 @@ public class UserOutbox {
     @Column(name = "payload", columnDefinition = "TEXT", nullable = false)
     private String payload;
 
-    @Enumerated(EnumType.STRING)
-    private OutboxStatus outboxStatus;
-
     @Version
     private Long version;
-
-    public void updateProcessedAt(ZonedDateTime processedAt) {
-        this.processedAt = processedAt;
-    }
 
 }

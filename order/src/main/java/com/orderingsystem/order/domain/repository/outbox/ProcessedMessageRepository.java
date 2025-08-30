@@ -1,6 +1,5 @@
 package com.orderingsystem.order.domain.repository.outbox;
 
-import com.orderingsystem.order.domain.model.outbox.MessageType;
 import com.orderingsystem.order.domain.model.outbox.ProcessedMessage;
 import java.time.ZonedDateTime;
 import java.util.UUID;
@@ -19,5 +18,4 @@ public interface ProcessedMessageRepository extends JpaRepository<ProcessedMessa
     )
     int insertIgnore(UUID messageId, String messageType, ZonedDateTime processedAt);
 
-    boolean existsByMessageIdAndMessageType(UUID messageId, MessageType messageType);
 }

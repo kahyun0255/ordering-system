@@ -12,7 +12,6 @@ import com.orderingsystem.domain.exception.UserNotFoundException;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserStatus;
 import com.orderingsystem.domain.repository.UserRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,6 @@ public class UserService {
 
         userOutboxHelper.saveUserOutboxMessage(
                 userDataMapper.userCreatedEventToUserCreateEventPayload(userCreatedEvent),
-                OutboxStatus.STARTED,
                 UUID.randomUUID(),
                 request.getType()
         );
@@ -98,7 +96,6 @@ public class UserService {
         UUID eventId = UUID.randomUUID();
         userOutboxHelper.deleteUserOutboxMessage(
                 userDataMapper.userDeletedEventToUserDeleteEventPayload(userDeletedEvent),
-                OutboxStatus.STARTED,
                 eventId,
                 user.getType()
         );
