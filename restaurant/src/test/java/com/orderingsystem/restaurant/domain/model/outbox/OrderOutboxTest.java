@@ -3,7 +3,6 @@ package com.orderingsystem.restaurant.domain.model.outbox;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +18,6 @@ class OrderOutboxTest {
                 .id(orderOutboxId)
                 .type("type")
                 .payload("payload")
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .sagaId(UUID.randomUUID())
                 .build();
@@ -28,7 +26,6 @@ class OrderOutboxTest {
                 .id(orderOutboxId)
                 .type("type1")
                 .payload("payload1")
-                .outboxStatus(OutboxStatus.COMPLETED)
                 .orderApprovalStatus(OrderApprovalStatus.REJECTED)
                 .sagaId(UUID.randomUUID())
                 .build();
@@ -47,7 +44,6 @@ class OrderOutboxTest {
                 .id(UUID.randomUUID())
                 .type("type")
                 .payload("payload")
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .sagaId(sagaId)
                 .build();
@@ -56,7 +52,6 @@ class OrderOutboxTest {
                 .id(UUID.randomUUID())
                 .type("type")
                 .payload("payload")
-                .outboxStatus(OutboxStatus.COMPLETED)
                 .orderApprovalStatus(OrderApprovalStatus.REJECTED)
                 .sagaId(sagaId)
                 .build();

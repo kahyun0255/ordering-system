@@ -51,11 +51,13 @@ public class RestaurantApprovalResponseKafkaListener implements KafkaConsumer<St
 
                     if (OrderApprovalStatus.APPROVED.name().equals(responseMessage.getOrderApprovalStatus().name())) {
                         log.info("주문 승인 진행. Order Id : {}", responseMessage.getOrderId());
-                        orderRestaurantApprovalService.process(responseMessage.toRestaurantApprovalResponse());
+                        orderRestaurantApprovalService.process(responseMessage.toRestaurantApprovalResponse(
+                                UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())));
                     } else if (OrderApprovalStatus.REJECTED.name()
                             .equals(responseMessage.getOrderApprovalStatus().name())) {
                         log.info("주문 거절 진행. Order Id :{}", responseMessage.getOrderId());
-                        orderRestaurantApprovalService.rollback(responseMessage.toRestaurantApprovalResponse());
+                        orderRestaurantApprovalService.rollback(responseMessage.toRestaurantApprovalResponse(
+                                UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())));
                     }
                 }
             } catch (JsonMappingException e) {

@@ -5,14 +5,11 @@ import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.outbox.order.model.OrderEventPayload;
 import com.orderingsystem.restaurant.domain.exception.RestaurantDomainException;
 import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.restaurant.domain.repository.outbox.OrderOutboxRepository;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +26,8 @@ public class OrderOutboxHelper {
 
     @Transactional
     public void save(OrderOutbox orderOutbox) {
-        if (!orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus(ORDER_SAGA_NAME,
-                orderOutbox.getSagaId(), orderOutbox.getOrderApprovalStatus(), orderOutbox.getOutboxStatus())) {
+        if (!orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatus(ORDER_SAGA_NAME,
+                orderOutbox.getSagaId(), orderOutbox.getOrderApprovalStatus())) {
             orderOutboxRepository.save(orderOutbox);
             log.info("Restaurant OrderOutbox 저장했습니다. Outbox Id : {}", orderOutbox.getId());
         } else {
@@ -40,8 +37,7 @@ public class OrderOutboxHelper {
     }
 
     @Transactional
-    public void saveOrderOutboxMessage(OrderEventPayload orderEventPayload, OrderApprovalStatus status,
-                                       OutboxStatus outboxStatus, UUID sagaId) {
+    public void saveOrderOutboxMessage(OrderEventPayload orderEventPayload, OrderApprovalStatus status, UUID sagaId) {
         save(OrderOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
@@ -49,7 +45,6 @@ public class OrderOutboxHelper {
                 .processedAt(ZonedDateTime.now())
                 .type(ORDER_SAGA_NAME)
                 .payload(createPayload(orderEventPayload))
-                .outboxStatus(outboxStatus)
                 .orderApprovalStatus(status)
                 .build());
     }
@@ -64,13 +59,8 @@ public class OrderOutboxHelper {
         }
     }
 
-    @Transactional(readOnly = true)
-    public Optional<List<OrderOutbox>> getOrderOutboxMessageByOutboxStatus(OutboxStatus outboxStatus) {
-        return orderOutboxRepository.findByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
-    }
-
     @Transactional
-    public void deleteAllOrderOutboxByOutboxStatus(OutboxStatus outboxStatus) {
-        orderOutboxRepository.deleteAllByTypeAndOutboxStatus(ORDER_SAGA_NAME, outboxStatus);
+    public int deleteOlderThan(ZonedDateTime threshold) {
+        return orderOutboxRepository.deleteOlderThan(threshold);
     }
 }

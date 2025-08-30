@@ -1,13 +1,13 @@
 package com.orderingsystem.restaurant.domain.model.outbox;
 
-import com.orderingsystem.outbox.OutboxStatus;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
+import jakarta.persistence.UniqueConstraint;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -17,28 +17,26 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "restaurant_update_outbox")
+@Table(name = "processed_messages", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_id_type", columnNames = {"message_id", "message_type"}
+        )
+})
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class RestaurantUpdateOutbox {
+public class ProcessedMessage {
 
     @Id
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private UUID eventId;
-    private ZonedDateTime createdAt;
-    private ZonedDateTime processedAt;
-    private String type;
+    private UUID messageId;
 
     @Enumerated(EnumType.STRING)
-    private OutboxStatus outboxStatus;
+    private MessageType messageType;
 
-    @Column(name = "payload", columnDefinition = "TEXT", nullable = false)
-    private String payload;
-
-    @Version
-    private Long version;
+    private ZonedDateTime processedAt;
 
 }

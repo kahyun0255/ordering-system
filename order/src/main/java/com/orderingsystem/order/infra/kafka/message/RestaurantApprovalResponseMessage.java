@@ -19,8 +19,9 @@ public class RestaurantApprovalResponseMessage {
     private OrderApprovalStatus orderApprovalStatus;
     private List<String> failureMessages;
 
-    public RestaurantApprovalResponse toRestaurantApprovalResponse(){
+    public RestaurantApprovalResponse toRestaurantApprovalResponse(UUID id){
         return RestaurantApprovalResponse.builder()
+                .id(id)
                 .sagaId(this.sagaId)
                 .orderId(this.orderId)
                 .restaurantId(this.restaurantId)

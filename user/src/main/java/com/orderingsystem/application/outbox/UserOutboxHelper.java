@@ -5,11 +5,13 @@ import static com.orderingsystem.common.saga.SagaConstants.USER_DELETE_NAME;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orderingsystem.application.outbox.model.UserCreatedEventPayload;
+import com.orderingsystem.application.outbox.model.UserDeletedEventPayload;
+import com.orderingsystem.application.outbox.model.UserEventPayload;
 import com.orderingsystem.domain.exception.UserDomainException;
 import com.orderingsystem.domain.model.UserType;
 import com.orderingsystem.domain.model.outbox.UserOutbox;
 import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +29,7 @@ public class UserOutboxHelper {
 
     @Transactional
     public void save(UserOutbox userOutbox) {
-        if (!userOutboxRepository.existsByTypeAndOutboxStatusAndEventId(USER_CREATED_NAME, OutboxStatus.STARTED,
-                userOutbox.getEventId())) {
+        if (!userOutboxRepository.existsByTypeAndEventId(USER_CREATED_NAME, userOutbox.getEventId())) {
             userOutboxRepository.save(userOutbox);
             log.info("User UserOutbox 저장. EventId : {}, Type : {}", userOutbox.getEventId(), userOutbox.getType());
         } else {
@@ -38,8 +39,8 @@ public class UserOutboxHelper {
     }
 
     @Transactional
-    public void saveUserOutboxMessage(UserCreatedEventPayload userCreatedEventPayload, OutboxStatus outboxStatus,
-                                          UUID eventId, UserType userType) {
+    public void saveUserOutboxMessage(UserCreatedEventPayload userCreatedEventPayload, UUID eventId,
+                                      UserType userType) {
         save(UserOutbox.builder()
                 .id(UUID.randomUUID())
                 .eventId(eventId)
@@ -47,12 +48,11 @@ public class UserOutboxHelper {
                 .type(USER_CREATED_NAME)
                 .userType(userType)
                 .payload(createPayload(userCreatedEventPayload))
-                .outboxStatus(outboxStatus)
                 .build());
     }
 
     @Transactional
-    public void deleteUserOutboxMessage(UserDeletedEventPayload userDeletedEventPayload, OutboxStatus outboxStatus,
+    public void deleteUserOutboxMessage(UserDeletedEventPayload userDeletedEventPayload,
                                         UUID eventId, UserType userType) {
         save(UserOutbox.builder()
                 .id(UUID.randomUUID())
@@ -61,7 +61,6 @@ public class UserOutboxHelper {
                 .type(USER_DELETE_NAME)
                 .userType(userType)
                 .payload(createPayload(userDeletedEventPayload))
-                .outboxStatus(outboxStatus)
                 .build());
     }
 
@@ -73,5 +72,9 @@ public class UserOutboxHelper {
             throw new UserDomainException(
                     "CustomerEventPayload 생성에 실패했습니다. User Id : " + userEventPayload.getId());
         }
+    }
+
+    public int deleteOlderThan(ZonedDateTime threshold) {
+        return userOutboxRepository.deleteOlderThan(threshold);
     }
 }

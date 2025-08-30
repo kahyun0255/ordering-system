@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
 import com.orderingsystem.payment.application.outbox.model.OrderEventPayload;
@@ -17,13 +16,17 @@ import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
 import com.orderingsystem.payment.domain.model.Payment;
 import com.orderingsystem.payment.domain.model.TransactionType;
+import com.orderingsystem.payment.domain.model.outbox.MessageType;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
+import com.orderingsystem.payment.domain.model.outbox.ProcessedMessage;
 import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
 import com.orderingsystem.payment.domain.repository.PaymentRepository;
 import com.orderingsystem.payment.domain.repository.outbox.OrderOutboxRepository;
+import com.orderingsystem.payment.domain.repository.outbox.ProcessedMessageRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,6 +58,9 @@ class PaymentServiceCancelTest {
 
     @Autowired
     private OrderOutboxRepository orderOutboxRepository;
+
+    @Autowired
+    private ProcessedMessageRepository processedMessageRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -150,8 +156,8 @@ class PaymentServiceCancelTest {
         //then
         Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
 
-        Optional<OrderOutbox> orderOutbox = orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatusAndOutboxStatus(
-                ORDER_SAGA_NAME, sagaId, payment.get().getStatus(), OutboxStatus.STARTED);
+        Optional<OrderOutbox> orderOutbox = orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatus(
+                ORDER_SAGA_NAME, sagaId, payment.get().getStatus());
 
         assertThat(orderOutbox).isPresent();
         String payload = orderOutbox.get().getPayload();
@@ -162,7 +168,7 @@ class PaymentServiceCancelTest {
         assertThat(orderEventPayload.getFailureMessages()).isEqualTo(List.of("총 가격은 0보다 커야합니다."));
     }
 
-    @DisplayName("해당 결제 취소 요청을 이미 처리했을 경우, 결제 로직을 진행하지 않는다.")
+    @DisplayName("해당 결제 취소 요청을 이미 처리했고 성공적으로 처리 완료되었을 경우, 결제 로직을 진행하지 않는다.")
     @Test
     void failToCancelPayment_whenPaymentRequestAlreadyProcessed() {
         //given
@@ -176,13 +182,18 @@ class PaymentServiceCancelTest {
                 .paymentOrderStatus(PaymentOrderStatus.PENDING)
                 .build();
 
+        processedMessageRepository.save(ProcessedMessage.builder()
+                        .messageId(paymentRequest.getId())
+                        .messageType(MessageType.CANCEL_PAYMENT)
+                        .processedAt(ZonedDateTime.now())
+                .build());
+
         orderOutboxRepository.save(OrderOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .paymentStatus(PaymentStatus.CANCELLED)
                 .type(ORDER_SAGA_NAME)
                 .payload("payload")
-                .outboxStatus(OutboxStatus.COMPLETED)
                 .build());
 
         //when
@@ -192,6 +203,43 @@ class PaymentServiceCancelTest {
         Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
         assertThat(payment).isPresent();
         assertThat(payment.get().getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+    }
+
+    @DisplayName("해당 결제 취소 요청을 이미 처리했지만 성공적으로 완료되지 않았을 경우, 결제 로직을 진행한다.")
+    @Test
+    void shouldProceedWithPaymentLogic_whenCancelRequestProcessedButNotCompleted() {
+        //given
+        PaymentRequest paymentRequest = PaymentRequest.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .orderId(orderId)
+                .customerId(customerId)
+                .price(new BigDecimal("25.00"))
+                .createdAt(Instant.now())
+                .paymentOrderStatus(PaymentOrderStatus.PENDING)
+                .build();
+
+        processedMessageRepository.save(ProcessedMessage.builder()
+                .messageId(paymentRequest.getId())
+                .messageType(MessageType.CANCEL_PAYMENT)
+                .processedAt(ZonedDateTime.now())
+                .build());
+
+        orderOutboxRepository.save(OrderOutbox.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .paymentStatus(PaymentStatus.FAILED)
+                .type(ORDER_SAGA_NAME)
+                .payload("payload")
+                .build());
+
+        //when
+        paymentService.cancelPayment(paymentRequest);
+
+        //then
+        Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
+        assertThat(payment).isPresent();
+        assertThat(payment.get().getStatus()).isEqualTo(PaymentStatus.CANCELLED);
     }
 
     @DisplayName("해당 결제 내역을 찾지 못하면 예외가 발생한다.")

@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.PaymentStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.payment.application.outbox.model.OrderEventPayload;
 import com.orderingsystem.payment.domain.exception.PaymentDomainException;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
@@ -48,15 +47,14 @@ class OrderOutboxHelperTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .paymentStatus(PaymentStatus.COMPLETED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .createdAt(ZonedDateTime.now())
                 .processedAt(ZonedDateTime.now())
                 .type(ORDER_SAGA_NAME)
                 .payload("payload")
                 .build();
 
-        given(orderOutboxRepository.existsByTypeAndSagaIdAndPaymentStatusAndOutboxStatus(
-                anyString(), any(), any(), any())).willReturn(true);
+        given(orderOutboxRepository.existsByTypeAndSagaIdAndPaymentStatus(
+                anyString(), any(), any())).willReturn(true);
 
         // when
         orderOutboxHelper.save(existingOutbox);
@@ -80,7 +78,7 @@ class OrderOutboxHelperTest {
 
         //when, then
         assertThatThrownBy(() -> orderOutboxHelper.saveOrderOutboxMessage(
-                payload, PaymentStatus.COMPLETED, OutboxStatus.STARTED, UUID.randomUUID()))
+                payload, PaymentStatus.COMPLETED, UUID.randomUUID()))
                 .isInstanceOf(PaymentDomainException.class)
                 .hasMessageContaining("OrderEventPayload 생성에 실패했습니다");
     }

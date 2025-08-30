@@ -10,9 +10,7 @@ import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantAp
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
-import java.util.Arrays;
-import java.util.List;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +43,6 @@ public class RestaurantApprovalOutboxHelper {
     @Transactional
     public void saveRestaurantApprovalOutboxMessage(RestaurantApprovalEventPayload restaurantApprovalEventPayload,
                                                     OrderStatus orderStatus, SagaStatus sagaStatus,
-                                                    OutboxStatus outboxStatus,
                                                     UUID sagaId) {
         save(RestaurantApprovalOutbox.builder()
                 .id(UUID.randomUUID())
@@ -55,7 +52,6 @@ public class RestaurantApprovalOutboxHelper {
                 .payload(createPayload(restaurantApprovalEventPayload))
                 .orderStatus(orderStatus)
                 .sagaStatus(sagaStatus)
-                .outboxStatus(outboxStatus)
                 .build());
     }
 
@@ -70,22 +66,13 @@ public class RestaurantApprovalOutboxHelper {
         }
     }
 
-    public Optional<List<RestaurantApprovalOutbox>> getRestaurantApprovalOutboxMessagesByOutboxStatusAndOutboxSagaStatus(
-            OutboxStatus outboxStatus, SagaStatus... sagaStatus) {
-        return restaurantApprovalOutboxRepository.findByTypeAndOutboxStatusAndSagaStatusIn(
-                ORDER_SAGA_NAME, outboxStatus,
-                Arrays.asList(sagaStatus));
-    }
-
-    public void deleteAllRestaurantApprovalOutboxMessageByOutboxStatusAndSagaStatus(OutboxStatus outboxStatus,
-                                                                                    SagaStatus... sagaStatus) {
-        restaurantApprovalOutboxRepository.deleteAllByTypeAndOutboxStatusAndSagaStatusIn(
-                ORDER_SAGA_NAME, outboxStatus, Arrays.asList(sagaStatus));
-    }
-
     public Optional<RestaurantApprovalOutbox> getRestaurantApprovalOutboxBySagaIdAndSagaStatus(UUID sagaId,
                                                                                                SagaStatus sagaStatus) {
         return restaurantApprovalOutboxRepository.findByTypeAndSagaIdAndSagaStatus(ORDER_SAGA_NAME, sagaId, sagaStatus);
     }
 
+    @Transactional
+    public int deleteOlderThan(ZonedDateTime threshold) {
+        return restaurantApprovalOutboxRepository.deleteOlderThan(threshold);
+    }
 }

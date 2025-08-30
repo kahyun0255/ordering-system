@@ -5,7 +5,6 @@ import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -39,7 +38,6 @@ public class OrderFacade {
                     orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent, sagaId),
                     orderCreateEvent.getOrder().getOrderStatus(),
                     OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
-                    OutboxStatus.STARTED,
                     sagaId
             );
         } else {

@@ -4,7 +4,6 @@ import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.PaymentStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
 import com.orderingsystem.payment.application.mapper.PaymentDataMapper;
@@ -14,13 +13,16 @@ import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
 import com.orderingsystem.payment.domain.model.CreditInfo;
 import com.orderingsystem.payment.domain.model.Payment;
+import com.orderingsystem.payment.domain.model.outbox.MessageType;
 import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
-import com.orderingsystem.payment.domain.repository.outbox.OrderOutboxRepository;
 import com.orderingsystem.payment.domain.repository.PaymentRepository;
+import com.orderingsystem.payment.domain.repository.outbox.OrderOutboxRepository;
+import com.orderingsystem.payment.domain.repository.outbox.ProcessedMessageRepository;
 import com.orderingsystem.payment.domain.service.PaymentValidateAndCancelService;
 import com.orderingsystem.payment.domain.service.PaymentValidateAndInitiateService;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,15 +41,17 @@ public class PaymentService {
     private final PaymentValidateAndInitiateService paymentValidateAndInitiateService;
     private final CreditEntryRepository creditEntryRepository;
     private final CreditHistoryRepository creditHistoryRepository;
-    private final OrderOutboxRepository orderOutboxRepository;
     private final OrderOutboxHelper orderOutboxHelper;
     private final PaymentDataMapper paymentDataMapper;
     private final PaymentValidateAndCancelService paymentValidateAndCancelService;
+    private final ProcessedMessageRepository processedMessageRepository;
+    private final OrderOutboxRepository orderOutboxRepository;
 
     @Transactional
     public void completePayment(PaymentRequest paymentRequest) {
-        if (isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.COMPLETED)) {
-            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 처리 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
+        if (checkAndMarkProcessed(paymentRequest, MessageType.COMPLETE_PAYMENT) &&
+                isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.COMPLETED)) {
+            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 결제 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
                     paymentRequest.getSagaId());
             return;
         }
@@ -74,19 +78,20 @@ public class PaymentService {
                 paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(),
                         paymentRequest.getFailureMessages()),
                 paymentEvent.getPayment().getStatus(),
-                OutboxStatus.STARTED,
                 paymentRequest.getSagaId());
     }
 
     @Transactional
     public void cancelPayment(PaymentRequest paymentRequest) {
-        log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
-
-        if (isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
+        if (checkAndMarkProcessed(paymentRequest, MessageType.CANCEL_PAYMENT) &&
+                isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 취소 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
                     paymentRequest.getSagaId());
             return;
         }
+
+        log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
+
 
         Payment payment = getPayment(paymentRequest.getOrderId());
         CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
@@ -103,16 +108,26 @@ public class PaymentService {
         persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
-                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(), paymentRequest.getFailureMessages()),
+                paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(),
+                        paymentRequest.getFailureMessages()),
                 paymentEvent.getPayment().getStatus(),
-                OutboxStatus.STARTED,
                 paymentRequest.getSagaId());
+    }
+
+    private boolean checkAndMarkProcessed(PaymentRequest paymentRequest, MessageType messageType) {
+        int inserted = processedMessageRepository.insertIgnore(
+                paymentRequest.getId(),
+                messageType.name(),
+                ZonedDateTime.now()
+        );
+
+        return inserted == 0;
     }
 
     private boolean isOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,
                                                        PaymentStatus paymentStatus) {
-        Optional<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatusAndOutboxStatus(
-                ORDER_SAGA_NAME, paymentRequest.getSagaId(), paymentStatus, OutboxStatus.COMPLETED);
+        Optional<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatus(
+                ORDER_SAGA_NAME, paymentRequest.getSagaId(), paymentStatus);
 
         return orderOutboxMessage.isPresent();
     }

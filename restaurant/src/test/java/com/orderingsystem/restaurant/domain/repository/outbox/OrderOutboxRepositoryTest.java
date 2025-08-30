@@ -3,10 +3,9 @@ package com.orderingsystem.restaurant.domain.repository.outbox;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
+import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +30,7 @@ class OrderOutboxRepositoryTest {
                 .type("type1")
                 .id(UUID.randomUUID())
                 .sagaId(sagaId1)
-                .outboxStatus(OutboxStatus.STARTED)
+                .createdAt(ZonedDateTime.now().minusDays(3))
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .payload("payload")
                 .build();
@@ -40,7 +39,7 @@ class OrderOutboxRepositoryTest {
                 .type("type1")
                 .id(UUID.randomUUID())
                 .sagaId(sagaId1)
-                .outboxStatus(OutboxStatus.STARTED)
+                .createdAt(ZonedDateTime.now().minusDays(4))
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .payload("payload")
                 .build();
@@ -49,7 +48,7 @@ class OrderOutboxRepositoryTest {
                 .type("type2")
                 .id(UUID.randomUUID())
                 .sagaId(sagaId1)
-                .outboxStatus(OutboxStatus.STARTED)
+                .createdAt(ZonedDateTime.now().minusDays(3))
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .payload("payload")
                 .build();
@@ -58,7 +57,7 @@ class OrderOutboxRepositoryTest {
                 .type("type1")
                 .id(UUID.randomUUID())
                 .sagaId(sagaId1)
-                .outboxStatus(OutboxStatus.COMPLETED)
+                .createdAt(ZonedDateTime.now().minusDays(2))
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .payload("payload")
                 .build();
@@ -67,7 +66,7 @@ class OrderOutboxRepositoryTest {
                 .type("type1")
                 .id(UUID.randomUUID())
                 .sagaId(sagaId2)
-                .outboxStatus(OutboxStatus.COMPLETED)
+                .createdAt(ZonedDateTime.now().minusDays(1))
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .payload("payload")
                 .build();
@@ -76,7 +75,7 @@ class OrderOutboxRepositoryTest {
                 .type("type1")
                 .id(UUID.randomUUID())
                 .sagaId(sagaId2)
-                .outboxStatus(OutboxStatus.STARTED)
+                .createdAt(ZonedDateTime.now().minusDays(1))
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .payload("payload")
                 .build();
@@ -85,62 +84,39 @@ class OrderOutboxRepositoryTest {
                 List.of(orderOutbox1, orderOutbox2, orderOutbox3, orderOutbox4, orderOutbox5, orderOutbox6));
     }
 
-    @DisplayName("Type, SagaID, OutboxStatus를 받아 Order Outbox 메시지를 조회한다.")
-    @Test
-    void findByTypeAndSagaIdAndOutboxStatus() {
-        //when
-        List<OrderOutbox> orderOutboxes = orderOutboxRepository.findByTypeAndSagaIdAndOutboxStatus(
-                "type1", sagaId1, OutboxStatus.STARTED);
-
-        //then
-        assertThat(orderOutboxes).hasSize(2);
-    }
-
-    @DisplayName("Type, OutboxStatus를 받아 Order Outbox 메시지를 조회한다.")
-    @Test
-    void findByTypeAndOutboxStatus() {
-        //when
-        Optional<List<OrderOutbox>> orderOutboxes = orderOutboxRepository.findByTypeAndOutboxStatus(
-                "type1", OutboxStatus.STARTED);
-
-        //then
-        assertThat(orderOutboxes).isPresent();
-        assertThat(orderOutboxes.get()).hasSize(3);
-    }
-
-    @DisplayName("Type, OutboxStatus를 받아 Order Outbox 메시지 삭제에 성공한다.")
-    @Test
-    void deleteAllByTypeAndOutboxStatus() {
-        //given
-        assertThat(orderOutboxRepository.count()).isEqualTo(6L);
-
-        //when
-        orderOutboxRepository.deleteAllByTypeAndOutboxStatus("type1", OutboxStatus.COMPLETED);
-
-        //then
-        assertThat(orderOutboxRepository.count()).isEqualTo(4L);
-    }
-
     @DisplayName("Type, SagaID, OrderApprovalStatus, OutboxStatus를 받아 Order Outbox 메시지가 있으면 True를 반환한다.")
     @Test
     void existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus_True() {
         //when
-        boolean exists = orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus(
-                "type1", sagaId1, OrderApprovalStatus.APPROVED, OutboxStatus.STARTED);
+        boolean exists = orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatus(
+                "type1", sagaId1, OrderApprovalStatus.APPROVED);
 
         //then
         assertThat(exists).isTrue();
     }
 
-    @DisplayName("Type, SagaID, OrderApprovalStatus, OutboxStatus를 받아 Order Outbox 메시지가 없으면 False를 반환한다.")
+    @DisplayName("Type, SagaID, OrderApprovalStatus를 받아 Order Outbox 메시지가 없으면 False를 반환한다.")
     @Test
     void existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus_False() {
         //when
-        boolean exists = orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatusAndOutboxStatus(
-                "type2", sagaId1, OrderApprovalStatus.APPROVED, OutboxStatus.COMPLETED);
+        boolean exists = orderOutboxRepository.existsByTypeAndSagaIdAndOrderApprovalStatus(
+                "type2", UUID.randomUUID(), OrderApprovalStatus.APPROVED);
 
         //then
         assertThat(exists).isFalse();
+    }
+
+    @DisplayName("정해진 threshold보다 짧은 시간 동안 저장된 Outbox 메시지를 삭제한다.")
+    @Test
+    void shouldDeleteOutboxMessagesStoredShorterThanThreshold() {
+        //given
+        assertThat(orderOutboxRepository.count()).isEqualTo(6);
+
+        //when
+        orderOutboxRepository.deleteOlderThan(ZonedDateTime.now().minusDays(3));
+
+        //then
+        assertThat(orderOutboxRepository.count()).isEqualTo(3);
     }
 
 }

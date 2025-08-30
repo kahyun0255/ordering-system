@@ -7,21 +7,21 @@ import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
+@TestPropertySource(properties = "outbox.delete-ttl=3")
 class PaymentOutboxCleanerSchedulerTest {
 
     @Autowired
@@ -30,28 +30,24 @@ class PaymentOutboxCleanerSchedulerTest {
     @Autowired
     private PaymentOutboxRepository paymentOutboxRepository;
 
-    @AfterEach
-    void tearDown() {
-        paymentOutboxRepository.deleteAllInBatch();
-    }
-
-    @DisplayName("OutboxStatus가 COMPLETED이고, SagaStatus가 SUCCEDDED이거나 FAILED, COMPENSATED인 PaymentOutbox 메시지만 삭제한다.")
+    @DisplayName("Delete TTL 이전에 생성한 Outbox Message를 삭제한다.")
     @Test
-    void deleteCompletedPaymentOutboxMessages() {
+    void shouldDeleteOutboxMessagesCreatedBeforeDeleteTTL() {
         //given
-        PaymentOutbox paymentOutbox1 = getPaymentOutbox(SagaStatus.SUCCEEDED);
-        PaymentOutbox paymentOutbox2 = getPaymentOutbox(SagaStatus.FAILED);
-        PaymentOutbox paymentOutbox3 = getPaymentOutbox(SagaStatus.COMPENSATED);
+        PaymentOutbox orderOutbox1 = getPaymentOutbox(ZonedDateTime.now().minusDays(4));
+        PaymentOutbox orderOutbox2 = getPaymentOutbox(ZonedDateTime.now().minusDays(3));
+        PaymentOutbox orderOutbox3 = getPaymentOutbox(ZonedDateTime.now().minusDays(3));
 
-        PaymentOutbox paymentOutbox4 = getPaymentOutbox(SagaStatus.STARTED);
-        PaymentOutbox paymentOutbox5 = getPaymentOutbox(SagaStatus.PROCESSING);
+        PaymentOutbox orderOutbox4 = getPaymentOutbox(ZonedDateTime.now().minusDays(1));
+        PaymentOutbox orderOutbox5 = getPaymentOutbox(ZonedDateTime.now().minusDays(2));
 
         paymentOutboxRepository.saveAll(
-                List.of(paymentOutbox1, paymentOutbox2, paymentOutbox3, paymentOutbox4, paymentOutbox5));
+                List.of(orderOutbox1, orderOutbox2, orderOutbox3, orderOutbox4, orderOutbox5));
 
-        //when
         long beforeCount = paymentOutboxRepository.count();
         assertThat(beforeCount).isEqualTo(5L);
+
+        //when
         paymentOutboxCleanerScheduler.processOutboxMessage();
 
         //then
@@ -59,16 +55,15 @@ class PaymentOutboxCleanerSchedulerTest {
         assertThat(afterCount).isEqualTo(2L);
     }
 
-    private static PaymentOutbox getPaymentOutbox(SagaStatus sagaStatus) {
+    private PaymentOutbox getPaymentOutbox(ZonedDateTime threshold) {
         return PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(UUID.randomUUID())
-                .createdAt(ZonedDateTime.now())
+                .createdAt(threshold)
                 .type(ORDER_SAGA_NAME)
+                .sagaStatus(SagaStatus.PROCESSING)
+                .orderStatus(OrderStatus.PAID)
                 .payload("payload")
-                .orderStatus(OrderStatus.APPROVED)
-                .sagaStatus(sagaStatus)
-                .outboxStatus(OutboxStatus.COMPLETED)
                 .build();
     }
 

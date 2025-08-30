@@ -22,8 +22,9 @@ public class RestaurantApprovalRequestMessage {
     private BigDecimal price;
     private Instant createdAt;
 
-    public ApprovalRequest toApprovalRequest() {
+    public ApprovalRequest toApprovalRequest(UUID id) {
         return ApprovalRequest.builder()
+                .id(id)
                 .sagaId(this.sagaId)
                 .orderId(this.orderId)
                 .restaurantId(this.restaurantId)

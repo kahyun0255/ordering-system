@@ -11,6 +11,7 @@ import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalReque
 import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalRequestMessage;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -45,14 +46,15 @@ public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<Str
                         objectMapper.readValue(message, RestaurantApprovalRequestDebeziumMessage.class);
 
                 if (restaurantApprovalRequestDebeziumMessage.getBefore() == null &&
-                restaurantApprovalRequestDebeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
+                        restaurantApprovalRequestDebeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
 
                     RestaurantApprovalRequestMessage requestMessage =
                             objectMapper.readValue(restaurantApprovalRequestDebeziumMessage.getAfter().getPayload(),
                                     RestaurantApprovalRequestMessage.class);
 
                     log.info("주문 승인 시작. Order Id : {}", requestMessage.getOrderId());
-                    orderApprovalService.approveOrder(requestMessage.toApprovalRequest());
+                    orderApprovalService.approveOrder(requestMessage.toApprovalRequest(
+                            UUID.fromString(restaurantApprovalRequestDebeziumMessage.getAfter().getId())));
                 }
             } catch (JsonMappingException e) {
                 log.info("Json 매핑에 실패했습니다. error : {}", e.getMessage());

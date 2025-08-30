@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
-import com.orderingsystem.restaurant.domain.repository.outbox.RestaurantUpdateOutboxRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Jwts.SIG;
 import io.jsonwebtoken.io.Decoders;
@@ -41,9 +40,6 @@ public abstract class ControllerTestSupport {
     @Autowired
     protected RestaurantOwnershipRepository restaurantOwnershipRepository;
 
-    @Autowired
-    protected RestaurantUpdateOutboxRepository restaurantUpdateOutboxRepository;
-
     @Value("${jwt.issuer}")
     protected String issuer;
 
@@ -55,7 +51,6 @@ public abstract class ControllerTestSupport {
         restaurantRepository.deleteAllInBatch();
         ownerRepository.deleteAllInBatch();
         restaurantOwnershipRepository.deleteAllInBatch();
-        restaurantUpdateOutboxRepository.deleteAllInBatch();
     }
 
     protected String buildToken(UUID userId, String typ, String iss, Instant exp) {

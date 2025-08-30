@@ -1,7 +1,7 @@
 package com.orderingsystem.application.mapper;
 
-import com.orderingsystem.application.outbox.UserCreatedEventPayload;
-import com.orderingsystem.application.outbox.UserDeletedEventPayload;
+import com.orderingsystem.application.outbox.model.UserCreatedEventPayload;
+import com.orderingsystem.application.outbox.model.UserDeletedEventPayload;
 import com.orderingsystem.common.domain.status.OutboxEventOperation;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.event.UserDeletedEvent;

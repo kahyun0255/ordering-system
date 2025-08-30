@@ -11,6 +11,7 @@ import com.orderingsystem.order.infra.kafka.message.PaymentResponseDebeziumMessa
 import com.orderingsystem.order.infra.kafka.message.PaymentResponseMessage;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -56,13 +57,16 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
 
                     if (PaymentStatus.COMPLETED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                         log.info("결제 완료. order Id : {}", paymentResponseMessage.getOrderId());
-                        orderPaymentService.process(paymentResponseMessage.toPaymentResponse());
+                        orderPaymentService.process(paymentResponseMessage.toPaymentResponse(
+                                UUID.fromString(debeziumMessage.getAfter().getId())));
                     } else if (PaymentStatus.CANCELLED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                         log.info("결제 취소. order Id : {}", paymentResponseMessage.getOrderId());
-                        orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse());
+                        orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse(
+                                UUID.fromString(debeziumMessage.getAfter().getId())));
                     } else if (PaymentStatus.FAILED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                         log.info("결제 실패. order Id : {}", paymentResponseMessage.getOrderId());
-                        orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse());
+                        orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse(
+                                UUID.fromString(debeziumMessage.getAfter().getId())));
                     }
                 }
             } catch (JsonProcessingException e) {

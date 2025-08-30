@@ -1,7 +1,7 @@
-package com.orderingsystem.restaurant.application.outbox.order.scheduler;
+package com.orderingsystem.application.outbox.scheduler;
 
+import com.orderingsystem.application.outbox.UserOutboxHelper;
 import com.orderingsystem.outbox.OutboxScheduler;
-import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
 import java.time.ZonedDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OrderOutboxCleanerScheduler implements OutboxScheduler {
+public class UserOutboxCleanerScheduler implements OutboxScheduler {
 
-    private final OrderOutboxHelper orderOutboxHelper;
+    private final UserOutboxHelper userOutboxHelper;
 
     @Value("${outbox.delete-ttl}")
     private Long deleteTtl;
@@ -23,8 +23,8 @@ public class OrderOutboxCleanerScheduler implements OutboxScheduler {
     @Scheduled(cron = "@midnight")
     public void processOutboxMessage() {
         ZonedDateTime threshold = ZonedDateTime.now().minusDays(deleteTtl);
-        int deleted = orderOutboxHelper.deleteOlderThan(threshold);
+        int deleted = userOutboxHelper.deleteOlderThan(threshold);
 
-        log.info("{}개의 Restaurant OrderOutbox Message 삭제", deleted);
+        log.info("{}개의 User UserOutbox Message 삭제", deleted);
     }
 }

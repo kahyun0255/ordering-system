@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalOrderItem;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
 import com.orderingsystem.restaurant.application.outbox.order.model.OrderEventPayload;
@@ -18,7 +17,9 @@ import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantProduct;
 import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
+import com.orderingsystem.restaurant.domain.model.outbox.MessageType;
 import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
+import com.orderingsystem.restaurant.domain.model.outbox.ProcessedMessage;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -48,6 +49,7 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
         restaurantRepository.deleteAllInBatch();
         productRepository.deleteAllInBatch();
         restaurantProductRepository.deleteAllInBatch();
+        processedMessageRepository.deleteAllInBatch();
     }
 
     @DisplayName("레스토랑 승인에 성공한다.")
@@ -268,7 +270,6 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
                 .processedAt(ZonedDateTime.now())
                 .type(ORDER_SAGA_NAME)
                 .payload("payload")
-                .outboxStatus(OutboxStatus.COMPLETED)
                 .orderApprovalStatus(OrderApprovalStatus.APPROVED)
                 .build());
 
@@ -276,7 +277,26 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
         saveProduct();
         saveRestaurantProduct();
 
-        ApprovalRequest request = getApprovalRequest();
+        UUID messageId = UUID.randomUUID();
+        processedMessageRepository.save(ProcessedMessage.builder()
+                        .messageId(messageId)
+                        .messageType(MessageType.ORDER_APPROVAL)
+                        .processedAt(ZonedDateTime.now())
+                .build());
+
+        ApprovalRequest request = ApprovalRequest.builder()
+                .id(messageId)
+                .sagaId(sagaId)
+                .orderId(orderId)
+                .restaurantId(restaurantId)
+                .restaurantOrderStatus(RestaurantOrderStatus.PAID)
+                .products(List.of(ApprovalOrderItem.builder()
+                        .productId(productId)
+                        .quantity(1)
+                        .build()))
+                .price(productPrice)
+                .createdAt(Instant.now())
+                .build();
 
         //when
         orderApprovalService.approveOrder(request);
@@ -374,7 +394,6 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
 
     private void saveRestaurantProduct(UUID restaurantId, UUID productId) {
         restaurantProductRepository.save(RestaurantProduct.builder()
-                .id(UUID.randomUUID())
                 .productId(productId)
                 .restaurantId(restaurantId)
                 .build());
@@ -386,6 +405,7 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
 
     private ApprovalRequest getApprovalRequest(RestaurantOrderStatus restaurantOrderStatus) {
         return ApprovalRequest.builder()
+                .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .orderId(orderId)
                 .restaurantId(restaurantId)
@@ -400,8 +420,7 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
     }
 
     private OrderEventPayload getOrderEventPayload() throws JsonProcessingException {
-        Optional<List<OrderOutbox>> orderOutbox = orderOutboxRepository.findByTypeAndOutboxStatus(ORDER_SAGA_NAME,
-                OutboxStatus.STARTED);
+        Optional<List<OrderOutbox>> orderOutbox = orderOutboxRepository.findByType(ORDER_SAGA_NAME);
         assertThat(orderOutbox).isPresent();
         String payload = orderOutbox.get().get(0).getPayload();
         return objectMapper.readValue(payload, OrderEventPayload.class);

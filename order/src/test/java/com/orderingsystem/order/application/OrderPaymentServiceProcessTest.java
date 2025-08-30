@@ -12,12 +12,16 @@ import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
+import com.orderingsystem.order.domain.model.outbox.MessageType;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
+import com.orderingsystem.order.domain.model.outbox.ProcessedMessage;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
+import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
+import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +48,12 @@ class OrderPaymentServiceProcessTest {
     @Autowired
     private PaymentOutboxRepository paymentOutboxRepository;
 
+    @Autowired
+    private ProcessedMessageRepository processedMessageRepository;
+
+    @Autowired
+    private RestaurantApprovalOutboxRepository restaurantApprovalOutboxRepository;
+
     private final UUID sagaId = UUID.randomUUID();
     private final UUID paymentId = UUID.randomUUID();
     private final UUID orderId = UUID.randomUUID();
@@ -62,7 +72,6 @@ class OrderPaymentServiceProcessTest {
                 .id(paymentOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.STARTED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -101,9 +110,9 @@ class OrderPaymentServiceProcessTest {
                 .hasMessage("주문을 찾을 수 없습니다. Order Id : " + orderId);
     }
 
-    @DisplayName("해당 SAGA ID에 대해 이미 처리한 메시지라면, 주문 결제를 다시 처리하지 않는다.")
+    @DisplayName("SagaStatus가 STARTED 상태인 PaymentOutbox가 없으면 처리하지 않는다.")
     @Test
-    void AlreadyHandledSagaMessage() {
+    void shouldNotProcess_whenNoStartedPaymentOutboxExists() {
         //given
         saveOrder(OrderStatus.PENDING);
         UUID sagaId = UUID.randomUUID();
@@ -113,7 +122,6 @@ class OrderPaymentServiceProcessTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -126,6 +134,98 @@ class OrderPaymentServiceProcessTest {
         Optional<Order> order = orderRepository.findById(orderId);
         assertThat(order).isPresent();
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(restaurantApprovalOutboxRepository.count()).isZero();
+    }
+
+    @DisplayName("ProcessedMessage에 이미 메시지가 저장되어 있으면 이미 해당 메시지가 처리 되었기에, 첫 호출도 즉시 스킵된다.")
+    @Test
+    void shouldSkipImmediately_whenAlreadyMarkedInProcessedMessage() {
+        //given
+        UUID sagaId = UUID.randomUUID();
+        saveOrder(OrderStatus.PENDING);
+        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
+
+        paymentOutboxRepository.save(PaymentOutbox.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .sagaStatus(SagaStatus.STARTED)
+                .orderStatus(OrderStatus.PENDING)
+                .type(ORDER_SAGA_NAME)
+                .payload("")
+                .build());
+
+        processedMessageRepository.save(ProcessedMessage.builder()
+                .messageId(paymentResponse.getId())
+                .messageType(MessageType.PAYMENT_COMPLETE)
+                .processedAt(ZonedDateTime.now())
+                .build());
+
+        //when
+        orderPaymentService.process(paymentResponse);
+
+        //then
+        Optional<Order> savedOrder = orderRepository.findById(orderId);
+        assertThat(savedOrder).isPresent();
+        assertThat(savedOrder.get().getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(restaurantApprovalOutboxRepository.count()).isZero();
+    }
+
+    @DisplayName("동일 메시지가 재전달되면, 이미 ProcessedMessage에 저장되어 있으므로 재처리하지 않는다.")
+    @Test
+    void shouldSkipProcessing_whenMessageAlreadyStoredInProcessedMessage() {
+        // given
+        saveOrder(OrderStatus.PENDING);
+        UUID sagaId = UUID.randomUUID();
+        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
+
+        paymentOutboxRepository.save(PaymentOutbox.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .sagaStatus(SagaStatus.STARTED)
+                .orderStatus(OrderStatus.PENDING)
+                .type(ORDER_SAGA_NAME)
+                .payload("")
+                .build());
+
+        orderPaymentService.process(paymentResponse);
+
+        Optional<Order> order = orderRepository.findById(orderId);
+        assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PAID);
+        assertThat(restaurantApprovalOutboxRepository.count()).isEqualTo(1L);
+
+        // when
+        orderPaymentService.process(paymentResponse);
+
+        // then
+        Order savedOrder = orderRepository.findById(orderId).orElseThrow();
+        assertThat(savedOrder.getOrderStatus()).isEqualTo(OrderStatus.PAID);
+        assertThat(restaurantApprovalOutboxRepository.count()).isEqualTo(1L);
+    }
+
+    @DisplayName("Saga Status가 STARTED 상태가 아니라면, 늦게 도착한 메시지는 무시된다.")
+    @Test
+    void shouldSkip_whenSagaStatusIsNotStarted() {
+        // given
+        saveOrder(OrderStatus.APPROVED);
+        UUID sagaId = UUID.randomUUID();
+        PaymentResponse resp = getPaymentResponse(sagaId, orderId);
+
+        paymentOutboxRepository.save(PaymentOutbox.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .sagaStatus(SagaStatus.COMPENSATED)
+                .orderStatus(OrderStatus.APPROVED)
+                .type(ORDER_SAGA_NAME)
+                .payload("")
+                .build());
+
+        // when
+        orderPaymentService.process(resp);
+
+        // then
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.APPROVED);
+        assertThat(restaurantApprovalOutboxRepository.count()).isZero();
     }
 
     @DisplayName("해당 주문이 이미 승인된 상태라면, 주문 결제를 다시 처리하지 않는다.")
@@ -178,6 +278,7 @@ class OrderPaymentServiceProcessTest {
 
     private PaymentResponse getPaymentResponse(UUID sagaId, UUID orderId) {
         return PaymentResponse.builder()
+                .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .paymentId(paymentId)
                 .orderId(orderId)

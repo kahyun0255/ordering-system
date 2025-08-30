@@ -1,19 +1,16 @@
 package com.orderingsystem.restaurant.application;
 
-import static com.orderingsystem.common.saga.SagaConstants.RESTAURANT_CREATE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 
 import com.orderingsystem.common.exception.AccessDeniedException;
-import com.orderingsystem.outbox.OutboxStatus;
 import com.orderingsystem.restaurant.application.dto.request.CreateRestaurantApplicationRequest;
 import com.orderingsystem.restaurant.application.dto.response.CreateRestaurantResponse;
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
 import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
-import com.orderingsystem.restaurant.domain.model.outbox.RestaurantUpdateOutbox;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,7 +31,6 @@ class RestaurantManagementFacadeCreateTest extends ApplicationTestSupport {
         ownerRepository.deleteAllInBatch();
         restaurantOwnershipRepository.deleteAllInBatch();
         restaurantRepository.deleteAllInBatch();
-        restaurantUpdateOutboxRepository.deleteAllInBatch();
     }
 
     @DisplayName("레스토랑을 성공적으로 생성한다.")
@@ -68,10 +64,6 @@ class RestaurantManagementFacadeCreateTest extends ApplicationTestSupport {
         assertThat(savedRestaurantOwnership).hasSize(1)
                 .extracting("restaurantId", "ownerId")
                 .containsExactlyInAnyOrder(tuple(response.getRestaurantId(), ownerId));
-
-        List<RestaurantUpdateOutbox> outbox = restaurantUpdateOutboxRepository.findByTypeAndOutboxStatus(
-                RESTAURANT_CREATE_NAME, OutboxStatus.STARTED);
-        assertThat(outbox).isNotEmpty();
     }
 
     @DisplayName("레스토랑 오너 정보가 없으면 레스토랑 저장에 실패하고, 예외가 발생한다.")

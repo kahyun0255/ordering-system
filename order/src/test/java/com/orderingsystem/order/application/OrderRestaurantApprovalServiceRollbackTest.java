@@ -17,7 +17,6 @@ import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
 import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
-import com.orderingsystem.outbox.OutboxStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -180,7 +179,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.STARTED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -213,7 +211,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -246,7 +243,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -279,7 +275,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -312,7 +307,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -366,7 +360,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .id(restaurantApprovalOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -376,7 +369,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .id(paymentOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -388,7 +380,6 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .id(paymentOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
