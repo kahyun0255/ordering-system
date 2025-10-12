@@ -6,7 +6,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -28,8 +27,6 @@ public class Product extends BaseEntity {
     private String name;
     private Money price;
     private boolean available;
-
-    @Transient
     private int quantity;
 
     public void updateWithConfirmedNamePriceAndAvailability(String name, Money price, boolean available) {

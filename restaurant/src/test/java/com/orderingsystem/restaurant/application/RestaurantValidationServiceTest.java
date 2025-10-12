@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.restaurant.application.dto.request.RestaurantValidationApplicationRequest;
+import com.orderingsystem.restaurant.application.dto.request.RestaurantValidationApplicationRequest.Item;
 import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantProduct;
@@ -34,6 +35,8 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
     private static final BigDecimal product3Price = new BigDecimal("20.00");
     private static final UUID productId4 = UUID.randomUUID();
     private static final BigDecimal product4Price = new BigDecimal("20.00");
+    private static final UUID productId5 = UUID.randomUUID();
+    private static final BigDecimal product5Price = new BigDecimal("20.00");
     private static final UUID restaurantId2 = UUID.randomUUID();
 
     @BeforeEach
@@ -55,6 +58,7 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
                 .name("상품1")
                 .price(new Money(product1Price))
                 .available(true)
+                .quantity(10)
                 .build());
 
         productRepository.save(Product.builder()
@@ -62,6 +66,7 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
                 .name("상품2")
                 .price(new Money(product2Price))
                 .available(true)
+                .quantity(10)
                 .build());
 
         productRepository.save(Product.builder()
@@ -69,6 +74,7 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
                 .name("판매 불가 상품")
                 .price(new Money(product3Price))
                 .available(false)
+                .quantity(10)
                 .build());
 
         productRepository.save(Product.builder()
@@ -76,6 +82,15 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
                 .name("레스토랑이 판매하지 않는 상품")
                 .price(new Money(product4Price))
                 .available(true)
+                .quantity(10)
+                .build());
+
+        productRepository.save(Product.builder()
+                .productId(productId5)
+                .name("재고 부족 상품")
+                .price(new Money(product5Price))
+                .available(true)
+                .quantity(1)
                 .build());
 
         restaurantProductRepository.save(RestaurantProduct.builder()
@@ -92,6 +107,11 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
                 .restaurantId(restaurantId)
                 .productId(productId3)
                 .build());
+
+        restaurantProductRepository.save(RestaurantProduct.builder()
+                .restaurantId(restaurantId)
+                .productId(productId5)
+                .build());
     }
 
     @AfterEach
@@ -107,12 +127,12 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
         //given
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(productId1)
                                 .price(product1Price)
                                 .quantity(1)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
+                        Item.builder()
                                 .productId(productId2)
                                 .price(product2Price)
                                 .quantity(2)
@@ -168,12 +188,12 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
         //given
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(UUID.randomUUID())
                                 .price(product1Price)
                                 .quantity(1)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
+                        Item.builder()
                                 .productId(productId2)
                                 .price(product2Price)
                                 .quantity(2)
@@ -195,12 +215,12 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
         //given
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(productId1)
                                 .price(product1Price)
                                 .quantity(1)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
+                        Item.builder()
                                 .productId(productId3)
                                 .price(product3Price)
                                 .quantity(2)
@@ -224,12 +244,12 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
 
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(productId1)
                                 .price(product1Price)
                                 .quantity(1)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
+                        Item.builder()
                                 .productId(productId2)
                                 .price(price)
                                 .quantity(2)
@@ -253,12 +273,12 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
 
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(productId1)
                                 .price(product1Price)
                                 .quantity(1)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
+                        Item.builder()
                                 .productId(productId2)
                                 .price(product2Price)
                                 .quantity(2)
@@ -280,12 +300,12 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
         //given
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(productId1)
                                 .price(product1Price)
                                 .quantity(1)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
+                        Item.builder()
                                 .productId(productId4)
                                 .price(product4Price)
                                 .quantity(2)
@@ -307,12 +327,12 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
         //given
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(productId1)
                                 .price(product1Price)
                                 .quantity(1)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
+                        Item.builder()
                                 .productId(productId4)
                                 .price(product4Price)
                                 .quantity(2)
@@ -334,17 +354,17 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
         //given
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(productId1)
                                 .price(product1Price)
                                 .quantity(0)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
-                                .productId(productId4)
-                                .price(product4Price)
+                        Item.builder()
+                                .productId(productId2)
+                                .price(product2Price)
                                 .quantity(2)
                                 .build()))
-                .totalPrice(product1Price.add(product4Price.multiply(BigDecimal.valueOf(2))))
+                .totalPrice(product2Price.multiply(BigDecimal.valueOf(2)))
                 .build();
 
         Restaurant restaurant = restaurantRepository.findById(restaurantId).get();
@@ -361,17 +381,17 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
         //given
         RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
                 .sagaId(sagaId)
-                .items(List.of(RestaurantValidationApplicationRequest.Item.builder()
+                .items(List.of(Item.builder()
                                 .productId(productId1)
                                 .price(product1Price)
                                 .quantity(-1)
                                 .build(),
-                        RestaurantValidationApplicationRequest.Item.builder()
-                                .productId(productId4)
-                                .price(product4Price)
+                        Item.builder()
+                                .productId(productId2)
+                                .price(product2Price)
                                 .quantity(2)
                                 .build()))
-                .totalPrice(product1Price.add(product4Price.multiply(BigDecimal.valueOf(2))))
+                .totalPrice(product2Price.multiply(BigDecimal.valueOf(2)))
                 .build();
 
         Restaurant restaurant = restaurantRepository.findById(restaurantId).get();
@@ -380,6 +400,34 @@ class RestaurantValidationServiceTest extends ApplicationTestSupport {
         assertThatThrownBy(() -> restaurantValidationService.validate(restaurant, request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("상품 수량이 유효하지 않습니다.");
+    }
+
+    @DisplayName("상품의 재고가 부족하면 예외가 발생한다.")
+    @Test
+    void test() {
+        //given
+        RestaurantValidationApplicationRequest request = RestaurantValidationApplicationRequest.builder()
+                .sagaId(sagaId)
+                .items(List.of(Item.builder()
+                                .productId(productId5)
+                                .price(product5Price)
+                                .quantity(10000)
+                                .build(),
+                        Item.builder()
+                                .productId(productId2)
+                                .price(product2Price)
+                                .quantity(2)
+                                .build()))
+                .totalPrice(product5Price.multiply(BigDecimal.valueOf(10000))
+                        .add(product2Price.multiply(BigDecimal.valueOf(2))))
+                .build();
+
+        Restaurant restaurant = restaurantRepository.findById(restaurantId).get();
+
+        //when, then
+        assertThatThrownBy(() -> restaurantValidationService.validate(restaurant, request))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("상품 재고가 부족합니다.");
     }
 
 }
