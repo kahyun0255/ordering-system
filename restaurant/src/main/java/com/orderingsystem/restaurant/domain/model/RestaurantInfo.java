@@ -37,13 +37,13 @@ public class RestaurantInfo {
             failureMessages.add("해당 주문은 결제가 완료되지 않았습니다. Order Id : " + orderDetail.getOrderId());
         }
 
-        Money totalAmount = orderDetail.getProducts().stream().map(product -> {
-            if (!product.isAvailable()) {
+        Money totalAmount = orderDetail.getOrderProducts().stream().map(op -> {
+            if (!op.getProduct().isAvailable()) {
                 log.error("상품 Id가 {} 인 상품은 주문이 불가능한 상태입니다. Order Id : {}",
-                        product.getProductId(), orderDetail.getOrderId());
-                failureMessages.add("상품 Id가 " + product.getProductId() + "인 상품은 주문이 불가능한 상태입니다.");
+                        op.getProduct().getProductId(), orderDetail.getOrderId());
+                failureMessages.add("상품 Id가 " + op.getProduct().getProductId() + "인 상품은 주문이 불가능한 상태입니다.");
             }
-            return product.getPrice().multiply(product.getQuantity());
+            return op.getProduct().getPrice().multiply(op.getQuantity());
         }).reduce(Money.ZERO, Money::add);
 
         if (!totalAmount.equals(orderDetail.getTotalAmount())) {

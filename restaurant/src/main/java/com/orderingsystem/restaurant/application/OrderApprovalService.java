@@ -9,6 +9,7 @@ import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovalEve
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.model.OrderDetail;
+import com.orderingsystem.restaurant.domain.model.OrderProduct;
 import com.orderingsystem.restaurant.domain.model.Product;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantInfo;
@@ -87,9 +88,11 @@ public class OrderApprovalService {
                 .restaurantId(restaurantId)
                 .orderDetail(OrderDetail.builder()
                         .orderId(approvalRequest.getOrderId())
-                        .products(approvalRequest.getProducts().stream().map(product ->
-                                Product.builder()
-                                        .productId(product.getProductId())
+                        .orderProducts(approvalRequest.getProducts().stream().map(product ->
+                                OrderProduct.builder()
+                                        .product(Product.builder()
+                                                .productId(product.getProductId())
+                                                .build())
                                         .quantity(product.getQuantity())
                                         .build()).toList())
                         .totalAmount(new Money(approvalRequest.getPrice()))
@@ -97,8 +100,8 @@ public class OrderApprovalService {
                         .build())
                 .build();
 
-        List<UUID> restaurantProductIds = restaurant.getOrderDetail().getProducts().stream()
-                .map(Product::getProductId).toList();
+        List<UUID> restaurantProductIds = restaurant.getOrderDetail().getOrderProducts().stream()
+                .map(op -> op.getProduct().getProductId()).toList();
 
         List<RestaurantInfoView> restaurantInfos =
                 restaurantRepository.findRestaurantInfo(restaurantId, restaurantProductIds);
@@ -118,10 +121,11 @@ public class OrderApprovalService {
                         .available(r.getProductAvailable())
                         .build()).toList();
 
-        restaurant.getOrderDetail().getProducts().forEach(product -> {
+        restaurant.getOrderDetail().getOrderProducts().forEach(orderProduct -> {
             restaurantProducts.forEach(p -> {
-                if (p.getProductId().equals(product.getProductId())) {
-                    product.updateWithConfirmedNamePriceAndAvailability(p.getName(), p.getPrice(), p.isAvailable());
+                if (p.getProductId().equals(orderProduct.getProduct().getProductId())) {
+                    orderProduct.getProduct()
+                            .updateWithConfirmedNamePriceAndAvailability(p.getName(), p.getPrice(), p.isAvailable());
                 }
             });
         });
