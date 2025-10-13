@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -28,6 +29,16 @@ public class Product extends BaseEntity {
     private Money price;
     private boolean available;
     private int quantity;
+
+    public static Product create(String name, Boolean available, BigDecimal price, Integer quantity) {
+        return Product.builder()
+                .productId(UUID.randomUUID())
+                .name(name)
+                .available(available)
+                .price(new Money(price))
+                .quantity(quantity)
+                .build();
+    }
 
     public void updateWithConfirmedNamePriceAndAvailability(String name, Money price, boolean available) {
         this.name = name;

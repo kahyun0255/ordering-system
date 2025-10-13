@@ -94,8 +94,8 @@ class RestaurantManagementControllerUpdateTest extends ControllerTestSupport {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("Forbidden"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
                 .andExpect(jsonPath("$.message").value("레스토랑 오너 정보를 찾을 수 없습니다."));
 
         assertThat(restaurantRepository.findById(restaurantId).get().getName()).isNotEqualTo(request.getStatus());

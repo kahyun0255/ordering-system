@@ -5,6 +5,7 @@ import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundExceptio
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
+import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
@@ -25,12 +26,23 @@ public class RestaurantAccessValidatorService {
     private final RestaurantOwnershipRepository restaurantOwnershipRepository;
 
     @Transactional(readOnly = true)
+    public boolean isRestaurantOwnership(UUID ownerId, UUID restaurantId) {
+        findOwner(ownerId);
+        findRestaurant(restaurantId);
+
+        Optional<RestaurantOwnership> restaurantOwnerships = restaurantOwnershipRepository.findByOwnerIdAndRestaurantId(
+                ownerId, restaurantId);
+
+        return restaurantOwnerships.isPresent();
+    }
+
+    @Transactional(readOnly = true)
     public Owner findOwner(UUID ownerId) {
         Optional<Owner> owner = ownerRepository.findById(ownerId);
 
         if (owner.isEmpty()) {
             log.warn("레스토랑 오너 정보를 찾을 수 없습니다. Owner Id : {}", ownerId);
-            throw new AccessDeniedException("레스토랑 오너 정보를 찾을 수 없습니다.");
+            throw new RestaurantNotFoundException("레스토랑 오너 정보를 찾을 수 없습니다.");
         }
 
         return owner.get();
@@ -40,7 +52,7 @@ public class RestaurantAccessValidatorService {
     public Restaurant findRestaurant(UUID restaurantId) {
         Optional<Restaurant> restaurant = restaurantRepository.findById(restaurantId);
 
-        if (restaurant.isEmpty()) {
+        if (restaurant.isEmpty() || restaurant.get().getStatus().equals(RestaurantStatus.DELETED)) {
             log.warn("레스토랑 정보를 찾을 수 없습니다. Restaurant Id : {}", restaurantId);
             throw new RestaurantNotFoundException("레스토랑 정보를 찾을 수 없습니다.");
         }
@@ -48,6 +60,7 @@ public class RestaurantAccessValidatorService {
         return restaurant.get();
     }
 
+    @Transactional(readOnly = true)
     public void validateRestaurantOwnership(Owner owner, Restaurant restaurant) {
         Optional<RestaurantOwnership> restaurantOwnerships = restaurantOwnershipRepository.findByOwnerIdAndRestaurantId(
                 owner.getUserId(), restaurant.getRestaurantId());

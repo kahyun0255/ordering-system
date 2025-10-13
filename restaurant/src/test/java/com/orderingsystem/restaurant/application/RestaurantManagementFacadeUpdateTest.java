@@ -128,7 +128,7 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
         //when, then
         assertThatThrownBy(
                 () -> restaurantManagementFacade.updateRestaurant(request, restaurantId, notOwnerId))
-                .isInstanceOf(AccessDeniedException.class)
+                .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("레스토랑 오너 정보를 찾을 수 없습니다.");
     }
 

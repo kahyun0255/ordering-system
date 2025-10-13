@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 
-import com.orderingsystem.common.exception.AccessDeniedException;
 import com.orderingsystem.restaurant.application.dto.request.CreateRestaurantApplicationRequest;
 import com.orderingsystem.restaurant.application.dto.response.CreateRestaurantResponse;
+import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.Owner;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
@@ -77,7 +77,7 @@ class RestaurantManagementFacadeCreateTest extends ApplicationTestSupport {
 
         //when, then
         assertThatThrownBy(() -> restaurantManagementFacade.createRestaurant(request))
-                .isInstanceOf(AccessDeniedException.class)
+                .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("레스토랑 오너 정보를 찾을 수 없습니다.");
 
         assertThat(restaurantRepository.count()).isEqualTo(0L);
