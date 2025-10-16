@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -114,19 +115,11 @@ class ProductControllerFindTest extends ControllerTestSupport {
                 );
     }
 
-    private static Stream<Arguments> provideProductManageableStatuses() {
-        return Stream.of(
-                Arguments.of("관리자 승인 대기", RestaurantStatus.PENDING_APPROVAL),
-                Arguments.of("영업 전", RestaurantStatus.PRE_OPEN),
-                Arguments.of("영업 중", RestaurantStatus.ACTIVE),
-                Arguments.of("일시 휴업", RestaurantStatus.TEMP_CLOSED)
-        );
-    }
-
     @DisplayName("폐업, 영업 정지, 삭제 상태의 레스토랑에는 레스토랑에서 판매 가능한 상품 전체 조회가 불가능하고, 404를 반환한다.")
     @ParameterizedTest(name = "[{index}] 레스토랑 상태 : {0}")
     @MethodSource("restaurantStatusesThatCannotExposeProducts")
-    void shouldFailToGetProducts_whenRestaurantStatusIsInvalid(String status, RestaurantStatus restaurantStatus) throws Exception {
+    void shouldFailToGetProducts_whenRestaurantStatusIsInvalid(String status, RestaurantStatus restaurantStatus)
+            throws Exception {
         //given
         Restaurant restaurant = Restaurant.builder()
                 .restaurantId(restaurantId)
@@ -148,6 +141,155 @@ class ProductControllerFindTest extends ControllerTestSupport {
                 Arguments.of("폐업", RestaurantStatus.PERM_CLOSED),
                 Arguments.of("영업 정지", RestaurantStatus.SUSPENDED),
                 Arguments.of("삭제", RestaurantStatus.DELETED)
+        );
+    }
+
+    @DisplayName("관리자 승인 대기, 영업 전, 영업 중, 일시 휴업 상태의 레스토랑에서 판매중인 상품이라면 상품 ID로 상품 조회가 가능하다.")
+    @ParameterizedTest(name = "[{index}] 레스토랑 상태 : {0}")
+    @MethodSource("provideProductManageableStatuses")
+    void shouldAllowViewingProduct_whenRestaurantStatusIsValid(String status, RestaurantStatus restaurantStatus)
+            throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("레스토랑 이름")
+                .status(restaurantStatus)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/restaurants/" + restaurantId + "/products/" + activeProduct1.getProductId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productId").value(activeProduct1.getProductId().toString()))
+                .andExpect(jsonPath("$.name").value(activeProduct1.getName()))
+                .andExpect(jsonPath("$.price").value(activeProduct1.getPrice().getAmount()))
+                .andExpect(jsonPath("$.available").value(activeProduct1.isAvailable()))
+                .andExpect(jsonPath("$.quantity").value(activeProduct1.getQuantity()));
+    }
+
+    @DisplayName("폐업, 영업 정지 상태의 레스토랑에서 판매하는 상품은 상품ID로 조회가 불가능하고, 403을 반환한다.")
+    @ParameterizedTest(name = "[{index}] 레스토랑 상태 : {0}")
+    @MethodSource("provideStatusesThatCannotExposeProducts")
+    void shouldDenyProductAccess_whenRestaurantStatusBlocksExposure(String status, RestaurantStatus restaurantStatus)
+            throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("레스토랑 이름")
+                .status(restaurantStatus)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        //when, then
+
+        mockMvc.perform(
+                        get("/api/restaurants/" + restaurantId + "/products/" + activeProduct1.getProductId()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("Forbidden"))
+                .andExpect(jsonPath("$.message").value("물품을 조회할 권한이 없습니다."));
+    }
+
+    private static Stream<Arguments> provideStatusesThatCannotExposeProducts() {
+        return Stream.of(
+                Arguments.of("폐업", RestaurantStatus.PERM_CLOSED),
+                Arguments.of("영업 정지", RestaurantStatus.SUSPENDED)
+        );
+    }
+
+    @DisplayName("삭제된 레스토랑에서 판매하는 상품은 상품ID로 조회가 불가능하고, 404를 반환한다.")
+    @Test
+    void shouldReturn404_whenRestaurantIsDeleted() throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("레스토랑 이름")
+                .status(RestaurantStatus.DELETED)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/restaurants/" + restaurantId + "/products/" + activeProduct1.getProductId()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("레스토랑 정보를 찾을 수 없습니다."));
+    }
+
+    @DisplayName("레스토랑이 존재하지 않으면 404를 반환한다.")
+    @Test
+    void shouldReturnNotFound_whenRestaurantDoesNotExist() throws Exception {
+        //when, then
+        mockMvc.perform(
+                        get("/api/restaurants/" + UUID.randomUUID() + "/products/" + activeProduct1.getProductId()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("레스토랑 정보를 찾을 수 없습니다."));
+    }
+
+    @DisplayName("레스토랑에서 판매하지 않는 상품은 상품ID로 조회가 불가능하고, 404를 반환한다.")
+    @Test
+    void shouldReturn404_whenProductIsNotSoldByRestaurant() throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .name("레스토랑 이름")
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/restaurants/" + restaurant.getRestaurantId() + "/products/" + activeProduct1.getProductId()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("해당 레스토랑이 판매하고 있지 않은 상품입니다."));
+    }
+
+    @DisplayName("상품이 존재하지 않으면 404를 반환한다.")
+    @Test
+    void shouldReturn404_whenProductDoesNotExist() throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("레스토랑 이름")
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/restaurants/" + restaurantId + "/products/" + UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("상품 정보를 찾을 수 없습니다"));
+    }
+
+    @DisplayName("판매중이지 않은 상태의 상품이라면 403을 반환한다.")
+    @Test
+    void shouldReturn403_whenProductIsNotAvailable() throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("레스토랑 이름")
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/restaurants/" + restaurantId + "/products/" + inactiveProductId))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("Forbidden"))
+                .andExpect(jsonPath("$.message").value("현재 판매하고 있지 않은 상품입니다."));
+    }
+
+    private static Stream<Arguments> provideProductManageableStatuses() {
+        return Stream.of(
+                Arguments.of("관리자 승인 대기", RestaurantStatus.PENDING_APPROVAL),
+                Arguments.of("영업 전", RestaurantStatus.PRE_OPEN),
+                Arguments.of("영업 중", RestaurantStatus.ACTIVE),
+                Arguments.of("일시 휴업", RestaurantStatus.TEMP_CLOSED)
         );
     }
 

@@ -49,4 +49,9 @@ public class ProductController {
         return ResponseEntity.ok(findProductService.findAll(restaurantId, pageable));
     }
 
+    @GetMapping("/{productId}")
+    public ResponseEntity<ProductResponse> getProduct(@PathVariable UUID restaurantId, @PathVariable UUID productId){
+        return ResponseEntity.ok(findProductService.findOne(restaurantId, productId));
+    }
+
 }
