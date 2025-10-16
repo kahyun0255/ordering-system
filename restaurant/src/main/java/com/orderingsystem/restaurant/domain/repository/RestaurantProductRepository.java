@@ -11,4 +11,5 @@ public interface RestaurantProductRepository extends JpaRepository<RestaurantPro
 
     List<RestaurantProduct> findByRestaurantIdAndProductIdIn(UUID restaurantId, List<UUID> productIds);
 
+    List<RestaurantProduct> findAllByRestaurantId(UUID restaurantId);
 }

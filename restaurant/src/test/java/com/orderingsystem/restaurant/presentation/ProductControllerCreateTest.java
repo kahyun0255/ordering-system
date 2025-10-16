@@ -62,6 +62,7 @@ class ProductControllerCreateTest extends ControllerTestSupport {
     @AfterEach
     @Override
     void tearDown() {
+        super.tearDown();
         productRepository.deleteAllInBatch();
     }
 
