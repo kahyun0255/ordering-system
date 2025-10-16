@@ -115,9 +115,9 @@ class ProductControllerFindTest extends ControllerTestSupport {
                 );
     }
 
-    @DisplayName("폐업, 영업 정지, 삭제 상태의 레스토랑에는 레스토랑에서 판매 가능한 상품 전체 조회가 불가능하고, 404를 반환한다.")
+    @DisplayName("폐업, 영업 정지, 삭제 상태의 레스토랑은 레스토랑에서 판매 가능한 상품 전체 조회가 불가능하고, 403을 반환한다.")
     @ParameterizedTest(name = "[{index}] 레스토랑 상태 : {0}")
-    @MethodSource("restaurantStatusesThatCannotExposeProducts")
+    @MethodSource("provideStatusesThatCannotExposeProducts")
     void shouldFailToGetProducts_whenRestaurantStatusIsInvalid(String status, RestaurantStatus restaurantStatus)
             throws Exception {
         //given
@@ -131,17 +131,28 @@ class ProductControllerFindTest extends ControllerTestSupport {
         //when, then
         mockMvc.perform(
                         get("/api/restaurants/" + restaurantId + "/products"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("Forbidden"))
+                .andExpect(jsonPath("$.message").value("물품을 조회할 권한이 없습니다."));
+    }
+
+    @DisplayName("삭제된 레스토랑은 레스토랑에서 판매 가능한 상품 전체 조회가 불가능하고, 404를 반환한다.")
+    @Test
+    void shouldReturn404_whenRestaurantIsDeleted() throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("레스토랑 이름")
+                .status(RestaurantStatus.DELETED)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/restaurants/" + restaurantId + "/products"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("Not Found"))
                 .andExpect(jsonPath("$.message").value("레스토랑 정보를 찾을 수 없습니다."));
-    }
-
-    private static Stream<Arguments> restaurantStatusesThatCannotExposeProducts() {
-        return Stream.of(
-                Arguments.of("폐업", RestaurantStatus.PERM_CLOSED),
-                Arguments.of("영업 정지", RestaurantStatus.SUSPENDED),
-                Arguments.of("삭제", RestaurantStatus.DELETED)
-        );
     }
 
     @DisplayName("관리자 승인 대기, 영업 전, 영업 중, 일시 휴업 상태의 레스토랑에서 판매중인 상품이라면 상품 ID로 상품 조회가 가능하다.")
@@ -190,16 +201,9 @@ class ProductControllerFindTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("물품을 조회할 권한이 없습니다."));
     }
 
-    private static Stream<Arguments> provideStatusesThatCannotExposeProducts() {
-        return Stream.of(
-                Arguments.of("폐업", RestaurantStatus.PERM_CLOSED),
-                Arguments.of("영업 정지", RestaurantStatus.SUSPENDED)
-        );
-    }
-
     @DisplayName("삭제된 레스토랑에서 판매하는 상품은 상품ID로 조회가 불가능하고, 404를 반환한다.")
     @Test
-    void shouldReturn404_whenRestaurantIsDeleted() throws Exception {
+    void shouldReturn404_whenRestaurantIsDeleted2() throws Exception {
         //given
         Restaurant restaurant = Restaurant.builder()
                 .restaurantId(restaurantId)
@@ -290,6 +294,13 @@ class ProductControllerFindTest extends ControllerTestSupport {
                 Arguments.of("영업 전", RestaurantStatus.PRE_OPEN),
                 Arguments.of("영업 중", RestaurantStatus.ACTIVE),
                 Arguments.of("일시 휴업", RestaurantStatus.TEMP_CLOSED)
+        );
+    }
+
+    private static Stream<Arguments> provideStatusesThatCannotExposeProducts() {
+        return Stream.of(
+                Arguments.of("폐업", RestaurantStatus.PERM_CLOSED),
+                Arguments.of("영업 정지", RestaurantStatus.SUSPENDED)
         );
     }
 

@@ -11,7 +11,6 @@ import com.orderingsystem.restaurant.domain.repository.ProductRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantProductRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
 import com.orderingsystem.restaurant.domain.service.RestaurantProductPermissionCheckerService;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,10 +29,8 @@ public class FindProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> findAll(UUID restaurantId, Pageable pageable) {
-        Optional<Restaurant> restaurant = restaurantRepository.findById(restaurantId);
-        if (restaurant.isEmpty() || !restaurantProductPermissionCheckerService.canManageProduct(restaurant.get())) {
-            throw new RestaurantNotFoundException("레스토랑 정보를 찾을 수 없습니다.");
-        }
+        Restaurant restaurant = findValidRestaurant(restaurantId);
+        validateRestaurantAccessPermission(restaurant);
 
         return productRepository.findByRestaurantId(restaurantId, pageable).map(ProductResponse::from);
     }

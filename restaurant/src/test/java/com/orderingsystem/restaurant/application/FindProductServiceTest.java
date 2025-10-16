@@ -102,6 +102,27 @@ class FindProductServiceTest {
     }
 
     @Test
+    @DisplayName("레스토랑이 삭제되었으면 예외가 발생한다.")
+    void shouldThrowException_whenRestaurantIsDeleted() {
+        //given
+        UUID restaurantId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(0, 10);
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(restaurantId)
+                .status(RestaurantStatus.DELETED)
+                .name("삭제된 레스토랑")
+                .build();
+
+        given(restaurantRepository.findById(restaurantId)).willReturn(Optional.empty());
+        given(restaurantProductPermissionCheckerService.canManageProduct(restaurant)).willReturn(false);
+
+        //when, then
+        assertThatThrownBy(() -> findProductService.findAll(restaurantId, pageable))
+                .isInstanceOf(RestaurantNotFoundException.class)
+                .hasMessageContaining("레스토랑 정보를 찾을 수 없습니다.");
+    }
+
+    @Test
     @DisplayName("레스토랑이 존재하지만 관리 불가능한 상태면 예외가 발생한다.")
     void shouldThrowException_whenRestaurantIsNotManageable() {
         //given
@@ -118,8 +139,8 @@ class FindProductServiceTest {
 
         //when, then
         assertThatThrownBy(() -> findProductService.findAll(restaurantId, pageable))
-                .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessageContaining("레스토랑 정보를 찾을 수 없습니다.");
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("물품을 조회할 권한이 없습니다.");
     }
 
     @DisplayName("상품 관리가 가능한 상태의 레스토랑에서 판매중인 상품이라면 상품 ID로 상품 조회시 상품 정보를 반환한다.")
