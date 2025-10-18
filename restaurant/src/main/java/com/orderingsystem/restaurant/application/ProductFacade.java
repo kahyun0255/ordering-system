@@ -15,21 +15,32 @@ public class ProductFacade {
 
     private final RestaurantAccessValidatorService restaurantAccessValidatorService;
     private final CreateProductService createProductService;
+    private final DeleteProductService deleteProductService;
 
     public UUID create(CreateProductApplicationRequest request, UUID restaurantOwnerId, UUID restaurantId) {
-        if (!restaurantAccessValidatorService.isRestaurantOwnership(restaurantOwnerId, restaurantId)) {
-            log.info("{} 유저는 {} 레스토랑의 상품을 생성할 권한이 없습니다.", restaurantOwnerId, restaurantId);
-            throw new AccessDeniedException("상품을 생성할 권한이 없습니다.");
-        }
         validateProductManagementPermission(restaurantOwnerId, restaurantId);
-
         return createProductService.create(request, restaurantId, restaurantOwnerId);
     }
 
-    private void validateProductManagementPermission(UUID requestOwnerId, UUID restaurantId) {
+    public void delete(UUID restaurantId, UUID productId, UUID restaurantOwnerId) {
+        validateProductManagementPermission(restaurantOwnerId, restaurantId);
+        deleteProductService.deleteProduct(restaurantId, productId, restaurantOwnerId);
+    }
+
+    private void validateProductManagementPermission(UUID restaurantOwnerId, UUID restaurantId) {
         Restaurant restaurant = restaurantAccessValidatorService.findRestaurant(restaurantId);
+
+        validateRestaurantOwnership(restaurantOwnerId, restaurantId);
+
         if (!restaurant.getStatus().canManageProduct()) {
-            log.info("{} 상태의 {} 레스토랑은 {} 유저가 상품을 관리할 수 없습니다.", restaurant.getStatus(), restaurantId, requestOwnerId);
+            log.info("{} 상태의 {} 레스토랑은 {} 유저가 상품을 관리할 수 없습니다.", restaurant.getStatus(), restaurantId, restaurantOwnerId);
+            throw new AccessDeniedException("현재 상태의 레스토랑에서는 상품을 관리할 수 없습니다.");
+        }
+    }
+
+    private void validateRestaurantOwnership(UUID restaurantOwnerId, UUID restaurantId) {
+        if (!restaurantAccessValidatorService.isRestaurantOwnership(restaurantOwnerId, restaurantId)) {
+            log.info("{} 유저는 {} 레스토랑의 상품을 관리할 권한이 없습니다.", restaurantOwnerId, restaurantId);
             throw new AccessDeniedException("상품을 관리할 권한이 없습니다.");
         }
     }

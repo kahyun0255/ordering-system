@@ -152,7 +152,7 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("Forbidden"))
-                .andExpect(jsonPath("$.message").value("상품을 관리할 권한이 없습니다."));
+                .andExpect(jsonPath("$.message").value("현재 상태의 레스토랑에서는 상품을 관리할 수 없습니다."));
 
         assertThat(productRepository.count()).isZero();
     }
@@ -192,7 +192,7 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("Forbidden"))
-                .andExpect(jsonPath("$.message").value("상품을 생성할 권한이 없습니다."));
+                .andExpect(jsonPath("$.message").value("상품을 관리할 권한이 없습니다."));
 
         assertThat(productRepository.count()).isZero();
     }

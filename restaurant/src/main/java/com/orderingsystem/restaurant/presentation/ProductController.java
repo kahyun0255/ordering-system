@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,24 +35,33 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<Void> createProduct(@Valid @RequestBody CreateProductRequest createProductRequest,
                                               BindingResult bindingResult,
-                                              @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+                                              @RequestHeader(value = "Authorization") String authorizationHeader,
                                               @PathVariable UUID restaurantId) {
         UUID restaurantOwnerId = restaurantControllerHelper.getRestaurantOwnerId(authorizationHeader);
         RestaurantControllerHelper.valid(bindingResult);
         UUID productId = productFacade.create(
                 createProductRequest.toApplicationRequest(), restaurantOwnerId, restaurantId);
-        return ResponseEntity.created(URI.create("/api/restaurants/" + restaurantId + "/products/" + productId)).build();
+        return ResponseEntity.created(URI.create("/api/restaurants/" + restaurantId + "/products/" + productId))
+                .build();
     }
 
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> getProducts(@PathVariable UUID restaurantId,
-                                                             @PageableDefault(size = 10, sort = "createdAt", direction = Direction.DESC) Pageable pageable){
+                                                             @PageableDefault(size = 10, sort = "createdAt", direction = Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(findProductService.findAll(restaurantId, pageable));
     }
 
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductResponse> getProduct(@PathVariable UUID restaurantId, @PathVariable UUID productId){
+    public ResponseEntity<ProductResponse> getProduct(@PathVariable UUID restaurantId, @PathVariable UUID productId) {
         return ResponseEntity.ok(findProductService.findOne(restaurantId, productId));
+    }
+
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable UUID restaurantId, @PathVariable UUID productId,
+                                              @RequestHeader(value = "Authorization") String authorizationHeader) {
+        UUID restaurantOwnerId = restaurantControllerHelper.getRestaurantOwnerId(authorizationHeader);
+        productFacade.delete(restaurantId, productId, restaurantOwnerId);
+        return ResponseEntity.noContent().build();
     }
 
 }

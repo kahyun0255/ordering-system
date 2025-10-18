@@ -115,7 +115,7 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
         //when, then
         assertThatThrownBy(() -> productFacade.create(request, ownerId, restaurantId))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("상품을 관리할 권한이 없습니다.");
+                .hasMessage("현재 상태의 레스토랑에서는 상품을 관리할 수 없습니다.");
 
         assertThat(productRepository.count()).isZero();
     }
@@ -148,7 +148,7 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
         //when, then
         assertThatThrownBy(() -> productFacade.create(request, nonOwnerId, restaurantId))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("상품을 생성할 권한이 없습니다.");
+                .hasMessage("상품을 관리할 권한이 없습니다.");
 
         assertThat(productRepository.count()).isZero();
     }
@@ -219,7 +219,7 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
         //when, then
         assertThatThrownBy(() -> productFacade.create(request, UUID.randomUUID(), restaurantId))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessage("레스토랑 오너 정보를 찾을 수 없습니다.");
+                .hasMessage("레스토랑 정보를 찾을 수 없습니다.");
 
         assertThat(productRepository.count()).isZero();
     }

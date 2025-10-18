@@ -46,4 +46,7 @@ public class Product extends BaseEntity {
         this.available = available;
     }
 
+    public void delete() {
+        this.available = false;
+    }
 }
