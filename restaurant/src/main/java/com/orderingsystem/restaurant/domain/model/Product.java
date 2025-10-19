@@ -33,6 +33,11 @@ public class Product extends BaseEntity {
     private int quantity;
 
     public static Product create(String name, Boolean available, BigDecimal price, Integer quantity) {
+        validateName(name);
+        validateAvailability(available);
+        validatePrice(price);
+        validateQuantity(quantity);
+
         return Product.builder()
                 .productId(UUID.randomUUID())
                 .name(name)
