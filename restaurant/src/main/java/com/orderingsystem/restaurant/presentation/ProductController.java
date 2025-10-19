@@ -4,6 +4,7 @@ import com.orderingsystem.restaurant.application.FindProductService;
 import com.orderingsystem.restaurant.application.ProductFacade;
 import com.orderingsystem.restaurant.application.dto.response.ProductResponse;
 import com.orderingsystem.restaurant.presentation.request.CreateProductRequest;
+import com.orderingsystem.restaurant.presentation.request.UpdateProductRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,6 +64,15 @@ public class ProductController {
         UUID restaurantOwnerId = restaurantControllerHelper.getRestaurantOwnerId(authorizationHeader);
         productFacade.delete(restaurantId, productId, restaurantOwnerId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{productId}")
+    public ResponseEntity<ProductResponse> updateProduct(@PathVariable UUID restaurantId, @PathVariable UUID productId,
+                                                         @RequestHeader(value = "Authorization") String authorizationHeader,
+                                                         @RequestBody UpdateProductRequest updateProductRequest) {
+        UUID ownerId = restaurantControllerHelper.getRestaurantOwnerId(authorizationHeader);
+        return ResponseEntity.ok(
+                productFacade.update(ownerId, restaurantId, productId, updateProductRequest.toApplicationRequest()));
     }
 
 }

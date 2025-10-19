@@ -2,6 +2,8 @@ package com.orderingsystem.restaurant.application;
 
 import com.orderingsystem.common.exception.AccessDeniedException;
 import com.orderingsystem.restaurant.application.dto.request.CreateProductApplicationRequest;
+import com.orderingsystem.restaurant.application.dto.request.UpdateProductApplicationRequest;
+import com.orderingsystem.restaurant.application.dto.response.ProductResponse;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ public class ProductFacade {
     private final RestaurantAccessValidatorService restaurantAccessValidatorService;
     private final CreateProductService createProductService;
     private final DeleteProductService deleteProductService;
+    private final UpdateProductService updateProductService;
 
     public UUID create(CreateProductApplicationRequest request, UUID restaurantOwnerId, UUID restaurantId) {
         validateProductManagementPermission(restaurantOwnerId, restaurantId);
@@ -25,6 +28,12 @@ public class ProductFacade {
     public void delete(UUID restaurantId, UUID productId, UUID restaurantOwnerId) {
         validateProductManagementPermission(restaurantOwnerId, restaurantId);
         deleteProductService.deleteProduct(restaurantId, productId, restaurantOwnerId);
+    }
+
+    public ProductResponse update(UUID ownerId, UUID restaurantId, UUID productId,
+                                  UpdateProductApplicationRequest request) {
+        validateProductManagementPermission(ownerId, restaurantId);
+        return updateProductService.updateProduct(ownerId, restaurantId, productId, request);
     }
 
     private void validateProductManagementPermission(UUID restaurantOwnerId, UUID restaurantId) {
@@ -44,5 +53,4 @@ public class ProductFacade {
             throw new AccessDeniedException("상품을 관리할 권한이 없습니다.");
         }
     }
-
 }
