@@ -57,15 +57,9 @@ public class RedisStockRepository implements StockCachePort {
         try {
             redisTransaction.execute(redisTemplate, ops -> {
                 int total = getInt(ops, stockKey(productId));
-                System.out.println(stockKey(productId));
                 int reserved = getInt(ops, reserveKey(productId));
-                System.out.println(reserveKey(productId));
 
                 if (total - reserved < quantity) {
-                    System.out.println(total);
-                    System.out.println(reserved);
-                    System.out.println(quantity);
-                    System.out.println();
                     throw new IllegalStateException("재고 부족");
                 }
 
