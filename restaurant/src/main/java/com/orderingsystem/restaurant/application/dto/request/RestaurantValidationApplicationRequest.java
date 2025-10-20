@@ -10,6 +10,7 @@ import lombok.Getter;
 @Builder
 public class RestaurantValidationApplicationRequest {
     private UUID sagaId;
+    private UUID orderId;
     private List<Item> items;
     private BigDecimal totalPrice;
 
