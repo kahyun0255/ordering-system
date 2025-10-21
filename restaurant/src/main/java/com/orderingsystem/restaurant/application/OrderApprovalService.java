@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ public class OrderApprovalService {
     private final OrderOutboxHelper orderOutboxHelper;
     private final RestaurantDataMapper restaurantDataMapper;
     private final ProcessedMessageRepository processedMessageRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public void approveOrder(ApprovalRequest approvalRequest) {
@@ -61,8 +63,8 @@ public class OrderApprovalService {
         Restaurant restaurant = findRestaurant(approvalRequest.getRestaurantId());
         RestaurantInfo restaurantInfo = findRestaurantVO(restaurant.getRestaurantId(), approvalRequest);
 
-        OrderApprovalEvent orderApprovalEvent =
-                restaurantValidateOrderService.validateOrder(restaurantInfo, failureMessage);
+        OrderApprovalEvent orderApprovalEvent = restaurantValidateOrderService.validateOrder(restaurantInfo,
+                failureMessage, approvalRequest.getSagaId());
 
         orderApprovalSave(restaurantInfo.getOrderApproval());
 
@@ -70,6 +72,8 @@ public class OrderApprovalService {
                 restaurantDataMapper.restaurantApprovalEventToOrderEventPayload(orderApprovalEvent),
                 orderApprovalEvent.getOrderApproval().getStatus(),
                 approvalRequest.getSagaId());
+
+        applicationEventPublisher.publishEvent(orderApprovalEvent);
     }
 
     private Restaurant findRestaurant(UUID restaurantId) {

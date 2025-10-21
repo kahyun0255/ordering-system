@@ -61,7 +61,7 @@ public class RestaurantInfo {
         this.status = status;
     }
 
-    public OrderApprovedEvent approveOrder(List<String> failureMessages) {
+    public OrderApprovedEvent approveOrder(List<String> failureMessages, UUID sagaId) {
         this.orderApproval = OrderApproval.builder()
                 .id(UUID.randomUUID())
                 .restaurantId(this.getRestaurantId())
@@ -71,11 +71,11 @@ public class RestaurantInfo {
 
         log.info("주문이 승인되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
 
-        return new OrderApprovedEvent(this.getOrderApproval(), this.getRestaurantId(), failureMessages,
+        return new OrderApprovedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
                 ZonedDateTime.now());
     }
 
-    public OrderRejectedEvent rejectOrder(List<String> failureMessages) {
+    public OrderRejectedEvent rejectOrder(List<String> failureMessages, UUID sagaId) {
         this.orderApproval = OrderApproval.builder()
                 .id(UUID.randomUUID())
                 .restaurantId(this.getRestaurantId())
@@ -85,7 +85,7 @@ public class RestaurantInfo {
 
         log.info("주문이 거절되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
 
-        return new OrderRejectedEvent(this.getOrderApproval(), this.getRestaurantId(), failureMessages,
+        return new OrderRejectedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
                 ZonedDateTime.now());
     }
 

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.orderingsystem.common.util.RedisTransaction;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -110,6 +111,84 @@ class RedisStockRepositoryTest {
         assertThatThrownBy(() -> redisStockRepository.reserve(productId, 1, sagaId))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("재고 수정 중");
+    }
+
+    @DisplayName("한개의 상품을 주문 할 경우, 레스토랑 승인에 성공하면 재고 차감, 예약 해제, 히스토리 삭제가 이루어진다.")
+    @Test
+    void testConfirmSingleSuccess() {
+        //given
+        redisTemplate.opsForValue().set(stockKey + productId, "10");
+        redisTemplate.opsForValue().set(reserveKey + productId, "3");
+        redisTemplate.opsForHash().put(historyKey + sagaId, productId.toString(), "3");
+
+        Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
+
+        //when
+        redisStockRepository.confirm(history, sagaId);
+
+        //then
+        assertThat(redisTemplate.opsForValue().get(stockKey + productId)).isEqualTo("7");
+        assertThat(redisTemplate.opsForValue().get(reserveKey + productId)).isEqualTo("0");
+        assertThat(redisTemplate.hasKey(historyKey + sagaId)).isFalse();
+    }
+
+    @DisplayName("여러개의 상품을 주문 할 경우, 레스토랑 승인에 성공하면 각각의 상품에 대해 재고 차감, 예약 해제, 히스토리 삭제가 이루어진다.")
+    @Test
+    void testConfirmMultipleProducts() {
+        //given
+        UUID productId1 = UUID.randomUUID();
+        UUID productId2 = UUID.randomUUID();
+
+        redisTemplate.opsForValue().set(stockKey + productId1, "10");
+        redisTemplate.opsForValue().set(stockKey + productId2, "20");
+        redisTemplate.opsForValue().set(reserveKey + productId1, "5");
+        redisTemplate.opsForValue().set(reserveKey + productId2, "7");
+
+        redisTemplate.opsForHash().put(historyKey + sagaId, productId1.toString(), "5");
+        redisTemplate.opsForHash().put(historyKey + sagaId, productId2.toString(), "7");
+
+        Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
+
+        //when
+        redisStockRepository.confirm(history, sagaId);
+
+        //then
+        assertThat(redisTemplate.opsForValue().get(stockKey + productId1)).isEqualTo("5");
+        assertThat(redisTemplate.opsForValue().get(stockKey + productId2)).isEqualTo("13");
+
+        assertThat(redisTemplate.opsForValue().get(reserveKey + productId1)).isEqualTo("0");
+        assertThat(redisTemplate.opsForValue().get(reserveKey + productId2)).isEqualTo("0");
+
+        assertThat(redisTemplate.hasKey(historyKey + sagaId)).isFalse();
+    }
+
+    @DisplayName("히스토리가 비어있을 경우 아무 동작도 하지 않는다.")
+    @Test
+    void testConfirmEmptyHistory() {
+        //given
+        Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
+
+        //when
+        redisStockRepository.confirm(history, sagaId);
+
+        //then
+        assertThat(redisTemplate.hasKey(historyKey + sagaId)).isFalse();
+    }
+
+    @DisplayName("재고 키가 존재하지 않으면 예외가 발생한다.")
+    @Test
+    void testConfirmMissingStockKey() {
+        //given
+        UUID missingProductId = UUID.randomUUID();
+        UUID sagaId = UUID.randomUUID();
+        redisTemplate.opsForHash().put(historyKey + sagaId, missingProductId.toString(), "2");
+
+        Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
+
+        //when, then
+        assertThatThrownBy(() -> redisStockRepository.confirm(history, sagaId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("재고 데이터가 존재하지 않습니다." + missingProductId);
     }
 
 }

@@ -279,9 +279,9 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
 
         UUID messageId = UUID.randomUUID();
         processedMessageRepository.save(ProcessedMessage.builder()
-                        .messageId(messageId)
-                        .messageType(MessageType.ORDER_APPROVAL)
-                        .processedAt(ZonedDateTime.now())
+                .messageId(messageId)
+                .messageType(MessageType.ORDER_APPROVAL)
+                .processedAt(ZonedDateTime.now())
                 .build());
 
         ApprovalRequest request = ApprovalRequest.builder()

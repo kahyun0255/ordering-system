@@ -3,6 +3,7 @@ package com.orderingsystem.restaurant.infra.redis;
 import com.orderingsystem.common.util.RedisTransaction;
 import com.orderingsystem.restaurant.application.StockCachePort;
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +72,36 @@ public class RedisStockRepository implements StockCachePort {
         } finally {
             redisTemplate.delete(lock);
         }
+    }
+
+    @Override
+    public Map<Object, Object> getHistory(UUID sagaId) {
+        return redisTemplate.opsForHash().entries(historyKey + sagaId);
+    }
+
+    @Override
+    public void confirm(Map<Object, Object> history, UUID sagaId) {
+        redisTransaction.execute(redisTemplate, ops -> {
+            history.forEach((productId, quantityStr) -> {
+                int quantity = Integer.parseInt(quantityStr.toString());
+                String productKey = stockKey(UUID.fromString(productId.toString()));
+                String reservedKey = reserveKey(UUID.fromString(productId.toString()));
+
+                int total = getInt(ops, productKey);
+                int reserved = getInt(ops, reservedKey);
+
+                if (total == 0 && reserved == 0) {
+                    throw new IllegalStateException("재고 데이터가 존재하지 않습니다." + productId);
+                }
+
+                ops.opsForValue().set(productKey, String.valueOf(total - quantity));
+                ops.opsForValue().set(reservedKey, String.valueOf(Math.max(0, reserved - quantity)));
+            });
+
+            ops.delete(historyKey + sagaId);
+        });
+
+        log.info("{} 주문 예약 확정 완료. Redis 실제 재고 차감 및 예약 해제", sagaId);
     }
 
     private int getInt(RedisOperations<String, String> ops, String key) {

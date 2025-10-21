@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 
 class RestaurantInfoTest {
 
+    private final UUID sagaId = UUID.randomUUID();
+
     @DisplayName("주문이 유효하면 검증에 성공한다.")
     @Test
     void validateOrderSuccessfully() {
@@ -494,7 +496,7 @@ class RestaurantInfoTest {
                 .build();
 
         //when
-        restaurantInfo.rejectOrder(failureMessages);
+        restaurantInfo.rejectOrder(failureMessages, sagaId);
 
         //then
         assertThat(restaurantInfo.getOrderApproval().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);

@@ -57,6 +57,10 @@ public class Product extends BaseEntity {
         this.available = false;
     }
 
+    public void decreaseStock(int quantity) {
+        this.quantity -= quantity;
+    }
+
     public void updateName(String name) {
         validateName(name);
         this.name = name;
@@ -100,5 +104,4 @@ public class Product extends BaseEntity {
             throw new IllegalArgumentException("상품 재고는 0 이상이어야 합니다.");
         }
     }
-
 }

@@ -7,9 +7,9 @@ import java.util.UUID;
 
 public class OrderApprovedEvent extends OrderApprovalEvent {
 
-    public OrderApprovedEvent(OrderApproval orderApproval, UUID restaurantId, List<String> failureMessages,
-                              ZonedDateTime createdAt){
-        super(orderApproval, restaurantId, failureMessages, createdAt);
+    public OrderApprovedEvent(OrderApproval orderApproval, UUID restaurantId, UUID sagaId, List<String> failureMessages,
+                              ZonedDateTime createdAt) {
+        super(orderApproval, restaurantId, sagaId, failureMessages, createdAt);
     }
 
 }
