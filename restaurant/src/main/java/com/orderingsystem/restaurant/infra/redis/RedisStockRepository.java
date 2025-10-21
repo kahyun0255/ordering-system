@@ -2,7 +2,7 @@ package com.orderingsystem.restaurant.infra.redis;
 
 import com.orderingsystem.common.util.RedisTransaction;
 import com.orderingsystem.restaurant.application.StockCachePort;
-import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -32,8 +33,15 @@ public class RedisStockRepository implements StockCachePort {
     @Value("${key.history}")
     private String historyKey;
 
-    @Value("${lock.expire-second}")
-    private int lockExpire;
+    private static final String RESERVE_LUA_SCRIPT =
+            "local stock = redis.call('GET', KEYS[1]); " +
+                    "if (not stock) then return -1 end; " +
+                    "local reserved = redis.call('GET', KEYS[2]); " +
+                    "if (not reserved) then reserved = 0 end; " +
+                    "if (tonumber(stock) - tonumber(reserved) < tonumber(ARGV[1])) then return 0 end; " +
+                    "redis.call('INCRBY', KEYS[2], ARGV[1]); " +
+                    "redis.call('HSET', KEYS[3], ARGV[2], ARGV[1]); " +
+                    "return 1;";
 
     private String stockKey(UUID productId) {
         return stockKey + productId;
@@ -43,35 +51,35 @@ public class RedisStockRepository implements StockCachePort {
         return reserveKey + productId;
     }
 
-    private String lockKey(UUID productId) {
-        return lockKey + productId;
+    private String historyKey(UUID sagaId) {
+        return historyKey + sagaId;
     }
 
     @Override
     public void reserve(UUID productId, int quantity, UUID sagaId) {
-        String lock = lockKey(productId);
-        Boolean locked = redisTemplate.opsForValue().setIfAbsent(lock, "1", Duration.ofSeconds(lockExpire));
-        if (locked.equals(Boolean.FALSE)) {
-            throw new IllegalStateException("재고 수정 중");
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setScriptText(RESERVE_LUA_SCRIPT);
+        script.setResultType(Long.class);
+
+        String stock = stockKey(productId);
+        String reserved = reserveKey(productId);
+        String history = historyKey(sagaId);
+
+        Long result = redisTemplate.execute(
+                script,
+                List.of(stock, reserved, history),
+                String.valueOf(quantity),
+                productId.toString()
+        );
+
+        if (result == null || result == -1) {
+            throw new IllegalStateException("재고 키가 존재하지 않습니다.");
+        }
+        if (result == 0) {
+            throw new IllegalStateException("재고 부족");
         }
 
-        try {
-            redisTransaction.execute(redisTemplate, ops -> {
-                int total = getInt(ops, stockKey(productId));
-                int reserved = getInt(ops, reserveKey(productId));
-
-                if (total - reserved < quantity) {
-                    throw new IllegalStateException("재고 부족");
-                }
-
-                ops.opsForValue().increment(reserveKey(productId), quantity);
-                ops.opsForHash().put(historyKey + sagaId, productId.toString(), String.valueOf(quantity));
-            });
-
-            log.info("[{}] 상품 {} 예약 완료.", productId, quantity);
-        } finally {
-            redisTemplate.delete(lock);
-        }
+        log.info("[{}] 상품 {} 예약 완료.", productId, quantity);
     }
 
     @Override

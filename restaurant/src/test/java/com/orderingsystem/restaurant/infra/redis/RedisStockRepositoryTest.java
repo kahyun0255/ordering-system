@@ -85,7 +85,6 @@ class RedisStockRepositoryTest {
 
         String history = (String) redisTemplate.opsForHash().get(historyKey + sagaId, productId.toString());
         assertThat(history).isEqualTo("3");
-
     }
 
     @DisplayName("재고가 부족할 경우 예외가 발생한다.")
@@ -105,12 +104,14 @@ class RedisStockRepositoryTest {
     void testReserveLockConflict() {
         //given
         redisTemplate.opsForValue().set(stockKey + productId, "1");
-        redisTemplate.opsForValue().set(lockKey + productId, "1");
+        redisTemplate.opsForValue().set(reserveKey + productId, "0");
 
-        //when, then
-        assertThatThrownBy(() -> redisStockRepository.reserve(productId, 1, sagaId))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("재고 수정 중");
+        //when
+        redisStockRepository.reserve(productId, 1, sagaId);
+
+        //then
+        String reserved = redisTemplate.opsForValue().get(reserveKey + productId);
+        assertThat(reserved).isEqualTo("1");
     }
 
     @DisplayName("한개의 상품을 주문 할 경우, 레스토랑 승인에 성공하면 재고 차감, 예약 해제, 히스토리 삭제가 이루어진다.")
