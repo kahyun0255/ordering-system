@@ -220,4 +220,27 @@ public class RestaurantStockIntegrationTest {
         assertThat(afterProduct3.get().getQuantity()).isEqualTo(7);
     }
 
+    @DisplayName("TTL이 만료되면 예약된 재고와 히스토리가 자동으로 삭제된다.")
+    @Test
+    void reserveStockWithTTL() throws InterruptedException {
+        //given
+        restaurantStockFacade.reserve(productId, 2, sagaId);
+
+        redisTemplate.expire(reserveKey + productId, java.time.Duration.ofSeconds(2));
+        redisTemplate.expire(historyKey + sagaId, java.time.Duration.ofSeconds(2));
+
+        //when
+        Thread.sleep(2500);
+
+        //then
+        String reserved = redisTemplate.opsForValue().get(reserveKey + productId);
+        Map<Object, Object> history = redisTemplate.opsForHash().entries(historyKey + sagaId);
+
+        assertThat(reserved).isNull();
+        assertThat(history).isEmpty();
+
+        String totalStock = redisTemplate.opsForValue().get(stockKey + productId);
+        assertThat(totalStock).isEqualTo("10");
+    }
+
 }

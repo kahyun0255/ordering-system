@@ -58,9 +58,6 @@ class RedisStockRepositoryTest {
     @Value("${key.history}")
     private String historyKey;
 
-    @Value("${lock.expire-second}")
-    private int lockExpire;
-
     private UUID productId;
     private UUID sagaId;
 

@@ -28,8 +28,8 @@ public class RedisStockRepository implements StockCachePort {
     @Value("${key.reserved}")
     private String reserveKey;
 
-    @Value("${key.lock}")
-    private String lockKey;
+    @Value("${stock.reserve.ttl-second}")
+    private long reserveTtl;
 
     @Value("${key.history}")
     private String historyKey;
@@ -42,6 +42,8 @@ public class RedisStockRepository implements StockCachePort {
                     "if (tonumber(stock) - tonumber(reserved) < tonumber(ARGV[1])) then return 0 end; " +
                     "redis.call('INCRBY', KEYS[2], ARGV[1]); " +
                     "redis.call('HSET', KEYS[3], ARGV[2], ARGV[1]); " +
+                    "redis.call('EXPIRE', KEYS[2], tonumber(ARGV[3])); " +
+                    "redis.call('EXPIRE', KEYS[3], tonumber(ARGV[3])); " +
                     "return 1;";
 
     private static final String CONFIRM_LUA_SCRIPT =
@@ -85,7 +87,8 @@ public class RedisStockRepository implements StockCachePort {
                 script,
                 List.of(stock, reserved, history),
                 String.valueOf(quantity),
-                productId.toString()
+                productId.toString(),
+                String.valueOf(reserveTtl)
         );
 
         if (result == null || result == -1) {
