@@ -2,6 +2,7 @@ package com.orderingsystem.restaurant.infra.redis;
 
 import com.orderingsystem.common.util.RedisTransaction;
 import com.orderingsystem.restaurant.application.StockCachePort;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,6 +42,21 @@ public class RedisStockRepository implements StockCachePort {
                     "if (tonumber(stock) - tonumber(reserved) < tonumber(ARGV[1])) then return 0 end; " +
                     "redis.call('INCRBY', KEYS[2], ARGV[1]); " +
                     "redis.call('HSET', KEYS[3], ARGV[2], ARGV[1]); " +
+                    "return 1;";
+
+    private static final String CONFIRM_LUA_SCRIPT =
+            "for i = 1, #KEYS, 3 do " +
+                    "  local stockKey = KEYS[i]; " +
+                    "  local reserveKey = KEYS[i + 1]; " +
+                    "  local historyKey = KEYS[i + 2]; " +
+                    "  local quantity = tonumber(ARGV[(i - 1) / 3 + 1]); " +
+                    "  local stock = tonumber(redis.call('GET', stockKey)); " +
+                    "  local reserved = tonumber(redis.call('GET', reserveKey)); " +
+                    "  if (not stock or not reserved) then return -1 end; " +
+                    "  redis.call('SET', stockKey, stock - quantity); " +
+                    "  redis.call('SET', reserveKey, math.max(0, reserved - quantity)); " +
+                    "  redis.call('DEL', historyKey); " +
+                    "end; " +
                     "return 1;";
 
     private String stockKey(UUID productId) {
@@ -84,30 +100,36 @@ public class RedisStockRepository implements StockCachePort {
 
     @Override
     public Map<Object, Object> getHistory(UUID sagaId) {
-        return redisTemplate.opsForHash().entries(historyKey + sagaId);
+        return redisTemplate.opsForHash().entries(historyKey(sagaId));
     }
 
     @Override
     public void confirm(Map<Object, Object> history, UUID sagaId) {
-        redisTransaction.execute(redisTemplate, ops -> {
-            history.forEach((productId, quantityStr) -> {
-                int quantity = Integer.parseInt(quantityStr.toString());
-                String productKey = stockKey(UUID.fromString(productId.toString()));
-                String reservedKey = reserveKey(UUID.fromString(productId.toString()));
+        if (history == null || history.isEmpty()) {
+            log.warn("재고 예약 내역이 존재하지 않습니다. sagaId={}", sagaId);
+            return;
+        }
 
-                int total = getInt(ops, productKey);
-                int reserved = getInt(ops, reservedKey);
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setScriptText(CONFIRM_LUA_SCRIPT);
+        script.setResultType(Long.class);
 
-                if (total == 0 && reserved == 0) {
-                    throw new IllegalStateException("재고 데이터가 존재하지 않습니다." + productId);
-                }
+        List<String> keys = new ArrayList<>();
+        List<String> args = new ArrayList<>();
 
-                ops.opsForValue().set(productKey, String.valueOf(total - quantity));
-                ops.opsForValue().set(reservedKey, String.valueOf(Math.max(0, reserved - quantity)));
-            });
-
-            ops.delete(historyKey + sagaId);
+        history.forEach((productId, quantityStr) -> {
+            UUID pid = UUID.fromString(productId.toString());
+            keys.add(stockKey(pid));
+            keys.add(reserveKey(pid));
+            keys.add(historyKey(sagaId));
+            args.add(quantityStr.toString());
         });
+
+        Long result = redisTemplate.execute(script, keys, args.toArray());
+
+        if (result == null || result == -1) {
+            throw new IllegalStateException("재고 데이터가 존재하지 않습니다. " + history.keySet());
+        }
 
         log.info("{} 주문 예약 확정 완료. Redis 실제 재고 차감 및 예약 해제", sagaId);
     }

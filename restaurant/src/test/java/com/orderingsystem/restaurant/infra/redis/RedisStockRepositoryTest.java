@@ -189,7 +189,7 @@ class RedisStockRepositoryTest {
         //when, then
         assertThatThrownBy(() -> redisStockRepository.confirm(history, sagaId))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("재고 데이터가 존재하지 않습니다." + missingProductId);
+                .hasMessage("재고 데이터가 존재하지 않습니다. [" + missingProductId+"]");
     }
 
 }
