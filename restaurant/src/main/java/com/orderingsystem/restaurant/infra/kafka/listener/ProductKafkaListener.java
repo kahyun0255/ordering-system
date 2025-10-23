@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.kafka.KafkaConsumer;
-import com.orderingsystem.restaurant.application.RestaurantStockFacade;
+import com.orderingsystem.restaurant.application.ProductStockFacade;
 import com.orderingsystem.restaurant.application.exception.RestaurantApplicationException;
 import com.orderingsystem.restaurant.infra.kafka.message.ProductRequestDebeziumMessage;
 import com.orderingsystem.restaurant.infra.kafka.message.ProductRequestMessage;
@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 public class ProductKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final RestaurantStockFacade restaurantStockFacade;
+    private final ProductStockFacade productStockFacade;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.product-consumer-group-id}",
@@ -53,7 +53,7 @@ public class ProductKafkaListener implements KafkaConsumer<String> {
                                     ProductRequestMessage.class);
 
                     if (requestMessage.getType().equals(SagaConstants.STOCK_RESERVE_CANCELLED_NAME)){
-                        restaurantStockFacade.cancelReservation(requestMessage.getSagaId());
+                        productStockFacade.cancelReservation(requestMessage.getSagaId());
                     }
 
                 }

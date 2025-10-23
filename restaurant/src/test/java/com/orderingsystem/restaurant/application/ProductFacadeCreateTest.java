@@ -22,15 +22,23 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 
 class ProductFacadeCreateTest extends ApplicationTestSupport {
 
     @Autowired
     private ProductFacade productFacade;
 
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
     private final UUID ownerId = UUID.randomUUID();
     private final UUID nonOwnerId = UUID.randomUUID();
     private final UUID restaurantId = UUID.randomUUID();
+
+    @Value("${key.stock}")
+    private String stockKey;
 
     @BeforeEach
     void setUp() {
@@ -81,6 +89,9 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
         assertThat(after).isPresent();
         assertThat(after.get().getQuantity()).isEqualTo(request.getQuantity());
         assertThat(after.get().getName()).isEqualTo(request.getName());
+
+        String redisStock = redisTemplate.opsForValue().get(stockKey + productId);
+        assertThat(redisStock).isEqualTo("100");
     }
 
     private static Stream<Arguments> provideOwnerCanAddProductStatuses() {
@@ -118,6 +129,9 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
                 .hasMessage("현재 상태의 레스토랑에서는 상품을 관리할 수 없습니다.");
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     private static Stream<Arguments> provideOwnerCannotAddProductStatuses() {
@@ -151,6 +165,9 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
                 .hasMessage("상품을 관리할 권한이 없습니다.");
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("레스토랑이 삭제되었으면 상품 생성에 실패하고, 예외를 반환한다.")
@@ -177,6 +194,10 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
                 .hasMessage("레스토랑 정보를 찾을 수 없습니다.");
 
         assertThat(productRepository.count()).isZero();
+
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("레스토랑이 존재하지 않으면 상품 생성에 실패하고, 예외를 반환한다.")
@@ -196,6 +217,10 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
                 .hasMessage("레스토랑 정보를 찾을 수 없습니다.");
 
         assertThat(productRepository.count()).isZero();
+
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("소유자가 존재하지 않으면 상품 생성에 실패하고, 예외를 반환한다.")
@@ -222,6 +247,10 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
                 .hasMessage("레스토랑 정보를 찾을 수 없습니다.");
 
         assertThat(productRepository.count()).isZero();
+
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
 }

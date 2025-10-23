@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 public class RestaurantStockConcurrencyTest {
 
     @Autowired
-    private RestaurantStockFacade restaurantStockFacade;
+    private ProductStockFacade productStockFacade;
 
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
@@ -53,7 +53,7 @@ public class RestaurantStockConcurrencyTest {
         for (int i = 0; i < treadCount; i++) {
             executor.submit(() -> {
                 try {
-                    restaurantStockFacade.reserve(productId, 3, UUID.randomUUID());
+                    productStockFacade.reserve(productId, 3, UUID.randomUUID());
                 } catch (Exception e) {
 
                 } finally {
@@ -88,8 +88,8 @@ public class RestaurantStockConcurrencyTest {
             executor.submit(() -> {
                 UUID sagaId = UUID.randomUUID();
                 try {
-                    restaurantStockFacade.reserve(productId, 3, sagaId);
-                    restaurantStockFacade.confirm(sagaId);
+                    productStockFacade.reserve(productId, 3, sagaId);
+                    productStockFacade.confirm(sagaId);
                 } catch (Exception e) {
 
                 } finally {

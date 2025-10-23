@@ -12,13 +12,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class RestaurantStockFacadeTest {
+class ProductStockFacadeTest {
 
     @Mock
     private StockCachePort stockCachePort;
 
     @InjectMocks
-    private RestaurantStockFacade restaurantStockFacade;
+    private ProductStockFacade productStockFacade;
 
     @DisplayName("상품 재고 예약이 정상적으로 위임된다.")
     @Test
@@ -29,7 +29,7 @@ class RestaurantStockFacadeTest {
         int quantity = 3;
 
         //when
-        restaurantStockFacade.reserve(productId, quantity, sagaId);
+        productStockFacade.reserve(productId, quantity, sagaId);
 
         //then
         verify(stockCachePort, times(1))

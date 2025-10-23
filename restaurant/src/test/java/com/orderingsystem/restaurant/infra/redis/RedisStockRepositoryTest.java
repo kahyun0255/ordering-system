@@ -59,15 +59,21 @@ class RedisStockRepositoryTest {
     private String historyKey;
 
     private UUID productId;
+    private UUID productId2;
     private UUID sagaId;
 
     @BeforeEach
     void setUp() {
         productId = UUID.randomUUID();
+        productId2 = UUID.randomUUID();
         sagaId = UUID.randomUUID();
+
         ValueOperations<String, String> ops = redisTemplate.opsForValue();
         ops.set(stockKey + productId, "10");
+        ops.set(stockKey + productId2, "20");
+
         redisTemplate.delete(reserveKey + productId);
+        redisTemplate.delete(reserveKey + productId2);
     }
 
     @DisplayName("정상적으로 재고가 예약된다.")
@@ -186,7 +192,74 @@ class RedisStockRepositoryTest {
         //when, then
         assertThatThrownBy(() -> redisStockRepository.confirm(history, sagaId))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("재고 데이터가 존재하지 않습니다. [" + missingProductId+"]");
+                .hasMessage("재고 데이터가 존재하지 않습니다. [" + missingProductId + "]");
+    }
+
+    @DisplayName("Saga Id 기준으로 예약을 취소하면 예약 수량이 감소하고 히스토리가 삭제된다.")
+    @Test
+    void testCancelReservation() {
+        //given
+        redisTemplate.opsForValue().set(reserveKey + productId, "3");
+        redisTemplate.opsForValue().set(reserveKey + productId2, "10");
+
+        redisTemplate.opsForHash().put(historyKey + sagaId, productId.toString(), "3");
+        redisTemplate.opsForHash().put(historyKey + sagaId, productId2.toString(), "5");
+
+        Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
+
+        //when
+        redisStockRepository.cancelReservation(history, sagaId);
+
+        //then
+        String reserved1 = redisTemplate.opsForValue().get(reserveKey + productId);
+        String reserved2 = redisTemplate.opsForValue().get(reserveKey + productId2);
+        assertThat(reserved1).isEqualTo("0");
+        assertThat(reserved2).isEqualTo("5");
+
+        assertThat(redisTemplate.hasKey(historyKey + sagaId)).isFalse();
+    }
+
+    @DisplayName("재고 업데이트시 Redis에 기존 상품이 존재하지 않으면 새로운 수량이 반영된다.")
+    @Test
+    void testUpdateStockSuccess() {
+        //given
+        UUID newProductId = UUID.randomUUID();
+
+        //when
+        redisStockRepository.update(newProductId, 10);
+
+        //then
+        String updateStock = redisTemplate.opsForValue().get(stockKey+newProductId);
+        assertThat(updateStock).isEqualTo("10");
+    }
+
+    @DisplayName("재고 업데이트시 Redis에 기존 상품이 존재하면 새로운 수량이 반영된다.")
+    @Test
+    void testUpdateStockSuccess2() {
+        //when
+        redisStockRepository.update(productId, 1000000);
+
+        //then
+        String updateStock = redisTemplate.opsForValue().get(stockKey+productId);
+        assertThat(updateStock).isEqualTo("1000000");
+    }
+
+    @DisplayName("업데이트 할 재고가 음수라면 예외가 발생한다.")
+    @Test
+    void testUpdateNegativeStock() {
+        //when, then
+        assertThatThrownBy(()->redisStockRepository.update(productId, -1))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("재고 수량은 음수가 될 수 없습니다.");
+    }
+
+    @DisplayName("업데이트 할 productId가 null이라면 예외가 발생한다.")
+    @Test
+    void testUpdateNullProductId() {
+        //when, then
+        assertThatThrownBy(()->redisStockRepository.update(null, 10))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("상품 id는 null이 불가능합니다.");
     }
 
 }

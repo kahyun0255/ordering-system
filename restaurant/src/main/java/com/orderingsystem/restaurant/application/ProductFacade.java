@@ -19,10 +19,13 @@ public class ProductFacade {
     private final CreateProductService createProductService;
     private final DeleteProductService deleteProductService;
     private final UpdateProductService updateProductService;
+    private final StockCachePort stockCachePort;
 
     public UUID create(CreateProductApplicationRequest request, UUID restaurantOwnerId, UUID restaurantId) {
         validateProductManagementPermission(restaurantOwnerId, restaurantId);
-        return createProductService.create(request, restaurantId, restaurantOwnerId);
+        UUID productId = createProductService.create(request, restaurantId, restaurantOwnerId);
+        stockCachePort.update(productId, request.getQuantity());
+        return productId;
     }
 
     public void delete(UUID restaurantId, UUID productId, UUID restaurantOwnerId) {

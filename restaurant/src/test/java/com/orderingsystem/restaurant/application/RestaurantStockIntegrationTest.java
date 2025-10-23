@@ -46,7 +46,7 @@ public class RestaurantStockIntegrationTest {
     }
 
     @Autowired
-    private RestaurantStockFacade restaurantStockFacade;
+    private ProductStockFacade productStockFacade;
 
     @Autowired
     private ProductRepository productRepository;
@@ -113,7 +113,7 @@ public class RestaurantStockIntegrationTest {
     @Test
     void reserveStock() {
         //when
-        restaurantStockFacade.reserve(productId, 3, sagaId);
+        productStockFacade.reserve(productId, 3, sagaId);
 
         //then
         String totalStock = redisTemplate.opsForValue().get(stockKey + productId);
@@ -130,10 +130,10 @@ public class RestaurantStockIntegrationTest {
     @Test
     void confirmStock() {
         //given
-        restaurantStockFacade.reserve(productId, 4, sagaId);
+        productStockFacade.reserve(productId, 4, sagaId);
 
         //when
-        restaurantStockFacade.confirm(sagaId);
+        productStockFacade.confirm(sagaId);
 
         //then
         String totalStock = redisTemplate.opsForValue().get(stockKey + productId);
@@ -152,7 +152,7 @@ public class RestaurantStockIntegrationTest {
     @Test
     void confirmWithoutHistory() {
         //when
-        restaurantStockFacade.confirm(sagaId);
+        productStockFacade.confirm(sagaId);
 
         //then
         Product after = productRepository.findById(productId).orElseThrow();
@@ -166,7 +166,7 @@ public class RestaurantStockIntegrationTest {
         redisTemplate.opsForValue().set(stockKey + productId, "2");
 
         //when, then
-        assertThatThrownBy(() -> restaurantStockFacade.reserve(productId, 5, sagaId))
+        assertThatThrownBy(() -> productStockFacade.reserve(productId, 5, sagaId))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("재고 부족");
     }
@@ -175,9 +175,9 @@ public class RestaurantStockIntegrationTest {
     @Test
     void reserveMultipleProducts() {
         //when
-        restaurantStockFacade.reserve(productId, 2, sagaId);
-        restaurantStockFacade.reserve(productId2, 3, sagaId);
-        restaurantStockFacade.reserve(productId3, 4, sagaId);
+        productStockFacade.reserve(productId, 2, sagaId);
+        productStockFacade.reserve(productId2, 3, sagaId);
+        productStockFacade.reserve(productId3, 4, sagaId);
 
         //then
         assertThat(redisTemplate.opsForValue().get(reserveKey + productId)).isEqualTo("2");
@@ -193,12 +193,12 @@ public class RestaurantStockIntegrationTest {
     @Test
     void confirmMultipleProducts() {
         //given
-        restaurantStockFacade.reserve(productId, 2, sagaId);
-        restaurantStockFacade.reserve(productId2, 4, sagaId);
-        restaurantStockFacade.reserve(productId3, 6, sagaId);
+        productStockFacade.reserve(productId, 2, sagaId);
+        productStockFacade.reserve(productId2, 4, sagaId);
+        productStockFacade.reserve(productId3, 6, sagaId);
 
         //when
-        restaurantStockFacade.confirm(sagaId);
+        productStockFacade.confirm(sagaId);
 
         //then
         assertThat(redisTemplate.opsForValue().get(stockKey + productId)).isEqualTo("8");
@@ -225,7 +225,7 @@ public class RestaurantStockIntegrationTest {
     @Test
     void reserveStockWithTTL() throws InterruptedException {
         //given
-        restaurantStockFacade.reserve(productId, 2, sagaId);
+        productStockFacade.reserve(productId, 2, sagaId);
 
         redisTemplate.expire(reserveKey + productId, java.time.Duration.ofSeconds(2));
         redisTemplate.expire(historyKey + sagaId, java.time.Duration.ofSeconds(2));
@@ -257,7 +257,7 @@ public class RestaurantStockIntegrationTest {
         redisTemplate.opsForHash().put(historyKey + sagaId, productId2.toString(), "3");
 
         //when
-        restaurantStockFacade.cancelReservation(sagaId);
+        productStockFacade.cancelReservation(sagaId);
 
         //then
         String reserved1 = redisTemplate.opsForValue().get(reserveKey + productId);
@@ -272,7 +272,7 @@ public class RestaurantStockIntegrationTest {
     @Test
     void cancelReservationWithoutHistory() {
         //when, then
-        assertThatNoException().isThrownBy(()->restaurantStockFacade.cancelReservation(sagaId));
+        assertThatNoException().isThrownBy(()-> productStockFacade.cancelReservation(sagaId));
     }
 
 }

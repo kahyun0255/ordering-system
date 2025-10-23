@@ -138,10 +138,10 @@ public class RedisStockRepository implements StockCachePort {
         script.setScriptText(cancelReservationLua);
         script.setResultType(Long.class);
 
-        List<String> keys= new ArrayList<>();
-        List<String> args= new ArrayList<>();
+        List<String> keys = new ArrayList<>();
+        List<String> args = new ArrayList<>();
 
-        history.forEach((productId, quantityStr)->{
+        history.forEach((productId, quantityStr) -> {
             UUID pid = UUID.fromString(productId.toString());
             keys.add(reserveKey(pid));
             keys.add(historyKey(sagaId));
@@ -155,6 +155,28 @@ public class RedisStockRepository implements StockCachePort {
         }
 
         log.info("{} 주문 예약 취소 완료. Redis 예약 수량 복구 및 히스토리 삭제.", sagaId);
+    }
+
+    @Override
+    public void update(UUID productId, int quantity) {
+        if (productId == null) {
+            throw new IllegalArgumentException("상품 id는 null이 불가능합니다.");
+        }
+
+        if (quantity < 0) {
+            log.info("재고 수량은 음수가 될 수 없습니다. productId : {}, quantity : {}", productId, quantity);
+            throw new IllegalArgumentException("재고 수량은 음수가 될 수 없습니다.");
+        }
+
+        String stockKey = stockKey(productId);
+
+        try {
+            redisTemplate.opsForValue().set(stockKey, String.valueOf(quantity));
+            log.info("Redis 재고 갱신/생성 완료. productId : {}, quantity : {}", productId, quantity);
+        } catch (Exception e) {
+            log.error("Redis 재고 갱신/생성 중 오류 발생. productId : {}, quantity : {}", productId, quantity);
+            throw new IllegalStateException("Redis 재고 갱신 실패.", e);
+        }
     }
 
 }

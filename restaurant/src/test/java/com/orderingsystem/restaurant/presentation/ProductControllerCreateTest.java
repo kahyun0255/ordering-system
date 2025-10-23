@@ -25,18 +25,26 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
 class ProductControllerCreateTest extends ControllerTestSupport {
 
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
     private final UUID ownerId = UUID.randomUUID();
     private final UUID nonOwnerId = UUID.randomUUID();
     private final UUID restaurantId = UUID.randomUUID();
 
-    @Autowired
-    private ProductRepository productRepository;
+    @Value("${key.stock}")
+    private String stockKey;
 
     @BeforeEach
     void setUp() {
@@ -110,6 +118,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
         assertThat(after.get().getQuantity()).isEqualTo(request.getQuantity());
         assertThat(after.get().isAvailable()).isEqualTo(request.getAvailable());
         assertThat(after.get().getPrice().getAmount().compareTo(request.getPrice())).isZero();
+
+        String redisStock = redisTemplate.opsForValue().get(stockKey + productId);
+        assertThat(redisStock).isEqualTo("100");
     }
 
     private static Stream<Arguments> provideOwnerCanAddProductStatuses() {
@@ -155,6 +166,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("현재 상태의 레스토랑에서는 상품을 관리할 수 없습니다."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     private static Stream<Arguments> provideOwnerCannotAddProductStatuses() {
@@ -195,6 +209,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("상품을 관리할 권한이 없습니다."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("레스토랑이 존재하지 않으면 상품 생성이 불가능하고 404를 반환한다.")
@@ -221,6 +238,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("레스토랑 정보를 찾을 수 없습니다."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("레스토랑이 삭제되었으면 상품 생성이 불가능하고 404를 반환한다.")
@@ -254,6 +274,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("레스토랑 정보를 찾을 수 없습니다."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("소유자 정보가 존재하지 않으면 상품 생성이 불가능하고 404를 반환한다.")
@@ -287,6 +310,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("레스토랑 오너 정보를 찾을 수 없습니다."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("상품 생성시 상품 이름은 필수이다.")
@@ -319,6 +345,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("name: 상품 이름을 입력해주세요. (2자 이상 30자 이하)"));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("상품 생성시 상품 이름은 필수이다.")
@@ -351,6 +380,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("price: 상품 가격을 입력해주세요."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("상품 생성시 판매 여부는 필수이다.")
@@ -383,6 +415,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("available: 상품 판매 여부를 선택해주세요."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("상품 생성시 재고는 필수이다.")
@@ -415,6 +450,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("quantity: 상품 재고를 입력해주세요."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
     @DisplayName("상품 생성시 재고는 0 이상이어야한다.")
@@ -448,6 +486,9 @@ class ProductControllerCreateTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("quantity: 상품 재고는 0 이상이어야 합니다."));
 
         assertThat(productRepository.count()).isZero();
+
+        Boolean exists = redisTemplate.hasKey(stockKey + "*");
+        assertThat(exists).isFalse();
     }
 
 }

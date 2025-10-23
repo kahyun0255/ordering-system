@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RestaurantStockFacade {
+public class ProductStockFacade {
 
     private final StockCachePort stockCachePort;
     private final ProductStockService productStockService;

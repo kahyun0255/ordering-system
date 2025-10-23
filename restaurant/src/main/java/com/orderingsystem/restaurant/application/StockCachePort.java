@@ -13,4 +13,6 @@ public interface StockCachePort {
 
     void cancelReservation(Map<Object, Object> history, UUID sagaId);
 
+    void update(UUID productId, int quantity);
+
 }
