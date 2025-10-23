@@ -1,9 +1,7 @@
 package com.orderingsystem.restaurant.infra.kafka.message;
 
-import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
 import com.orderingsystem.restaurant.application.dto.request.OrderItemRequest;
-import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
-import java.math.BigDecimal;
+import com.orderingsystem.restaurant.application.dto.request.ProductRequest;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -12,30 +10,31 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class RestaurantApprovalRequestMessage {
+public class ProductRequestMessage {
 
-    private UUID sagaId;
     private UUID orderId;
+    private UUID sagaId;
     private UUID restaurantId;
-    private RestaurantOrderStatus restaurantOrderStatus;
-    private List<OrderItemMessage> products;
-    private BigDecimal price;
     private Instant createdAt;
+    private String type;
+    private List<String> failureMessage;
+    private List<OrderItemMessage> products;
 
-    public ApprovalRequest toApprovalRequest(UUID id) {
-        return ApprovalRequest.builder()
+    public ProductRequest toProductRequest(UUID id){
+        return ProductRequest.builder()
                 .id(id)
-                .sagaId(this.sagaId)
                 .orderId(this.orderId)
+                .sagaId(this.sagaId)
                 .restaurantId(this.restaurantId)
-                .restaurantOrderStatus(this.restaurantOrderStatus)
+                .createdAt(this.createdAt)
+                .type(this.type)
+                .failureMessage(this.failureMessage)
                 .products(this.products.stream().map(product ->
                         OrderItemRequest.builder()
                                 .productId(product.getId())
                                 .quantity(product.getQuantity())
                                 .build()).toList())
-                .price(this.price)
-                .createdAt(this.createdAt)
                 .build();
     }
+
 }

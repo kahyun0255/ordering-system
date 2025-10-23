@@ -1,6 +1,7 @@
 package com.orderingsystem.restaurant.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.orderingsystem.common.domain.Money;
@@ -200,15 +201,15 @@ public class RestaurantStockIntegrationTest {
         restaurantStockFacade.confirm(sagaId);
 
         //then
-        assertThat(redisTemplate.opsForValue().get(stockKey+productId)).isEqualTo("8");
-        assertThat(redisTemplate.opsForValue().get(stockKey+productId2)).isEqualTo("8");
-        assertThat(redisTemplate.opsForValue().get(stockKey+productId3)).isEqualTo("7");
+        assertThat(redisTemplate.opsForValue().get(stockKey + productId)).isEqualTo("8");
+        assertThat(redisTemplate.opsForValue().get(stockKey + productId2)).isEqualTo("8");
+        assertThat(redisTemplate.opsForValue().get(stockKey + productId3)).isEqualTo("7");
 
-        assertThat(redisTemplate.opsForValue().get(reserveKey+productId)).isEqualTo("0");
-        assertThat(redisTemplate.opsForValue().get(reserveKey+productId2)).isEqualTo("0");
-        assertThat(redisTemplate.opsForValue().get(reserveKey+productId3)).isEqualTo("0");
+        assertThat(redisTemplate.opsForValue().get(reserveKey + productId)).isEqualTo("0");
+        assertThat(redisTemplate.opsForValue().get(reserveKey + productId2)).isEqualTo("0");
+        assertThat(redisTemplate.opsForValue().get(reserveKey + productId3)).isEqualTo("0");
 
-        assertThat(redisTemplate.opsForHash().entries(historyKey+sagaId)).isEmpty();
+        assertThat(redisTemplate.opsForHash().entries(historyKey + sagaId)).isEmpty();
 
         Optional<Product> afterProduct1 = productRepository.findById(productId);
         assertThat(afterProduct1.get().getQuantity()).isEqualTo(8);
@@ -241,6 +242,37 @@ public class RestaurantStockIntegrationTest {
 
         String totalStock = redisTemplate.opsForValue().get(stockKey + productId);
         assertThat(totalStock).isEqualTo("10");
+    }
+
+    @DisplayName("Saga ID 기준으로 예약을 취소하면 Redis의 예약 수량이 복구되고 히스토리가 삭제된다.")
+    @Test
+    void cancelReservationBySagaId() {
+        //given
+        redisTemplate.opsForValue().set(stockKey + productId, "10");
+        redisTemplate.opsForValue().set(stockKey + productId2, "20");
+        redisTemplate.opsForValue().set(reserveKey + productId, "3");
+        redisTemplate.opsForValue().set(reserveKey + productId2, "5");
+
+        redisTemplate.opsForHash().put(historyKey + sagaId, productId.toString(), "3");
+        redisTemplate.opsForHash().put(historyKey + sagaId, productId2.toString(), "3");
+
+        //when
+        restaurantStockFacade.cancelReservation(sagaId);
+
+        //then
+        String reserved1 = redisTemplate.opsForValue().get(reserveKey + productId);
+        String reserved2 = redisTemplate.opsForValue().get(reserveKey + productId2);
+
+        assertThat(reserved1).isEqualTo("0");
+        assertThat(reserved2).isEqualTo("2");
+        assertThat(redisTemplate.opsForHash().entries(historyKey + sagaId)).isEmpty();
+    }
+
+    @DisplayName("히스토리가 없을 때 호출하면 아무 일도 일어나지 않는다.")
+    @Test
+    void cancelReservationWithoutHistory() {
+        //when, then
+        assertThatNoException().isThrownBy(()->restaurantStockFacade.cancelReservation(sagaId));
     }
 
 }

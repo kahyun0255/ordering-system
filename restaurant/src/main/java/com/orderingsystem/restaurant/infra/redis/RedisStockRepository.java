@@ -144,11 +144,11 @@ public class RedisStockRepository implements StockCachePort {
         history.forEach((productId, quantityStr)->{
             UUID pid = UUID.fromString(productId.toString());
             keys.add(reserveKey(pid));
-            keys.add(historyKey(pid));
+            keys.add(historyKey(sagaId));
             args.add(quantityStr.toString());
         });
 
-        Long result = redisTemplate.execute(script, keys, args.toString());
+        Long result = redisTemplate.execute(script, keys, args.toArray());
 
         if (result == null || result == -1) {
             throw new IllegalStateException("재고 데이터가 존재하지 않습니다. " + history.keySet());
