@@ -179,4 +179,16 @@ public class RedisStockRepository implements StockCachePort {
         }
     }
 
+    @Override
+    public void delete(UUID productId) {
+        try {
+            redisTemplate.delete(stockKey(productId));
+            redisTemplate.delete(reserveKey(productId));
+            log.info("Redis 재고 및 예약 데이터 삭제 완료. product Id : {}", productId);
+        } catch (Exception e) {
+            log.error("Redis 재고 삭제 중 오류 발생. product Id : {}, error : {}", productId, e.getMessage());
+            throw new IllegalStateException("Redis 재고 삭제 중 오류 발생.", e);
+        }
+    }
+
 }

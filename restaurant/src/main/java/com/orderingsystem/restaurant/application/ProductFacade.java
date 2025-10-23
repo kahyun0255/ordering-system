@@ -31,6 +31,7 @@ public class ProductFacade {
     public void delete(UUID restaurantId, UUID productId, UUID restaurantOwnerId) {
         validateProductManagementPermission(restaurantOwnerId, restaurantId);
         deleteProductService.deleteProduct(restaurantId, productId, restaurantOwnerId);
+        stockCachePort.delete(productId);
     }
 
     public ProductResponse update(UUID ownerId, UUID restaurantId, UUID productId,

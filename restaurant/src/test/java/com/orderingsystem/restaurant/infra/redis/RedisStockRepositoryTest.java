@@ -229,7 +229,7 @@ class RedisStockRepositoryTest {
         redisStockRepository.update(newProductId, 10);
 
         //then
-        String updateStock = redisTemplate.opsForValue().get(stockKey+newProductId);
+        String updateStock = redisTemplate.opsForValue().get(stockKey + newProductId);
         assertThat(updateStock).isEqualTo("10");
     }
 
@@ -240,7 +240,7 @@ class RedisStockRepositoryTest {
         redisStockRepository.update(productId, 1000000);
 
         //then
-        String updateStock = redisTemplate.opsForValue().get(stockKey+productId);
+        String updateStock = redisTemplate.opsForValue().get(stockKey + productId);
         assertThat(updateStock).isEqualTo("1000000");
     }
 
@@ -248,7 +248,7 @@ class RedisStockRepositoryTest {
     @Test
     void testUpdateNegativeStock() {
         //when, then
-        assertThatThrownBy(()->redisStockRepository.update(productId, -1))
+        assertThatThrownBy(() -> redisStockRepository.update(productId, -1))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("재고 수량은 음수가 될 수 없습니다.");
     }
@@ -257,9 +257,45 @@ class RedisStockRepositoryTest {
     @Test
     void testUpdateNullProductId() {
         //when, then
-        assertThatThrownBy(()->redisStockRepository.update(null, 10))
+        assertThatThrownBy(() -> redisStockRepository.update(null, 10))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("상품 id는 null이 불가능합니다.");
+    }
+
+    @DisplayName("상품 삭제시 Redis 재고 및 예약 키가 모두 삭제된다.")
+    @Test
+    void testDeleteStockSuccess() {
+        //given
+        UUID deleteId = UUID.randomUUID();
+        redisTemplate.opsForValue().set(stockKey + deleteId, "50");
+        redisTemplate.opsForValue().set(reserveKey + deleteId, "50");
+
+        //when
+        redisStockRepository.delete(deleteId);
+
+        //then
+        Boolean stockExists = redisTemplate.hasKey(stockKey + deleteId);
+        Boolean reserveExists = redisTemplate.hasKey(reserveKey + deleteId);
+
+        assertThat(stockExists).isFalse();
+        assertThat(reserveExists).isFalse();
+    }
+
+    @DisplayName("Redis에 해당 상품 키가 없어도 삭제 시 예외가 발생하지 않는다.")
+    @Test
+    void testDeleteNonExistingKeys() {
+        //given
+        UUID unknownId = UUID.randomUUID();
+
+        //when
+        redisStockRepository.delete(unknownId);
+
+        //then
+        Boolean stockExists = redisTemplate.hasKey(stockKey + unknownId);
+        Boolean reserveExists = redisTemplate.hasKey(reserveKey + unknownId);
+
+        assertThat(stockExists).isFalse();
+        assertThat(reserveExists).isFalse();
     }
 
 }

@@ -15,4 +15,5 @@ public interface StockCachePort {
 
     void update(UUID productId, int quantity);
 
+    void delete(UUID productId);
 }
