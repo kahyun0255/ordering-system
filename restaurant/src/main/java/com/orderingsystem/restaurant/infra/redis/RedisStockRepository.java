@@ -1,6 +1,5 @@
 package com.orderingsystem.restaurant.infra.redis;
 
-import com.orderingsystem.common.util.RedisTransaction;
 import com.orderingsystem.restaurant.application.StockCachePort;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -13,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -24,7 +22,6 @@ import org.springframework.stereotype.Service;
 public class RedisStockRepository implements StockCachePort {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final RedisTransaction redisTransaction;
 
     @Value("${key.stock}")
     private String stockKey;
@@ -40,11 +37,13 @@ public class RedisStockRepository implements StockCachePort {
 
     private String reserveLua;
     private String confirmLua;
+    private String cancelReservationLua;
 
     @PostConstruct
     public void init() throws IOException {
         reserveLua = loadScript("lua/reserve.lua");
         confirmLua = loadScript("lua/confirm.lua");
+        cancelReservationLua = loadScript("lua/cancelReservation.lua");
     }
 
     private String loadScript(String path) throws IOException {
@@ -128,9 +127,34 @@ public class RedisStockRepository implements StockCachePort {
         log.info("{} 주문 예약 확정 완료. Redis 실제 재고 차감 및 예약 해제", sagaId);
     }
 
-    private int getInt(RedisOperations<String, String> ops, String key) {
-        String val = ops.opsForValue().get(key);
-        return val == null ? 0 : Integer.parseInt(val);
+    @Override
+    public void cancelReservation(Map<Object, Object> history, UUID sagaId) {
+        if (history == null || history.isEmpty()) {
+            log.warn("재고 예약 내역이 존재하지 않습니다. sagaId={}", sagaId);
+            return;
+        }
+
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setScriptText(cancelReservationLua);
+        script.setResultType(Long.class);
+
+        List<String> keys= new ArrayList<>();
+        List<String> args= new ArrayList<>();
+
+        history.forEach((productId, quantityStr)->{
+            UUID pid = UUID.fromString(productId.toString());
+            keys.add(reserveKey(pid));
+            keys.add(historyKey(pid));
+            args.add(quantityStr.toString());
+        });
+
+        Long result = redisTemplate.execute(script, keys, args.toString());
+
+        if (result == null || result == -1) {
+            throw new IllegalStateException("재고 데이터가 존재하지 않습니다. " + history.keySet());
+        }
+
+        log.info("{} 주문 예약 취소 완료. Redis 예약 수량 복구 및 히스토리 삭제.", sagaId);
     }
 
 }

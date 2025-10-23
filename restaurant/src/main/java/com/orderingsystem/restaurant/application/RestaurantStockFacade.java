@@ -29,4 +29,13 @@ public class RestaurantStockFacade {
         productStockService.confirm(history);
     }
 
+    public void cancelReservation(UUID sagaId) {
+        Map<Object, Object> history = stockCachePort.getHistory(sagaId);
+        if (history == null) {
+            return;
+        }
+
+        stockCachePort.cancelReservation(history, sagaId);
+    }
+
 }
