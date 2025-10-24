@@ -31,6 +31,9 @@ class ProductFacadeDeleteTest {
     @InjectMocks
     private ProductFacade productFacade;
 
+    @Mock
+    private StockCachePort stockCachePort;
+
     @DisplayName("레스토랑의 소유자이고, 해당 레스토랑이 '관리자 승인 대기', '영업 전', '영업 중', '일시 휴업' 상태라면 상품을 삭제할 수 있다.")
     @ParameterizedTest(name = "[{index}] 레스토랑 상태 : {0}")
     @MethodSource("provideDeletableRestaurantStatuses")

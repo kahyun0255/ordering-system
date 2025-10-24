@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 
 import com.orderingsystem.common.exception.AccessDeniedException;
 import com.orderingsystem.restaurant.application.dto.request.UpdateProductApplicationRequest;
+import com.orderingsystem.restaurant.application.dto.response.ProductResponse;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
 import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ProductFacadeUpdateTest {
+
     @Mock
     private UpdateProductService updateProductService;
 
@@ -32,6 +34,9 @@ class ProductFacadeUpdateTest {
     @InjectMocks
     private ProductFacade productFacade;
 
+    @Mock
+    private StockCachePort stockCachePort;
+
     @DisplayName("레스토랑의 소유자이고, 해당 레스토랑이 '관리자 승인 대기', '영업 전', '영업 중', '일시 휴업' 상태라면 상품 정보를 변경할 수 있다.")
     @ParameterizedTest(name = "[{index}] 레스토랑 상태 : {0}")
     @MethodSource("provideUpdatableRestaurantStatuses")
@@ -39,7 +44,7 @@ class ProductFacadeUpdateTest {
             throws Exception {
         //given
         UUID ownerId = UUID.randomUUID();
-        UUID restaurantId =UUID.randomUUID();
+        UUID restaurantId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
 
         Restaurant restaurant = Restaurant.builder()
@@ -52,11 +57,20 @@ class ProductFacadeUpdateTest {
                 .name("변경할 상품 이름")
                 .price(BigDecimal.valueOf(50.00))
                 .available(false)
-                .quantity(100)
+                .quantity(1000000000)
+                .build();
+
+        ProductResponse productResponse = ProductResponse.builder()
+                .productId(productId)
+                .name("상품")
+                .price(BigDecimal.valueOf(1000))
+                .available(true)
+                .quantity(1000000000)
                 .build();
 
         given(restaurantAccessValidatorService.findRestaurant(restaurantId)).willReturn(restaurant);
         given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(true);
+        given(updateProductService.updateProduct(ownerId, restaurantId, productId, request)).willReturn(productResponse);
 
         //when
         productFacade.update(ownerId, restaurantId, productId, request);
@@ -81,7 +95,7 @@ class ProductFacadeUpdateTest {
             throws Exception {
         //given
         UUID ownerId = UUID.randomUUID();
-        UUID restaurantId =UUID.randomUUID();
+        UUID restaurantId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
 
         Restaurant restaurant = Restaurant.builder()
@@ -101,7 +115,7 @@ class ProductFacadeUpdateTest {
         given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(true);
 
         //when, then
-        assertThatThrownBy(()-> productFacade.update(ownerId, restaurantId, productId, request))
+        assertThatThrownBy(() -> productFacade.update(ownerId, restaurantId, productId, request))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("현재 상태의 레스토랑에서는 상품을 관리할 수 없습니다.");
     }
@@ -118,7 +132,7 @@ class ProductFacadeUpdateTest {
     void shouldThrowException_whenUserIsNotOwner() {
         //given
         UUID ownerId = UUID.randomUUID();
-        UUID restaurantId =UUID.randomUUID();
+        UUID restaurantId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
 
         Restaurant restaurant = Restaurant.builder()
@@ -138,7 +152,7 @@ class ProductFacadeUpdateTest {
         given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(false);
 
         //when, then
-        assertThatThrownBy(()-> productFacade.update(ownerId, restaurantId, productId, request))
+        assertThatThrownBy(() -> productFacade.update(ownerId, restaurantId, productId, request))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("상품을 관리할 권한이 없습니다.");
     }

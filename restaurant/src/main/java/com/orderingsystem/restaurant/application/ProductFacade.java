@@ -37,7 +37,9 @@ public class ProductFacade {
     public ProductResponse update(UUID ownerId, UUID restaurantId, UUID productId,
                                   UpdateProductApplicationRequest request) {
         validateProductManagementPermission(ownerId, restaurantId);
-        return updateProductService.updateProduct(ownerId, restaurantId, productId, request);
+        ProductResponse productResponse = updateProductService.updateProduct(ownerId, restaurantId, productId, request);
+        stockCachePort.update(productResponse.getProductId(), productResponse.getQuantity());
+        return productResponse;
     }
 
     private void validateProductManagementPermission(UUID restaurantOwnerId, UUID restaurantId) {
