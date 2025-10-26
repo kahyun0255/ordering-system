@@ -42,14 +42,20 @@ public class Money {
     }
 
     public boolean equalTo(Money other) {
-        if (this.amount == null || other == null || other.amount == null) return false;
+        if (this.amount == null || other == null || other.amount == null) {
+            return false;
+        }
         return this.amount.compareTo(other.amount) == 0;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Money m)) return false;
-        if (this.amount == null || m.amount == null) return this.amount == m.amount;
+        if (!(o instanceof Money m)) {
+            return false;
+        }
+        if (this.amount == null || m.amount == null) {
+            return this.amount == m.amount;
+        }
         return this.amount.compareTo(m.amount) == 0;
     }
 

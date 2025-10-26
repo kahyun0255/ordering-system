@@ -1,7 +1,7 @@
 package com.orderingsystem.restaurant.infra.kafka.message;
 
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
-import com.orderingsystem.restaurant.application.dto.request.ApprovalOrderItem;
+import com.orderingsystem.restaurant.application.dto.request.OrderItemRequest;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,7 +18,7 @@ public class RestaurantApprovalRequestMessage {
     private UUID orderId;
     private UUID restaurantId;
     private RestaurantOrderStatus restaurantOrderStatus;
-    private List<RestaurantApprovalOrderItem> products;
+    private List<OrderItemMessage> products;
     private BigDecimal price;
     private Instant createdAt;
 
@@ -30,7 +30,7 @@ public class RestaurantApprovalRequestMessage {
                 .restaurantId(this.restaurantId)
                 .restaurantOrderStatus(this.restaurantOrderStatus)
                 .products(this.products.stream().map(product ->
-                        ApprovalOrderItem.builder()
+                        OrderItemRequest.builder()
                                 .productId(product.getId())
                                 .quantity(product.getQuantity())
                                 .build()).toList())

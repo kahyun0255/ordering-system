@@ -18,16 +18,32 @@ public enum RestaurantStatus {
     private static final EnumSet<RestaurantStatus> OWNER_LOCKED_CURRENTS =
             EnumSet.of(PENDING_APPROVAL, SUSPENDED, DELETED, PERM_CLOSED);
 
-    public boolean ownerCanChangeTo(RestaurantStatus restaurantStatus){
-        if (restaurantStatus == null) return false;
-        if (OWNER_LOCKED_CURRENTS.contains(this)) return false;
-        if (!OWNER_TARGETS.contains(restaurantStatus)) return false;
+    private static final EnumSet<RestaurantStatus> PRODUCT_MANAGEABLE_STATUSES =
+            EnumSet.of(PENDING_APPROVAL, PRE_OPEN, ACTIVE, TEMP_CLOSED);
+
+    private static final EnumSet<RestaurantStatus> PRODUCT_AVAILABLE_STATUSES =
+            EnumSet.of(PRE_OPEN, ACTIVE, TEMP_CLOSED);
+
+    public boolean ownerCanChangeTo(RestaurantStatus restaurantStatus) {
+        if (restaurantStatus == null) {
+            return false;
+        }
+        if (OWNER_LOCKED_CURRENTS.contains(this)) {
+            return false;
+        }
+        if (!OWNER_TARGETS.contains(restaurantStatus)) {
+            return false;
+        }
 
         return true;
     }
 
-    public boolean ownerCanFind(RestaurantStatus restaurantStatus){
+    public boolean ownerCanFind(RestaurantStatus restaurantStatus) {
         return !OWNER_TARGETS.contains(restaurantStatus);
+    }
+
+    public boolean canManageProduct() {
+        return PRODUCT_MANAGEABLE_STATUSES.contains(this);
     }
 
 }

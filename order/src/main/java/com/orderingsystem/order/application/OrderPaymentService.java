@@ -2,12 +2,14 @@ package com.orderingsystem.order.application;
 
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
+import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
+import com.orderingsystem.order.application.outbox.product.ProductOutboxHelper;
 import com.orderingsystem.order.application.outbox.restaurant.RestaurantApprovalOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
@@ -35,6 +37,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
     private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
     private final OrderDataMapper orderDataMapper;
     private final ProcessedMessageRepository processedMessageRepository;
+    private final ProductOutboxHelper productOutboxHelper;
 
     @Override
     @Transactional
@@ -117,9 +120,12 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
         updatePaymentOutboxMessage(paymentOutbox, order.getOrderStatus(), sagaStatus);
 
-        if (paymentResponse.getPaymentStatus().equals(PaymentStatus.CANCELLED.name())) {
-            updateApprovalOutboxMessage(paymentResponse.getSagaId(), order.getOrderStatus(), sagaStatus);
-        }
+        productOutboxHelper.saveProductOutboxMessage(
+                orderDataMapper.orderToStockReservationCancelEventPayload(order, paymentResponse.getSagaId(), SagaConstants.STOCK_RESERVE_CANCELLED_NAME),
+                SagaConstants.STOCK_RESERVE_CANCELLED_NAME,
+                sagaStatus,
+                paymentResponse.getSagaId()
+        );
 
         log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", paymentResponse.getOrderId());
     }

@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class RestaurantApprovalOrderItem {
+public class OrderItemMessage {
 
     private UUID id;
     private int quantity;

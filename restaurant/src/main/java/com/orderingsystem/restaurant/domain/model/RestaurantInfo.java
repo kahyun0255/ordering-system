@@ -37,13 +37,13 @@ public class RestaurantInfo {
             failureMessages.add("해당 주문은 결제가 완료되지 않았습니다. Order Id : " + orderDetail.getOrderId());
         }
 
-        Money totalAmount = orderDetail.getProducts().stream().map(product -> {
-            if (!product.isAvailable()) {
+        Money totalAmount = orderDetail.getOrderProducts().stream().map(op -> {
+            if (!op.getProduct().isAvailable()) {
                 log.error("상품 Id가 {} 인 상품은 주문이 불가능한 상태입니다. Order Id : {}",
-                        product.getProductId(), orderDetail.getOrderId());
-                failureMessages.add("상품 Id가 " + product.getProductId() + "인 상품은 주문이 불가능한 상태입니다.");
+                        op.getProduct().getProductId(), orderDetail.getOrderId());
+                failureMessages.add("상품 Id가 " + op.getProduct().getProductId() + "인 상품은 주문이 불가능한 상태입니다.");
             }
-            return product.getPrice().multiply(product.getQuantity());
+            return op.getProduct().getPrice().multiply(op.getQuantity());
         }).reduce(Money.ZERO, Money::add);
 
         if (!totalAmount.equals(orderDetail.getTotalAmount())) {
@@ -61,7 +61,7 @@ public class RestaurantInfo {
         this.status = status;
     }
 
-    public OrderApprovedEvent approveOrder(List<String> failureMessages) {
+    public OrderApprovedEvent approveOrder(List<String> failureMessages, UUID sagaId) {
         this.orderApproval = OrderApproval.builder()
                 .id(UUID.randomUUID())
                 .restaurantId(this.getRestaurantId())
@@ -71,11 +71,11 @@ public class RestaurantInfo {
 
         log.info("주문이 승인되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
 
-        return new OrderApprovedEvent(this.getOrderApproval(), this.getRestaurantId(), failureMessages,
+        return new OrderApprovedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
                 ZonedDateTime.now());
     }
 
-    public OrderRejectedEvent rejectOrder(List<String> failureMessages) {
+    public OrderRejectedEvent rejectOrder(List<String> failureMessages, UUID sagaId) {
         this.orderApproval = OrderApproval.builder()
                 .id(UUID.randomUUID())
                 .restaurantId(this.getRestaurantId())
@@ -85,7 +85,7 @@ public class RestaurantInfo {
 
         log.info("주문이 거절되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
 
-        return new OrderRejectedEvent(this.getOrderApproval(), this.getRestaurantId(), failureMessages,
+        return new OrderRejectedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
                 ZonedDateTime.now());
     }
 

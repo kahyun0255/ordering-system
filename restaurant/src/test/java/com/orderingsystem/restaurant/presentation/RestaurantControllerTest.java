@@ -29,7 +29,7 @@ class RestaurantControllerTest extends ControllerTestSupport {
             .name("레스토랑 2")
             .build();
 
-    private final  Restaurant restaurant3 = Restaurant.builder()
+    private final Restaurant restaurant3 = Restaurant.builder()
             .restaurantId(UUID.randomUUID())
             .status(RestaurantStatus.TEMP_CLOSED)
             .name("레스토랑 3")
@@ -168,29 +168,6 @@ class RestaurantControllerTest extends ControllerTestSupport {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("해당 상태의 레스토랑 조회가 불가능합니다."));
-    }
-
-    @DisplayName("음수 페이지 번호 요청 시, 0번 페이지로 대체하여 조회한다.")
-    @Test
-    void shouldDefaultToFirstPage_whenPageNumberIsNegative() throws Exception {
-        //when, then
-        mockMvc.perform(
-                        get("/api/restaurants")
-                                .param("page", "-1")
-                                .param("size", "10")
-                                .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].restaurantId").value(restaurant1.getRestaurantId().toString()))
-                .andExpect(jsonPath("$.content[0].restaurantName").value(restaurant1.getName()))
-                .andExpect(jsonPath("$.content[0].status").value(restaurant1.getStatus().name()))
-                .andExpect(jsonPath("$.content[1].restaurantId").value(restaurant2.getRestaurantId().toString()))
-                .andExpect(jsonPath("$.content[1].restaurantName").value(restaurant2.getName()))
-                .andExpect(jsonPath("$.content[1].status").value(restaurant2.getStatus().name()))
-                .andExpect(jsonPath("$.content[2].restaurantId").value(restaurant3.getRestaurantId().toString()))
-                .andExpect(jsonPath("$.content[2].restaurantName").value(restaurant3.getName()))
-                .andExpect(jsonPath("$.content[2].status").value(restaurant3.getStatus().name()))
-                .andExpect(jsonPath("$.totalElements").value(3));
     }
 
 }

@@ -14,6 +14,7 @@ public abstract class OrderApprovalEvent implements DomainEvent<OrderApproval> {
 
     private final OrderApproval orderApproval;
     private final UUID restaurantId;
+    private final UUID sagaId;
     private final List<String> failureMessages;
     private final ZonedDateTime createdAt;
 

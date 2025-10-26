@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class ApprovalOrderItem {
+public class OrderItemRequest {
 
     private UUID productId;
     private int quantity;

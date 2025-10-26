@@ -17,7 +17,7 @@ public class ApprovalRequest {
     private UUID orderId;
     private UUID restaurantId;
     private RestaurantOrderStatus restaurantOrderStatus;
-    private List<ApprovalOrderItem> products;
+    private List<OrderItemRequest> products;
     private BigDecimal price;
     private Instant createdAt;
 

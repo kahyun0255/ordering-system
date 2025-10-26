@@ -8,6 +8,8 @@ import com.orderingsystem.order.application.dto.request.OrderAddressApplicationR
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
+import com.orderingsystem.order.application.outbox.product.model.OrderProductEventPayload;
+import com.orderingsystem.order.application.outbox.product.model.OrderProductEventProduct;
 import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventPayload;
 import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventProduct;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
@@ -16,6 +18,7 @@ import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderAddress;
 import com.orderingsystem.order.domain.model.OrderItem;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -102,7 +105,6 @@ public class OrderDataMapper {
 
     public OrderPaymentEventPayload orderCancelledEventToOrderPaymentEventPayload(
             OrderCancelledEvent orderCancelledEvent, UUID sagaId) {
-        System.out.println(orderCancelledEvent.getOrder().getFailureMessageList());
         return OrderPaymentEventPayload.builder()
                 .orderId(orderCancelledEvent.getOrder().getId().toString())
                 .sagaId(sagaId.toString())
@@ -113,4 +115,21 @@ public class OrderDataMapper {
                 .failureMessage(orderCancelledEvent.getOrder().getFailureMessageList())
                 .build();
     }
+
+    public OrderProductEventPayload orderToStockReservationCancelEventPayload(Order order, UUID sagaId, String type) {
+        return OrderProductEventPayload.builder()
+                .sagaId(sagaId.toString())
+                .orderId(order.getId().toString())
+                .restaurantId(order.getRestaurantId().toString())
+                .type(type)
+                .createdAt(ZonedDateTime.now())
+                .products(order.getItems().stream().map(item -> {
+                    return OrderProductEventProduct.builder()
+                            .id(item.getProductId().toString())
+                            .quantity(item.getQuantity())
+                            .build();
+                }).toList())
+                .build();
+    }
+
 }

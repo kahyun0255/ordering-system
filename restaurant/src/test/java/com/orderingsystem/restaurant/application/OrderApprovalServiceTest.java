@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
-import com.orderingsystem.restaurant.application.dto.request.ApprovalOrderItem;
+import com.orderingsystem.restaurant.application.dto.request.OrderItemRequest;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
 import com.orderingsystem.restaurant.application.outbox.order.model.OrderEventPayload;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
@@ -156,11 +156,11 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
                 .orderId(orderId)
                 .restaurantId(restaurantId)
                 .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(List.of(ApprovalOrderItem.builder()
+                .products(List.of(OrderItemRequest.builder()
                                 .productId(productId1)
                                 .quantity(1)
                                 .build(),
-                        ApprovalOrderItem.builder()
+                        OrderItemRequest.builder()
                                 .productId(productId2)
                                 .quantity(1)
                                 .build()))
@@ -200,11 +200,11 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
                 .orderId(orderId)
                 .restaurantId(restaurantId)
                 .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(List.of(ApprovalOrderItem.builder()
+                .products(List.of(OrderItemRequest.builder()
                                 .productId(productId1)
                                 .quantity(1)
                                 .build(),
-                        ApprovalOrderItem.builder()
+                        OrderItemRequest.builder()
                                 .productId(productId2)
                                 .quantity(1)
                                 .build()))
@@ -238,7 +238,7 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
                 .orderId(orderId)
                 .restaurantId(restaurantId)
                 .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(List.of(ApprovalOrderItem.builder()
+                .products(List.of(OrderItemRequest.builder()
                         .productId(productId)
                         .quantity(1)
                         .build()))
@@ -279,9 +279,9 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
 
         UUID messageId = UUID.randomUUID();
         processedMessageRepository.save(ProcessedMessage.builder()
-                        .messageId(messageId)
-                        .messageType(MessageType.ORDER_APPROVAL)
-                        .processedAt(ZonedDateTime.now())
+                .messageId(messageId)
+                .messageType(MessageType.ORDER_APPROVAL)
+                .processedAt(ZonedDateTime.now())
                 .build());
 
         ApprovalRequest request = ApprovalRequest.builder()
@@ -290,7 +290,7 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
                 .orderId(orderId)
                 .restaurantId(restaurantId)
                 .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(List.of(ApprovalOrderItem.builder()
+                .products(List.of(OrderItemRequest.builder()
                         .productId(productId)
                         .quantity(1)
                         .build()))
@@ -410,7 +410,7 @@ class OrderApprovalServiceTest extends ApplicationTestSupport {
                 .orderId(orderId)
                 .restaurantId(restaurantId)
                 .restaurantOrderStatus(restaurantOrderStatus)
-                .products(List.of(ApprovalOrderItem.builder()
+                .products(List.of(OrderItemRequest.builder()
                         .productId(productId)
                         .quantity(1)
                         .build()))

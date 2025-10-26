@@ -14,6 +14,6 @@ public class OrderDetail {
     private final UUID orderId;
     private OrderStatus orderStatus;
     private Money totalAmount;
-    private final List<Product> products;
+    private final List<OrderProduct> orderProducts;
 
 }

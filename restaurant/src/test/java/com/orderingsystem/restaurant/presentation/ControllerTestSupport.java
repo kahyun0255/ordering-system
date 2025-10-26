@@ -2,7 +2,9 @@ package com.orderingsystem.restaurant.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
+import com.orderingsystem.restaurant.domain.repository.ProductRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
+import com.orderingsystem.restaurant.domain.repository.RestaurantProductRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Jwts.SIG;
@@ -39,6 +41,12 @@ public abstract class ControllerTestSupport {
 
     @Autowired
     protected RestaurantOwnershipRepository restaurantOwnershipRepository;
+
+    @Autowired
+    protected ProductRepository productRepository;
+
+    @Autowired
+    protected RestaurantProductRepository restaurantProductRepository;
 
     @Value("${jwt.issuer}")
     protected String issuer;

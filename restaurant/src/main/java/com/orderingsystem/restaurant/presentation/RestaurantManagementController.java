@@ -1,7 +1,5 @@
 package com.orderingsystem.restaurant.presentation;
 
-import com.orderingsystem.common.exception.InvalidCredentialsException;
-import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.restaurant.application.RestaurantManagementFacade;
 import com.orderingsystem.restaurant.application.dto.response.CreateRestaurantResponse;
 import com.orderingsystem.restaurant.application.dto.response.UpdateRestaurantResponse;
@@ -29,15 +27,15 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class RestaurantManagementController {
 
-    private final CommonJwtUtil commonJwtUtil;
     private final RestaurantManagementFacade restaurantManagementFacade;
+    private final RestaurantControllerHelper restaurantControllerHelper;
 
     @PostMapping
     public ResponseEntity<CreateRestaurantResponse> createRestaurant(
             @Valid @RequestBody CreateRestaurantRequest createRestaurantRequest, BindingResult bindingResult,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        valid(bindingResult);
-        UUID restaurantOwnerId = getRestaurantOwnerId(authorizationHeader);
+        RestaurantControllerHelper.valid(bindingResult);
+        UUID restaurantOwnerId = restaurantControllerHelper.getRestaurantOwnerId(authorizationHeader);
 
         log.info("레스토랑 생성. Restaurant Owner Id : {}", restaurantOwnerId);
 
@@ -52,7 +50,7 @@ public class RestaurantManagementController {
             @PathVariable UUID restaurantId,
             @RequestBody UpdateRestaurantRequest updateRestaurantRequest,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        UUID restaurantOwnerId = getRestaurantOwnerId(authorizationHeader);
+        UUID restaurantOwnerId = restaurantControllerHelper.getRestaurantOwnerId(authorizationHeader);
 
         log.info("레스토랑 정보 업데이트. restaurant Id : {}, ownerId : {}", restaurantId, restaurantOwnerId);
 
@@ -61,28 +59,12 @@ public class RestaurantManagementController {
     }
 
     @DeleteMapping("/{restaurantId}")
-    public ResponseEntity<Void> deleteRestaurant(@PathVariable UUID restaurantId, @RequestHeader(value = "Authorization", required = false)String authorizationHeader){
-        UUID restaurantOwnerId = getRestaurantOwnerId(authorizationHeader);
+    public ResponseEntity<Void> deleteRestaurant(@PathVariable UUID restaurantId,
+                                                 @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        UUID restaurantOwnerId = restaurantControllerHelper.getRestaurantOwnerId(authorizationHeader);
         log.info("레스토랑 삭제. Restaurant Id : {}, Owner Id : {}", restaurantId, restaurantOwnerId);
         restaurantManagementFacade.deleteRestaurant(restaurantId, restaurantOwnerId);
         return ResponseEntity.noContent().build();
-    }
-
-    private static void valid(BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            String message = bindingResult.getFieldErrors().stream()
-                    .map(e -> e.getField() + ": " + e.getDefaultMessage())
-                    .reduce((a, b) -> a + ", " + b)
-                    .orElse("잘못된 요청입니다.");
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    private UUID getRestaurantOwnerId(String authorizationHeader) {
-        if (authorizationHeader == null || authorizationHeader.isBlank()) {
-            throw new InvalidCredentialsException("레스토랑 오너 정보를 찾을 수 없습니다.");
-        }
-        return commonJwtUtil.getUserIdFromToken(authorizationHeader);
     }
 
 }
