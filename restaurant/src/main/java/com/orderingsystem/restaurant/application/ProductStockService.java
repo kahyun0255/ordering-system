@@ -10,6 +10,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -19,7 +20,7 @@ public class ProductStockService {
 
     private final ProductRepository productRepository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void confirm(Map<Object, Object> history) {
         Map<UUID, Integer> productMap = new HashMap<>();
         List<UUID> productIds = new ArrayList<>();
