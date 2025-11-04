@@ -3,6 +3,7 @@ package com.orderingsystem.restaurant.domain.model;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderAcceptedEvent;
 import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
 import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
 import java.time.ZonedDateTime;
@@ -86,6 +87,20 @@ public class RestaurantInfo {
         log.info("주문이 거절되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
 
         return new OrderRejectedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
+                ZonedDateTime.now());
+    }
+
+    public OrderAcceptedEvent acceptOrder(List<String> failureMessages, UUID sagaId) {
+        this.orderApproval = OrderApproval.builder()
+                .id(UUID.randomUUID())
+                .restaurantId(this.restaurantId)
+                .orderId(this.orderDetail.getOrderId())
+                .status(OrderApprovalStatus.ACCEPT)
+                .build();
+
+        log.info("주문이 접수되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
+
+        return new OrderAcceptedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
                 ZonedDateTime.now());
     }
 

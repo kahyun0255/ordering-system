@@ -16,7 +16,7 @@ public class RestaurantValidateOrderService {
         restaurant.validateOrder(failureMessages);
 
         if (failureMessages.isEmpty()) {
-            return restaurant.approveOrder(failureMessages, sagaId);
+            return restaurant.acceptOrder(failureMessages, sagaId);
         } else {
             return restaurant.rejectOrder(failureMessages, sagaId);
         }

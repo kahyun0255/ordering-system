@@ -1,7 +1,7 @@
 package com.orderingsystem.restaurant.application.listener;
 
 import com.orderingsystem.restaurant.application.ProductStockFacade;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderAcceptedEvent;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,15 +12,15 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class OrderApprovedEventListener {
+public class OrderAcceptEventListener {
 
     private final ProductStockFacade productStockFacade;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onOrderApproved(OrderApprovedEvent orderApprovedEvent){
-        UUID sagaId = orderApprovedEvent.getSagaId();
+    public void onOrderAccepted(OrderAcceptedEvent orderAcceptedEvent){
+        UUID sagaId = orderAcceptedEvent.getSagaId();
         productStockFacade.confirm(sagaId);
-        log.info("{} 주문 승인 이벤트 수신 후 재고 확정 처리 완료.", sagaId);
+        log.info("{} 주문 접수 이벤트 수신 후 재고 확정 처리 완료.", sagaId);
     }
 
 }
