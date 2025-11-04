@@ -22,10 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @Transactional
 @TestPropertySource(properties = "outbox.delete-ttl=3")
-class RestaurantApprovalOutboxCleanerSchedulerTest {
+class RestaurantAcceptOutboxCleanerSchedulerTest {
 
     @Autowired
-    private RestaurantApprovalOutboxCleanerScheduler restaurantApprovalOutboxCleanerScheduler;
+    private RestaurantAcceptOutboxCleanerScheduler restaurantAcceptOutboxCleanerScheduler;
 
     @Autowired
     private RestaurantApprovalOutboxRepository restaurantApprovalOutboxRepository;
@@ -47,7 +47,7 @@ class RestaurantApprovalOutboxCleanerSchedulerTest {
         assertThat(beforeCount).isEqualTo(5L);
 
         //when
-        restaurantApprovalOutboxCleanerScheduler.processOutboxMessage();
+        restaurantAcceptOutboxCleanerScheduler.processOutboxMessage();
 
         //then
         long afterCount = restaurantApprovalOutboxRepository.count();

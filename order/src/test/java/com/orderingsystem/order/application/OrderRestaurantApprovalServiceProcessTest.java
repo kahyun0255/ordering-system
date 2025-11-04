@@ -8,7 +8,7 @@ import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
-import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
+import com.orderingsystem.order.application.dto.response.RestaurantAcceptResponse;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
@@ -74,7 +74,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         //given
         saveOrder(OrderStatus.PAID);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         orderRestaurantApprovalService.process(request);
@@ -99,7 +99,7 @@ class OrderRestaurantApprovalServiceProcessTest {
     void notFoundOrder() {
         //given
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when, then
         assertThatThrownBy(() -> orderRestaurantApprovalService.process(request))
@@ -120,7 +120,7 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .type(ORDER_SAGA_NAME)
                 .payload("")
                 .build());
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when, then
         assertThatThrownBy(() -> orderRestaurantApprovalService.process(request))
@@ -134,7 +134,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         //given
         saveOrder(OrderStatus.PENDING);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when, then
         assertThatThrownBy(() -> orderRestaurantApprovalService.process(request))
@@ -148,7 +148,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         //given
         saveOrder(OrderStatus.APPROVED);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -172,7 +172,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         //given
         saveOrder(OrderStatus.CANCELLED);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -196,7 +196,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         //given
         saveOrder(OrderStatus.CANCELLING);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -228,7 +228,7 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -260,7 +260,7 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -292,7 +292,7 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -324,7 +324,7 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -356,7 +356,7 @@ class OrderRestaurantApprovalServiceProcessTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -380,7 +380,7 @@ class OrderRestaurantApprovalServiceProcessTest {
         //given
         saveOrder(OrderStatus.PAID);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         processedMessageRepository.save(ProcessedMessage.builder()
                 .messageId(request.getId())
@@ -397,8 +397,8 @@ class OrderRestaurantApprovalServiceProcessTest {
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PAID);
     }
 
-    private RestaurantApprovalResponse getRestaurantApprovalResponse() {
-        return RestaurantApprovalResponse.builder()
+    private RestaurantAcceptResponse getRestaurantApprovalResponse() {
+        return RestaurantAcceptResponse.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .orderId(orderId)

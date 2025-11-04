@@ -9,7 +9,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class RestaurantApprovalEventPayload {
+public class RestaurantAcceptEventPayload {
 
     @JsonProperty
     private String orderId;

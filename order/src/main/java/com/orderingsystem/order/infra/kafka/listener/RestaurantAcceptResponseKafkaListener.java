@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
-import com.orderingsystem.order.application.OrderRestaurantApprovalService;
+import com.orderingsystem.order.application.OrderRestaurantAcceptService;
 import com.orderingsystem.order.infra.kafka.message.RestaurantApprovalResponseMessage;
 import com.orderingsystem.order.infra.kafka.message.RestaurantResponseDebeziumMessage;
 import java.util.List;
@@ -23,20 +23,20 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class RestaurantApprovalResponseKafkaListener implements KafkaConsumer<String> {
+public class RestaurantAcceptResponseKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final OrderRestaurantApprovalService orderRestaurantApprovalService;
+    private final OrderRestaurantAcceptService orderRestaurantAcceptService;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.restaurant-response-consumer-group-id}",
-            topics = "${order-topic.restaurant-approval-response-topic-name}")
+            topics = "${order-topic.restaurant-response-topic-name}")
     public void receive(@Payload List<String> messages,
                         @Header(KafkaHeaders.RECEIVED_KEY) List<String> keys,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) List<Integer> partitions,
                         @Header(KafkaHeaders.OFFSET) List<Long> offsets) {
 
-        log.info("{}개의 Restaurant Approval Response 메시지를 받았습니다. keys : {}, partitions : {}, offsets : {}",
+        log.info("{}개의 Restaurant Accept Response 메시지를 받았습니다. keys : {}, partitions : {}, offsets : {}",
                 messages.size(), keys.toString(), partitions.toString(), offsets.toString());
 
         messages.forEach(message -> {
@@ -49,14 +49,14 @@ public class RestaurantApprovalResponseKafkaListener implements KafkaConsumer<St
                     RestaurantApprovalResponseMessage responseMessage = getRestaurantApprovalResponseMessage(
                             restaurantResponseDebeziumMessage);
 
-                    if (OrderApprovalStatus.APPROVED.name().equals(responseMessage.getOrderApprovalStatus().name())) {
-                        log.info("주문 승인 진행. Order Id : {}", responseMessage.getOrderId());
-                        orderRestaurantApprovalService.process(responseMessage.toRestaurantApprovalResponse(
+                    if (OrderApprovalStatus.ACCEPTED.name().equals(responseMessage.getOrderApprovalStatus().name())) {
+                        log.info("주문 접수 진행. Order Id : {}", responseMessage.getOrderId());
+                        orderRestaurantAcceptService.process(responseMessage.toRestaurantApprovalResponse(
                                 UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())));
-                    } else if (OrderApprovalStatus.REJECTED.name()
+                    } else if (OrderApprovalStatus.DECLINED.name()
                             .equals(responseMessage.getOrderApprovalStatus().name())) {
-                        log.info("주문 거절 진행. Order Id :{}", responseMessage.getOrderId());
-                        orderRestaurantApprovalService.rollback(responseMessage.toRestaurantApprovalResponse(
+                        log.info("주문 접수 거절 진행. Order Id :{}", responseMessage.getOrderId());
+                        orderRestaurantAcceptService.rollback(responseMessage.toRestaurantApprovalResponse(
                                 UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())));
                     }
                 }

@@ -96,7 +96,7 @@ public class RestaurantInfo {
                 .id(UUID.randomUUID())
                 .restaurantId(this.restaurantId)
                 .orderId(this.orderDetail.getOrderId())
-                .status(OrderApprovalStatus.ACCEPT)
+                .status(OrderApprovalStatus.ACCEPTED)
                 .build();
 
         log.info("주문이 접수되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());

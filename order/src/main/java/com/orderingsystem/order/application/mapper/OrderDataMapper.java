@@ -10,7 +10,7 @@ import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.application.outbox.product.model.OrderProductEventPayload;
 import com.orderingsystem.order.application.outbox.product.model.OrderProductEventProduct;
-import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventPayload;
+import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantAcceptEventPayload;
 import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantApprovalEventProduct;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
@@ -86,9 +86,9 @@ public class OrderDataMapper {
                 .build();
     }
 
-    public RestaurantApprovalEventPayload orderPaidEventToRestaurantApprovalEventPayload(
+    public RestaurantAcceptEventPayload orderPaidEventToRestaurantAcceptEventPayload(
             OrderPaidEvent orderPaidEvent, UUID sagaId) {
-        return RestaurantApprovalEventPayload.builder()
+        return RestaurantAcceptEventPayload.builder()
                 .orderId(orderPaidEvent.getOrder().getId().toString())
                 .restaurantId(orderPaidEvent.getOrder().getRestaurantId().toString())
                 .sagaId(sagaId.toString())

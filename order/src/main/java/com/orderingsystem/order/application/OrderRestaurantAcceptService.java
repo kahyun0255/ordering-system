@@ -3,17 +3,17 @@ package com.orderingsystem.order.application;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
-import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
+import com.orderingsystem.order.application.dto.response.RestaurantAcceptResponse;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
-import com.orderingsystem.order.application.outbox.restaurant.RestaurantApprovalOutboxHelper;
+import com.orderingsystem.order.application.outbox.restaurant.RestaurantAcceptOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.outbox.MessageType;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
-import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
+import com.orderingsystem.order.domain.model.outbox.RestaurantAcceptOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
 import java.time.ZonedDateTime;
@@ -27,133 +27,138 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OrderRestaurantApprovalService implements SagaStep<RestaurantApprovalResponse> {
+public class OrderRestaurantAcceptService implements SagaStep<RestaurantAcceptResponse> {
 
     private final OrderRepository orderRepository;
-    private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
+    private final RestaurantAcceptOutboxHelper restaurantAcceptOutboxHelper;
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final OrderDataMapper orderDataMapper;
     private final ProcessedMessageRepository processedMessageRepository;
 
     @Override
     @Transactional
-    public void process(RestaurantApprovalResponse restaurantApprovalResponse) {
-        log.info("주문 승인 처리 중. Order Id : {}", restaurantApprovalResponse.getOrderId());
+    public void process(RestaurantAcceptResponse restaurantAcceptResponse) {
+        log.info("주문 접수 처리 중. Order Id : {}", restaurantAcceptResponse.getOrderId());
 
-        if (checkAndMarkProcessed(restaurantApprovalResponse, MessageType.RESTAURANT_APPROVAL)) {
+        if (checkAndMarkProcessed(restaurantAcceptResponse, MessageType.RESTAURANT_ACCEPT)) {
             return;
         }
 
-        Optional<RestaurantApprovalOutbox> restaurantApprovalOutboxResponse =
-                restaurantApprovalOutboxHelper.getRestaurantApprovalOutboxBySagaIdAndSagaStatus(
-                        restaurantApprovalResponse.getSagaId(),
+        Optional<RestaurantAcceptOutbox> restaurantAcceptOutboxResponse =
+                restaurantAcceptOutboxHelper.getRestaurantAcceptOutboxBySagaIdAndSagaStatus(
+                        restaurantAcceptResponse.getSagaId(),
                         SagaStatus.PROCESSING);
 
-        if (restaurantApprovalOutboxResponse.isEmpty()) {
+        if (restaurantAcceptOutboxResponse.isEmpty()) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 없거나, 이미 다른 상태로 처리 중이므로 메시지를 무시합니다.",
-                    restaurantApprovalResponse.getSagaId());
+                    restaurantAcceptResponse.getSagaId());
             return;
         }
 
-        RestaurantApprovalOutbox restaurantApprovalOutbox = restaurantApprovalOutboxResponse.get();
+        RestaurantAcceptOutbox restaurantAcceptOutbox = restaurantAcceptOutboxResponse.get();
 
-        Order order = findOrder(restaurantApprovalResponse.getOrderId());
+        Order order = findOrder(restaurantAcceptResponse.getOrderId());
 
         if (order.getOrderStatus() == OrderStatus.APPROVED
                 || order.getOrderStatus() == OrderStatus.CANCELLED
                 || order.getOrderStatus() == OrderStatus.CANCELLING) {
             log.info("주문이 이미 {} 상태입니다. Outbox 업데이트를 생략합니다. Order Id : {}", order.getOrderStatus().name(),
-                    restaurantApprovalResponse.getOrderId());
+                    restaurantAcceptResponse.getOrderId());
 
             return;
         }
 
-        approvalOrder(order);
+        acceptOrder(order);
 
         SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
 
-        updateApprovalOutbox(restaurantApprovalOutbox, order.getOrderStatus(), sagaStatus);
-        updatePaymentOutbox(restaurantApprovalResponse.getSagaId(), order.getOrderStatus(), sagaStatus);
+        updateAcceptOutbox(restaurantAcceptOutbox, order.getOrderStatus(), sagaStatus);
+        updatePaymentOutbox(restaurantAcceptResponse.getSagaId(), order.getOrderStatus(), sagaStatus);
 
-        log.info("주문이 승인되었습니다. Order Id : {}", restaurantApprovalResponse.getOrderId());
+        log.info("주문이 접수되었습니다. Order Id : {}", restaurantAcceptResponse.getOrderId());
     }
 
     @Override
     @Transactional
-    public void rollback(RestaurantApprovalResponse restaurantApprovalResponse) {
-        log.info("주문 취소 처리 중. Order Id : {}", restaurantApprovalResponse.getOrderId());
+    public void rollback(RestaurantAcceptResponse restaurantAcceptResponse) {
+        log.info("주문 접수 거절 처리 중. Order Id : {}", restaurantAcceptResponse.getOrderId());
 
-        if (checkAndMarkProcessed(restaurantApprovalResponse, MessageType.RESTAURANT_REJECT)) {
+        if (checkAndMarkProcessed(restaurantAcceptResponse, MessageType.RESTAURANT_DECLINE)) {
             return;
         }
 
-        Optional<RestaurantApprovalOutbox> restaurantApprovalOutboxResponse =
-                restaurantApprovalOutboxHelper.getRestaurantApprovalOutboxBySagaIdAndSagaStatus(
-                        restaurantApprovalResponse.getSagaId(),
+        Optional<RestaurantAcceptOutbox> restaurantAcceptOutboxResponse =
+                restaurantAcceptOutboxHelper.getRestaurantAcceptOutboxBySagaIdAndSagaStatus(
+                        restaurantAcceptResponse.getSagaId(),
                         SagaStatus.PROCESSING);
 
-        if (restaurantApprovalOutboxResponse.isEmpty()) {
+        if (restaurantAcceptOutboxResponse.isEmpty()) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 롤백되어 다시 처리하지 않습니다.",
-                    restaurantApprovalResponse.getSagaId());
+                    restaurantAcceptResponse.getSagaId());
             return;
         }
 
-        RestaurantApprovalOutbox restaurantApprovalOutbox = restaurantApprovalOutboxResponse.get();
+        RestaurantAcceptOutbox restaurantAcceptOutbox = restaurantAcceptOutboxResponse.get();
 
-        Order order = findOrder(restaurantApprovalResponse.getOrderId());
+        Order order = findOrder(restaurantAcceptResponse.getOrderId());
 
         if (order.getOrderStatus() == OrderStatus.APPROVED
                 || order.getOrderStatus() == OrderStatus.CANCELLED
                 || order.getOrderStatus() == OrderStatus.CANCELLING) {
             log.info("주문이 이미 {} 상태입니다. Outbox 업데이트를 생략합니다. Order Id : {}", order.getOrderStatus().name(),
-                    restaurantApprovalResponse.getOrderId());
+                    restaurantAcceptResponse.getOrderId());
 
             return;
         }
 
-        OrderCancelledEvent orderCancelledEvent = order.initCancel(restaurantApprovalResponse.getFailureMessages());
+        OrderCancelledEvent orderCancelledEvent = order.initCancel(restaurantAcceptResponse.getFailureMessages());
 
         SagaStatus sagaStatus =
                 OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCancelledEvent.getOrder().getOrderStatus());
 
-        updateApprovalOutbox(restaurantApprovalOutbox, orderCancelledEvent.getOrder().getOrderStatus(), sagaStatus);
+        updateAcceptOutbox(restaurantAcceptOutbox, orderCancelledEvent.getOrder().getOrderStatus(), sagaStatus);
 
         paymentOutboxHelper.savePaymentOutboxMessage(
                 orderDataMapper.orderCancelledEventToOrderPaymentEventPayload(orderCancelledEvent,
-                        restaurantApprovalResponse.getSagaId()),
+                        restaurantAcceptResponse.getSagaId()),
                 orderCancelledEvent.getOrder().getOrderStatus(),
                 sagaStatus,
-                restaurantApprovalResponse.getSagaId());
+                restaurantAcceptResponse.getSagaId());
 
-        log.info("레스토랑 승인 거절로 인해 주문 ID: {} 의 주문을 취소 처리했습니다. failureMessages : {}",
-                restaurantApprovalResponse.getOrderId(),
-                String.join(",", restaurantApprovalResponse.getFailureMessages()));
+        log.info("레스토랑 접수 실패로 인해 주문 ID: {} 의 주문을 취소 처리했습니다. failureMessages : {}",
+                restaurantAcceptResponse.getOrderId(),
+                String.join(",", restaurantAcceptResponse.getFailureMessages()));
     }
 
-    private boolean checkAndMarkProcessed(RestaurantApprovalResponse restaurantApprovalResponse,
+    private boolean checkAndMarkProcessed(RestaurantAcceptResponse restaurantAcceptResponse,
                                           MessageType messageType) {
         int inserted = processedMessageRepository.insertIgnore(
-                restaurantApprovalResponse.getId(),
+                restaurantAcceptResponse.getId(),
                 messageType.name(),
                 ZonedDateTime.now()
         );
 
-        log.info("이미 {} 메시지가 처리되었습니다. Order Id : {}, Saga Id : {}", messageType,
-                restaurantApprovalResponse.getOrderId(), restaurantApprovalResponse.getSagaId());
+        if (inserted == 0) {
+            log.info("이미 {} 메시지가 처리되었습니다. Order Id : {}, Saga Id : {}",
+                    messageType,
+                    restaurantAcceptResponse.getOrderId(),
+                    restaurantAcceptResponse.getSagaId());
+            return true;
+        }
 
-        return inserted == 0;
+        return false;
     }
 
-    private void approvalOrder(Order order) {
-        order.approve();
-        log.info("주문 승인 완료. Order Id : {}", order.getId());
+    private void acceptOrder(Order order) {
+        order.accept();
+        log.info("주문 접수 완료. Order Id : {}", order.getId());
     }
 
-    private void updateApprovalOutbox(RestaurantApprovalOutbox restaurantApprovalOutbox,
-                                      OrderStatus orderStatus, SagaStatus sagaStatus) {
-        restaurantApprovalOutbox.updateProcessedAt(ZonedDateTime.now());
-        restaurantApprovalOutbox.updateOrderStatus(orderStatus);
-        restaurantApprovalOutbox.updateSagaStatus(sagaStatus);
+    private void updateAcceptOutbox(RestaurantAcceptOutbox restaurantAcceptOutbox,
+                                    OrderStatus orderStatus, SagaStatus sagaStatus) {
+        restaurantAcceptOutbox.updateProcessedAt(ZonedDateTime.now());
+        restaurantAcceptOutbox.updateOrderStatus(orderStatus);
+        restaurantAcceptOutbox.updateSagaStatus(sagaStatus);
     }
 
     private void updatePaymentOutbox(UUID sagaId, OrderStatus orderStatus, SagaStatus sagaStatus) {

@@ -6,17 +6,15 @@ import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
-import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.application.outbox.product.ProductOutboxHelper;
-import com.orderingsystem.order.application.outbox.restaurant.RestaurantApprovalOutboxHelper;
+import com.orderingsystem.order.application.outbox.restaurant.RestaurantAcceptOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.outbox.MessageType;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
-import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
 import java.time.ZonedDateTime;
@@ -34,7 +32,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
 
     private final OrderRepository orderRepository;
     private final PaymentOutboxHelper paymentOutboxHelper;
-    private final RestaurantApprovalOutboxHelper restaurantApprovalOutboxHelper;
+    private final RestaurantAcceptOutboxHelper restaurantAcceptOutboxHelper;
     private final OrderDataMapper orderDataMapper;
     private final ProcessedMessageRepository processedMessageRepository;
     private final ProductOutboxHelper productOutboxHelper;
@@ -76,8 +74,8 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
 
         updatePaymentOutboxMessage(paymentOutboxMessage, orderPaidEvent.getOrder().getOrderStatus(), sagaStatus);
 
-        restaurantApprovalOutboxHelper.saveRestaurantApprovalOutboxMessage(
-                orderDataMapper.orderPaidEventToRestaurantApprovalEventPayload(orderPaidEvent,
+        restaurantAcceptOutboxHelper.saveRestaurantAcceptOutboxMessage(
+                orderDataMapper.orderPaidEventToRestaurantAcceptEventPayload(orderPaidEvent,
                         paymentResponse.getSagaId()),
                 orderPaidEvent.getOrder().getOrderStatus(),
                 sagaStatus,
@@ -155,23 +153,6 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         order.cancel(paymentResponse.getFailureMessages());
     }
 
-    private void updateApprovalOutboxMessage(UUID sagaId, OrderStatus orderStatus,
-                                             SagaStatus sagaStatus) {
-        Optional<RestaurantApprovalOutbox> restaurantApprovalOutboxResponse =
-                restaurantApprovalOutboxHelper.getRestaurantApprovalOutboxBySagaIdAndSagaStatus(sagaId,
-                        SagaStatus.COMPENSATING);
-
-        if (restaurantApprovalOutboxResponse.isEmpty()) {
-            throw new OrderApplicationException(
-                    "SagaStatus " + SagaStatus.COMPENSATING.name() + " 상태의 RestaurantApprovalOutbox를 찾지 못했습니다.");
-        }
-
-        RestaurantApprovalOutbox restaurantApprovalOutbox = restaurantApprovalOutboxResponse.get();
-        restaurantApprovalOutbox.updateProcessedAt(ZonedDateTime.now());
-        restaurantApprovalOutbox.updateOrderStatus(orderStatus);
-        restaurantApprovalOutbox.updateSagaStatus(sagaStatus);
-    }
-
     private void updatePaymentOutboxMessage(PaymentOutbox paymentOutboxMessage, OrderStatus orderStatus,
                                             SagaStatus sagaStatus) {
         paymentOutboxMessage.updateProcessedAt(ZonedDateTime.now());
@@ -188,4 +169,5 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         }
         return order.get();
     }
+
 }

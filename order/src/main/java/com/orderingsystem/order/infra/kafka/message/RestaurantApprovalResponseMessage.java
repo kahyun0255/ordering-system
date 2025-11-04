@@ -1,7 +1,7 @@
 package com.orderingsystem.order.infra.kafka.message;
 
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
-import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
+import com.orderingsystem.order.application.dto.response.RestaurantAcceptResponse;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -19,8 +19,8 @@ public class RestaurantApprovalResponseMessage {
     private OrderApprovalStatus orderApprovalStatus;
     private List<String> failureMessages;
 
-    public RestaurantApprovalResponse toRestaurantApprovalResponse(UUID id){
-        return RestaurantApprovalResponse.builder()
+    public RestaurantAcceptResponse toRestaurantApprovalResponse(UUID id){
+        return RestaurantAcceptResponse.builder()
                 .id(id)
                 .sagaId(this.sagaId)
                 .orderId(this.orderId)

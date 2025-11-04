@@ -148,6 +148,13 @@ public class Order extends AggregateRoot {
         return new OrderPaidEvent(this, ZonedDateTime.now());
     }
 
+    public void accept() {
+        if (orderStatus != OrderStatus.PAID) {
+            throw new OrderDomainException("접수할 수 없는 주문 상태입니다.");
+        }
+        orderStatus = OrderStatus.ACCEPTED;
+    }
+
     public void approve() {
         if (orderStatus != OrderStatus.PAID) {
             throw new OrderDomainException("승인할 수 없는 주문 상태입니다.");
@@ -191,5 +198,4 @@ public class Order extends AggregateRoot {
     public void updateItems(List<OrderItem> items) {
         this.items = items;
     }
-
 }

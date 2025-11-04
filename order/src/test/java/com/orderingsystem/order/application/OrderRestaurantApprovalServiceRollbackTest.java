@@ -8,7 +8,7 @@ import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
-import com.orderingsystem.order.application.dto.response.RestaurantApprovalResponse;
+import com.orderingsystem.order.application.dto.response.RestaurantAcceptResponse;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
@@ -65,7 +65,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
         //given
         saveOrder(OrderStatus.PAID);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         long beforePaymentOutboxCount = paymentOutboxRepository.count();
@@ -90,7 +90,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
         //given
         saveOrder(OrderStatus.PENDING);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when, then
         assertThatThrownBy(() -> orderRestaurantApprovalService.rollback(request))
@@ -104,7 +104,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
         //given
         saveOrder(OrderStatus.APPROVED);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -128,7 +128,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
         //given
         saveOrder(OrderStatus.CANCELLED);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -152,7 +152,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
         //given
         saveOrder(OrderStatus.CANCELLING);
         saveOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -184,7 +184,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -216,7 +216,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -248,7 +248,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -280,7 +280,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -312,7 +312,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
                 .payload("")
                 .build());
         savePaymentOutbox();
-        RestaurantApprovalResponse request = getRestaurantApprovalResponse();
+        RestaurantAcceptResponse request = getRestaurantApprovalResponse();
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
@@ -330,8 +330,8 @@ class OrderRestaurantApprovalServiceRollbackTest {
         assertThat(after.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
     }
 
-    private RestaurantApprovalResponse getRestaurantApprovalResponse() {
-        return RestaurantApprovalResponse.builder()
+    private RestaurantAcceptResponse getRestaurantApprovalResponse() {
+        return RestaurantAcceptResponse.builder()
                 .sagaId(sagaId)
                 .orderId(orderId)
                 .restaurantId(restaurantId)
