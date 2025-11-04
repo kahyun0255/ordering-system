@@ -1,7 +1,7 @@
 package com.orderingsystem.restaurant.application.listener;
 
 import com.orderingsystem.restaurant.application.ProductStockFacade;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderAcceptedEvent;
+import com.orderingsystem.restaurant.domain.event.orderaccept.OrderAcceptedEvent;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

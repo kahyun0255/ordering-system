@@ -5,7 +5,7 @@ import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
 import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
 import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovalEvent;
+import com.orderingsystem.restaurant.domain.event.orderaccept.OrderAcceptEvent;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.model.OrderDetail;
@@ -63,17 +63,17 @@ public class OrderAcceptService {
         Restaurant restaurant = findRestaurant(approvalRequest.getRestaurantId());
         RestaurantInfo restaurantInfo = findRestaurantVO(restaurant.getRestaurantId(), approvalRequest);
 
-        OrderApprovalEvent orderApprovalEvent = restaurantValidateOrderService.validateOrder(restaurantInfo,
+        OrderAcceptEvent orderAcceptEvent = restaurantValidateOrderService.validateOrder(restaurantInfo,
                 failureMessage, approvalRequest.getSagaId());
 
         orderAcceptSave(restaurantInfo.getOrderApproval());
 
         orderOutboxHelper.saveOrderOutboxMessage(
-                restaurantDataMapper.restaurantApprovalEventToOrderEventPayload(orderApprovalEvent),
-                orderApprovalEvent.getOrderApproval().getStatus(),
+                restaurantDataMapper.restaurantAcceptEventToOrderEventPayload(orderAcceptEvent),
+                orderAcceptEvent.getOrderApproval().getStatus(),
                 approvalRequest.getSagaId());
 
-        applicationEventPublisher.publishEvent(orderApprovalEvent);
+        applicationEventPublisher.publishEvent(orderAcceptEvent);
     }
 
     private Restaurant findRestaurant(UUID restaurantId) {

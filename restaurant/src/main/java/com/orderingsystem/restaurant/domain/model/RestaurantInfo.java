@@ -3,7 +3,8 @@ package com.orderingsystem.restaurant.domain.model;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderAcceptedEvent;
+import com.orderingsystem.restaurant.domain.event.orderaccept.OrderAcceptedEvent;
+import com.orderingsystem.restaurant.domain.event.orderaccept.OrderDeclinedEvent;
 import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
 import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
 import java.time.ZonedDateTime;
@@ -101,6 +102,20 @@ public class RestaurantInfo {
         log.info("주문이 접수되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
 
         return new OrderAcceptedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
+                ZonedDateTime.now());
+    }
+
+    public OrderDeclinedEvent declineOrder(List<String> failureMessages, UUID sagaId) {
+        this.orderApproval = OrderApproval.builder()
+                .id(UUID.randomUUID())
+                .restaurantId(this.getRestaurantId())
+                .orderId(this.orderDetail.getOrderId())
+                .status(OrderApprovalStatus.DECLINED)
+                .build();
+
+        log.info("주문 접수가 거절되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
+
+        return new OrderDeclinedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
                 ZonedDateTime.now());
     }
 
