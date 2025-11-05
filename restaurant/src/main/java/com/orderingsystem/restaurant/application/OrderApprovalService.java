@@ -23,8 +23,6 @@ public class OrderApprovalService {
 
     @Transactional
     public void approval(UUID restaurantId, UUID orderId, UUID ownerId) {
-        log.info("[{}] 유저가 [{}] 레스토랑의 [{}] 주문 승인 처리 시작.", ownerId, restaurantId, orderId);
-
         OrderApproval orderApproval = orderApprovalRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new RestaurantNotFoundException("주문 내역을 찾을 수 없습니다."));
         OrderApprovedEvent orderApprovedEvent = orderApproval.approval();
@@ -36,7 +34,7 @@ public class OrderApprovalService {
                 sagaId
         );
 
-        log.info("{} 유저가 {} 레스토랑의 {} 주문 승인 완료.", ownerId, restaurantId, orderId);
+        log.info("[{}] 유저가 [{}] 레스토랑의 [{}] 주문 승인 완료.", ownerId, restaurantId, orderId);
     }
 
 }
