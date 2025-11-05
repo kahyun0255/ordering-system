@@ -9,7 +9,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class RestaurantAcceptResponse {
+public class RestaurantOrderDecisionResponse {
 
     private UUID id;
     private UUID sagaId;

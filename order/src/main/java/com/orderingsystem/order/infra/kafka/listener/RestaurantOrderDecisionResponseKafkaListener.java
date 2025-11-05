@@ -7,7 +7,8 @@ import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.OrderRestaurantAcceptService;
-import com.orderingsystem.order.infra.kafka.message.RestaurantApprovalResponseMessage;
+import com.orderingsystem.order.application.OrderRestaurantApprovalService;
+import com.orderingsystem.order.infra.kafka.message.RestaurantOrderDecisionMessage;
 import com.orderingsystem.order.infra.kafka.message.RestaurantResponseDebeziumMessage;
 import java.util.List;
 import java.util.UUID;
@@ -23,10 +24,11 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class RestaurantAcceptResponseKafkaListener implements KafkaConsumer<String> {
+public class RestaurantOrderDecisionResponseKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
     private final OrderRestaurantAcceptService orderRestaurantAcceptService;
+    private final OrderRestaurantApprovalService orderRestaurantApprovalService;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.restaurant-response-consumer-group-id}",
@@ -46,17 +48,22 @@ public class RestaurantAcceptResponseKafkaListener implements KafkaConsumer<Stri
 
                 if (restaurantResponseDebeziumMessage.getBefore() == null &&
                         restaurantResponseDebeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
-                    RestaurantApprovalResponseMessage responseMessage = getRestaurantApprovalResponseMessage(
+                    RestaurantOrderDecisionMessage responseMessage = getRestaurantApprovalResponseMessage(
                             restaurantResponseDebeziumMessage);
 
                     if (OrderApprovalStatus.ACCEPTED.name().equals(responseMessage.getOrderApprovalStatus().name())) {
                         log.info("주문 접수 진행. Order Id : {}", responseMessage.getOrderId());
-                        orderRestaurantAcceptService.process(responseMessage.toRestaurantApprovalResponse(
+                        orderRestaurantAcceptService.process(responseMessage.toDecisionResponse(
                                 UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())));
                     } else if (OrderApprovalStatus.DECLINED.name()
                             .equals(responseMessage.getOrderApprovalStatus().name())) {
                         log.info("주문 접수 거절 진행. Order Id :{}", responseMessage.getOrderId());
-                        orderRestaurantAcceptService.rollback(responseMessage.toRestaurantApprovalResponse(
+                        orderRestaurantAcceptService.rollback(responseMessage.toDecisionResponse(
+                                UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())));
+                    } else if (OrderApprovalStatus.APPROVED.name()
+                            .equals(responseMessage.getOrderApprovalStatus().name())) {
+                        log.info("주문 승인 진행. Order Id : {}", responseMessage.getOrderId());
+                        orderRestaurantApprovalService.approve(responseMessage.toDecisionResponse(
                                 UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())));
                     }
                 }
@@ -73,19 +80,19 @@ public class RestaurantAcceptResponseKafkaListener implements KafkaConsumer<Stri
         });
     }
 
-    private RestaurantApprovalResponseMessage getRestaurantApprovalResponseMessage(
+    private RestaurantOrderDecisionMessage getRestaurantApprovalResponseMessage(
             RestaurantResponseDebeziumMessage restaurantResponseDebeziumMessage) throws JsonProcessingException {
-        RestaurantApprovalResponseMessage restaurantApprovalResponseMessage =
+        RestaurantOrderDecisionMessage restaurantOrderDecisionMessage =
                 objectMapper.readValue(restaurantResponseDebeziumMessage.getAfter().getPayload(),
-                        RestaurantApprovalResponseMessage.class);
+                        RestaurantOrderDecisionMessage.class);
 
-        return RestaurantApprovalResponseMessage.builder()
+        return RestaurantOrderDecisionMessage.builder()
                 .sagaId(UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getSagaId()))
-                .orderId(restaurantApprovalResponseMessage.getOrderId())
-                .restaurantId(restaurantApprovalResponseMessage.getRestaurantId())
-                .createdAt(restaurantApprovalResponseMessage.getCreatedAt())
-                .orderApprovalStatus(restaurantApprovalResponseMessage.getOrderApprovalStatus())
-                .failureMessages(restaurantApprovalResponseMessage.getFailureMessages())
+                .orderId(restaurantOrderDecisionMessage.getOrderId())
+                .restaurantId(restaurantOrderDecisionMessage.getRestaurantId())
+                .createdAt(restaurantOrderDecisionMessage.getCreatedAt())
+                .orderApprovalStatus(restaurantOrderDecisionMessage.getOrderApprovalStatus())
+                .failureMessages(restaurantOrderDecisionMessage.getFailureMessages())
                 .build();
     }
 }

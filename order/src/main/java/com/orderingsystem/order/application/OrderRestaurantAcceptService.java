@@ -3,7 +3,7 @@ package com.orderingsystem.order.application;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
-import com.orderingsystem.order.application.dto.response.RestaurantAcceptResponse;
+import com.orderingsystem.order.application.dto.response.RestaurantOrderDecisionResponse;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OrderRestaurantAcceptService implements SagaStep<RestaurantAcceptResponse> {
+public class OrderRestaurantAcceptService implements SagaStep<RestaurantOrderDecisionResponse> {
 
     private final OrderRepository orderRepository;
     private final RestaurantAcceptOutboxHelper restaurantAcceptOutboxHelper;
@@ -37,33 +37,33 @@ public class OrderRestaurantAcceptService implements SagaStep<RestaurantAcceptRe
 
     @Override
     @Transactional
-    public void process(RestaurantAcceptResponse restaurantAcceptResponse) {
-        log.info("주문 접수 처리 중. Order Id : {}", restaurantAcceptResponse.getOrderId());
+    public void process(RestaurantOrderDecisionResponse restaurantOrderDecisionResponse) {
+        log.info("주문 접수 처리 중. Order Id : {}", restaurantOrderDecisionResponse.getOrderId());
 
-        if (checkAndMarkProcessed(restaurantAcceptResponse, MessageType.RESTAURANT_ACCEPT)) {
+        if (checkAndMarkProcessed(restaurantOrderDecisionResponse, MessageType.RESTAURANT_ACCEPT)) {
             return;
         }
 
         Optional<RestaurantAcceptOutbox> restaurantAcceptOutboxResponse =
                 restaurantAcceptOutboxHelper.getRestaurantAcceptOutboxBySagaIdAndSagaStatus(
-                        restaurantAcceptResponse.getSagaId(),
+                        restaurantOrderDecisionResponse.getSagaId(),
                         SagaStatus.PROCESSING);
 
         if (restaurantAcceptOutboxResponse.isEmpty()) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 없거나, 이미 다른 상태로 처리 중이므로 메시지를 무시합니다.",
-                    restaurantAcceptResponse.getSagaId());
+                    restaurantOrderDecisionResponse.getSagaId());
             return;
         }
 
         RestaurantAcceptOutbox restaurantAcceptOutbox = restaurantAcceptOutboxResponse.get();
 
-        Order order = findOrder(restaurantAcceptResponse.getOrderId());
+        Order order = findOrder(restaurantOrderDecisionResponse.getOrderId());
 
         if (order.getOrderStatus() == OrderStatus.APPROVED
                 || order.getOrderStatus() == OrderStatus.CANCELLED
                 || order.getOrderStatus() == OrderStatus.CANCELLING) {
             log.info("주문이 이미 {} 상태입니다. Outbox 업데이트를 생략합니다. Order Id : {}", order.getOrderStatus().name(),
-                    restaurantAcceptResponse.getOrderId());
+                    restaurantOrderDecisionResponse.getOrderId());
 
             return;
         }
@@ -73,45 +73,45 @@ public class OrderRestaurantAcceptService implements SagaStep<RestaurantAcceptRe
         SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
 
         updateAcceptOutbox(restaurantAcceptOutbox, order.getOrderStatus(), sagaStatus);
-        updatePaymentOutbox(restaurantAcceptResponse.getSagaId(), order.getOrderStatus(), sagaStatus);
+        updatePaymentOutbox(restaurantOrderDecisionResponse.getSagaId(), order.getOrderStatus(), sagaStatus);
 
-        log.info("주문이 접수되었습니다. Order Id : {}", restaurantAcceptResponse.getOrderId());
+        log.info("주문이 접수되었습니다. Order Id : {}", restaurantOrderDecisionResponse.getOrderId());
     }
 
     @Override
     @Transactional
-    public void rollback(RestaurantAcceptResponse restaurantAcceptResponse) {
-        log.info("주문 접수 거절 처리 중. Order Id : {}", restaurantAcceptResponse.getOrderId());
+    public void rollback(RestaurantOrderDecisionResponse restaurantOrderDecisionResponse) {
+        log.info("주문 접수 거절 처리 중. Order Id : {}", restaurantOrderDecisionResponse.getOrderId());
 
-        if (checkAndMarkProcessed(restaurantAcceptResponse, MessageType.RESTAURANT_DECLINE)) {
+        if (checkAndMarkProcessed(restaurantOrderDecisionResponse, MessageType.RESTAURANT_DECLINE)) {
             return;
         }
 
         Optional<RestaurantAcceptOutbox> restaurantAcceptOutboxResponse =
                 restaurantAcceptOutboxHelper.getRestaurantAcceptOutboxBySagaIdAndSagaStatus(
-                        restaurantAcceptResponse.getSagaId(),
+                        restaurantOrderDecisionResponse.getSagaId(),
                         SagaStatus.PROCESSING);
 
         if (restaurantAcceptOutboxResponse.isEmpty()) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 롤백되어 다시 처리하지 않습니다.",
-                    restaurantAcceptResponse.getSagaId());
+                    restaurantOrderDecisionResponse.getSagaId());
             return;
         }
 
         RestaurantAcceptOutbox restaurantAcceptOutbox = restaurantAcceptOutboxResponse.get();
 
-        Order order = findOrder(restaurantAcceptResponse.getOrderId());
+        Order order = findOrder(restaurantOrderDecisionResponse.getOrderId());
 
         if (order.getOrderStatus() == OrderStatus.APPROVED
                 || order.getOrderStatus() == OrderStatus.CANCELLED
                 || order.getOrderStatus() == OrderStatus.CANCELLING) {
             log.info("주문이 이미 {} 상태입니다. Outbox 업데이트를 생략합니다. Order Id : {}", order.getOrderStatus().name(),
-                    restaurantAcceptResponse.getOrderId());
+                    restaurantOrderDecisionResponse.getOrderId());
 
             return;
         }
 
-        OrderCancelledEvent orderCancelledEvent = order.initCancel(restaurantAcceptResponse.getFailureMessages());
+        OrderCancelledEvent orderCancelledEvent = order.initCancel(restaurantOrderDecisionResponse.getFailureMessages());
 
         SagaStatus sagaStatus =
                 OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCancelledEvent.getOrder().getOrderStatus());
@@ -120,20 +120,20 @@ public class OrderRestaurantAcceptService implements SagaStep<RestaurantAcceptRe
 
         paymentOutboxHelper.savePaymentOutboxMessage(
                 orderDataMapper.orderCancelledEventToOrderPaymentEventPayload(orderCancelledEvent,
-                        restaurantAcceptResponse.getSagaId()),
+                        restaurantOrderDecisionResponse.getSagaId()),
                 orderCancelledEvent.getOrder().getOrderStatus(),
                 sagaStatus,
-                restaurantAcceptResponse.getSagaId());
+                restaurantOrderDecisionResponse.getSagaId());
 
         log.info("레스토랑 접수 실패로 인해 주문 ID: {} 의 주문을 취소 처리했습니다. failureMessages : {}",
-                restaurantAcceptResponse.getOrderId(),
-                String.join(",", restaurantAcceptResponse.getFailureMessages()));
+                restaurantOrderDecisionResponse.getOrderId(),
+                String.join(",", restaurantOrderDecisionResponse.getFailureMessages()));
     }
 
-    private boolean checkAndMarkProcessed(RestaurantAcceptResponse restaurantAcceptResponse,
+    private boolean checkAndMarkProcessed(RestaurantOrderDecisionResponse restaurantOrderDecisionResponse,
                                           MessageType messageType) {
         int inserted = processedMessageRepository.insertIgnore(
-                restaurantAcceptResponse.getId(),
+                restaurantOrderDecisionResponse.getId(),
                 messageType.name(),
                 ZonedDateTime.now()
         );
@@ -141,8 +141,8 @@ public class OrderRestaurantAcceptService implements SagaStep<RestaurantAcceptRe
         if (inserted == 0) {
             log.info("이미 {} 메시지가 처리되었습니다. Order Id : {}, Saga Id : {}",
                     messageType,
-                    restaurantAcceptResponse.getOrderId(),
-                    restaurantAcceptResponse.getSagaId());
+                    restaurantOrderDecisionResponse.getOrderId(),
+                    restaurantOrderDecisionResponse.getSagaId());
             return true;
         }
 

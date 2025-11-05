@@ -156,7 +156,7 @@ public class Order extends AggregateRoot {
     }
 
     public void approve() {
-        if (orderStatus != OrderStatus.PAID) {
+        if (orderStatus != OrderStatus.ACCEPTED) {
             throw new OrderDomainException("승인할 수 없는 주문 상태입니다.");
         }
         orderStatus = OrderStatus.APPROVED;
