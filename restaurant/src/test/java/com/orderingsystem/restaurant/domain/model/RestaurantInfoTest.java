@@ -472,37 +472,4 @@ class RestaurantInfoTest {
         assertThat(failureMessages).isEqualTo(List.of("레스토랑이 주문을 받을 수 없는 상태입니다. Order Id : " + orderId));
     }
 
-    @DisplayName("OrderApprovalStatus를 받아 OrderApproval을 업데이트 할 수 있다.")
-    @Test
-    void updateOrderApproval() {
-        //given
-        UUID restaurantId = UUID.randomUUID();
-        UUID orderId = UUID.randomUUID();
-        UUID orderApprovalId = UUID.randomUUID();
-        UUID orderDetailOrderId = UUID.randomUUID();
-        List<String> failureMessages = new ArrayList<>();
-
-        RestaurantInfo restaurantInfo = RestaurantInfo.builder()
-                .restaurantId(restaurantId)
-                .orderApproval(OrderApproval.builder()
-                        .id(orderApprovalId)
-                        .restaurantId(UUID.randomUUID())
-                        .status(OrderApprovalStatus.APPROVED)
-                        .orderId(orderId)
-                        .build())
-                .orderDetail(OrderDetail.builder()
-                        .orderId(orderDetailOrderId)
-                        .build())
-                .build();
-
-        //when
-        restaurantInfo.rejectOrder(failureMessages, sagaId);
-
-        //then
-        assertThat(restaurantInfo.getOrderApproval().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);
-        assertThat(restaurantInfo.getOrderApproval().getId()).isNotEqualTo(orderApprovalId);
-        assertThat(restaurantInfo.getOrderApproval().getOrderId()).isEqualTo(orderDetailOrderId);
-        assertThat(restaurantInfo.getOrderApproval().getRestaurantId()).isEqualTo(restaurantId);
-    }
-
 }

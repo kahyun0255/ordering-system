@@ -5,8 +5,6 @@ import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.restaurant.domain.event.orderaccept.OrderAcceptedEvent;
 import com.orderingsystem.restaurant.domain.event.orderaccept.OrderDeclinedEvent;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -61,34 +59,6 @@ public class RestaurantInfo {
 
     public void updateStatus(RestaurantStatus status) {
         this.status = status;
-    }
-
-    public OrderApprovedEvent approveOrder(List<String> failureMessages, UUID sagaId) {
-        this.orderApproval = OrderApproval.builder()
-                .id(UUID.randomUUID())
-                .restaurantId(this.getRestaurantId())
-                .orderId(this.orderDetail.getOrderId())
-                .status(OrderApprovalStatus.APPROVED)
-                .build();
-
-        log.info("주문이 승인되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
-
-        return new OrderApprovedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
-                ZonedDateTime.now());
-    }
-
-    public OrderRejectedEvent rejectOrder(List<String> failureMessages, UUID sagaId) {
-        this.orderApproval = OrderApproval.builder()
-                .id(UUID.randomUUID())
-                .restaurantId(this.getRestaurantId())
-                .orderId(this.orderDetail.getOrderId())
-                .status(OrderApprovalStatus.REJECTED)
-                .build();
-
-        log.info("주문이 거절되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
-
-        return new OrderRejectedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
-                ZonedDateTime.now());
     }
 
     public OrderAcceptedEvent acceptOrder(List<String> failureMessages, UUID sagaId) {

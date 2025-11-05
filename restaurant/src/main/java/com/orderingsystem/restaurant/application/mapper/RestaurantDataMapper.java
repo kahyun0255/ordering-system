@@ -14,7 +14,7 @@ public class RestaurantDataMapper {
                 .restaurantId(orderApprovalEvent.getRestaurantId().toString())
                 .createdAt(orderApprovalEvent.getCreatedAt())
                 .orderApprovalStatus(orderApprovalEvent.getOrderApproval().getStatus().name())
-                .failureMessages(orderApprovalEvent.getFailureMessages())
+                .failureMessages(null)
                 .build();
     }
 
