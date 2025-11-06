@@ -90,6 +90,9 @@ class OrderRestaurantAcceptServiceProcessTest {
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.ACCEPTED);
         assertThat(paymentOutbox.get().getOrderStatus()).isEqualTo(OrderStatus.ACCEPTED);
         assertThat(restaurantAcceptOutbox.get().getOrderStatus()).isEqualTo(OrderStatus.ACCEPTED);
+
+        assertThat(paymentOutbox.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
+        assertThat(restaurantAcceptOutbox.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
     }
 
     @DisplayName("해당 주문에 대한 정보를 찾을 수 없으면 예외가 발생한다.")
