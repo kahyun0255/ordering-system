@@ -13,10 +13,10 @@ import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
-import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
+import com.orderingsystem.order.domain.model.outbox.RestaurantAcceptOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
-import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
+import com.orderingsystem.order.domain.repository.outbox.RestaurantAcceptOutboxRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -33,16 +33,16 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
-class OrderRestaurantApprovalServiceRollbackTest {
+class OrderRestaurantAcceptServiceRollbackTest {
 
     @Autowired
-    private OrderRestaurantApprovalService orderRestaurantApprovalService;
+    private OrderRestaurantAcceptService orderRestaurantAcceptService;
 
     @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
-    private RestaurantApprovalOutboxRepository restaurantApprovalOutboxRepository;
+    private RestaurantAcceptOutboxRepository restaurantAcceptOutboxRepository;
 
     @Autowired
     private PaymentOutboxRepository paymentOutboxRepository;
@@ -53,7 +53,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
     private final UUID restaurantId = UUID.randomUUID();
     private final Instant createdAt = Instant.parse("2025-08-05T15:06:00Z");
     private final UUID productId = UUID.randomUUID();
-    private final UUID restaurantApprovalOutboxId = UUID.randomUUID();
+    private final UUID restaurantAcceptOutboxId = UUID.randomUUID();
     private final UUID paymentOutboxId = UUID.randomUUID();
     private final OrderItem orderItem = OrderItem.builder()
             .productId(productId)
@@ -69,18 +69,18 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         long beforePaymentOutboxCount = paymentOutboxRepository.count();
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         long afterPaymentOutboxCount = paymentOutboxRepository.count();
-        Optional<RestaurantApprovalOutbox> restaurantApprovalOutbox = restaurantApprovalOutboxRepository.findById(
-                restaurantApprovalOutboxId);
+        Optional<RestaurantAcceptOutbox> restaurantAcceptOutbox = restaurantAcceptOutboxRepository.findById(
+                restaurantAcceptOutboxId);
 
         //then
         assertThat(order).isPresent();
-        assertThat(restaurantApprovalOutbox).isPresent();
+        assertThat(restaurantAcceptOutbox).isPresent();
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLING);
-        assertThat(restaurantApprovalOutbox.get().getSagaStatus()).isEqualTo(SagaStatus.COMPENSATING);
-        assertThat(restaurantApprovalOutbox.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLING);
+        assertThat(restaurantAcceptOutbox.get().getSagaStatus()).isEqualTo(SagaStatus.COMPENSATING);
+        assertThat(restaurantAcceptOutbox.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLING);
         assertThat(beforePaymentOutboxCount+1).isEqualTo(afterPaymentOutboxCount);
     }
 
@@ -93,7 +93,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
         RestaurantOrderDecisionResponse request = getRestaurantApprovalResponse();
 
         //when, then
-        assertThatThrownBy(() -> orderRestaurantApprovalService.rollback(request))
+        assertThatThrownBy(() -> orderRestaurantAcceptService.rollback(request))
                 .isInstanceOf(OrderDomainException.class)
                 .hasMessage("주문을 취소할 수 없는 상태입니다.");
     }
@@ -108,7 +108,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         Optional<PaymentOutbox> after = paymentOutboxRepository.findById(paymentOutboxId);
 
@@ -132,7 +132,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         Optional<PaymentOutbox> after = paymentOutboxRepository.findById(paymentOutboxId);
 
@@ -156,7 +156,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         Optional<PaymentOutbox> after = paymentOutboxRepository.findById(paymentOutboxId);
 
@@ -170,13 +170,13 @@ class OrderRestaurantApprovalServiceRollbackTest {
         assertThat(after.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
     }
 
-    @DisplayName("해당 주문에 대한 RestaurantApprovalOutbox에 대한 SAGA Status가 STARTED 상태라면 결제 처리가 되지 않은 상태이므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
+    @DisplayName("해당 주문에 대한 RestaurantAcceptOutbox에 대한 SAGA Status가 STARTED 상태라면 결제 처리가 되지 않은 상태이므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
     @Test
     void failToRollbackOrder_whenOutboxStatusIsSTARTED() {
         //given
         saveOrder(OrderStatus.PAID);
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
-                .id(restaurantApprovalOutboxId)
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
+                .id(restaurantAcceptOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
@@ -188,7 +188,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         Optional<PaymentOutbox> after = paymentOutboxRepository.findById(paymentOutboxId);
 
@@ -202,13 +202,13 @@ class OrderRestaurantApprovalServiceRollbackTest {
         assertThat(after.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
     }
 
-    @DisplayName("해당 주문에 대한 RestaurantApprovalOutbox에 대한 SAGA Status가 FAILED 상태라면 주문에 실패했으므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
+    @DisplayName("해당 주문에 대한 RestaurantAcceptOutbox에 대한 SAGA Status가 FAILED 상태라면 주문에 실패했으므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
     @Test
     void failToRollbackOrder_whenOutboxStatusIsFAILED() {
         //given
         saveOrder(OrderStatus.PAID);
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
-                .id(restaurantApprovalOutboxId)
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
+                .id(restaurantAcceptOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
                 .orderStatus(OrderStatus.PENDING)
@@ -220,7 +220,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         Optional<PaymentOutbox> after = paymentOutboxRepository.findById(paymentOutboxId);
 
@@ -234,13 +234,13 @@ class OrderRestaurantApprovalServiceRollbackTest {
         assertThat(after.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
     }
 
-    @DisplayName("해당 주문에 대한 RestaurantApprovalOutbox에 대한 SAGA Status가 SUCCEEDED 상태라면 이미 주문 로직이 완료된 상태이므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
+    @DisplayName("해당 주문에 대한 RestaurantAcceptOutbox에 대한 SAGA Status가 SUCCEEDED 상태라면 이미 주문 로직이 완료된 상태이므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
     @Test
     void failToRollbackOrder_whenOutboxStatusIsSUCCEEDED() {
         //given
         saveOrder(OrderStatus.PAID);
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
-                .id(restaurantApprovalOutboxId)
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
+                .id(restaurantAcceptOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
                 .orderStatus(OrderStatus.PENDING)
@@ -252,7 +252,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         Optional<PaymentOutbox> after = paymentOutboxRepository.findById(paymentOutboxId);
 
@@ -266,13 +266,13 @@ class OrderRestaurantApprovalServiceRollbackTest {
         assertThat(after.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
     }
 
-    @DisplayName("해당 주문에 대한 RestaurantApprovalOutbox에 대한 SAGA Status가 COMPENSATING 상태라면 주문 실패로 인해 롤백 처리 중이므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
+    @DisplayName("해당 주문에 대한 RestaurantAcceptOutbox에 대한 SAGA Status가 COMPENSATING 상태라면 주문 실패로 인해 롤백 처리 중이므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
     @Test
     void failToRollbackOrder_whenOutboxStatusIsCOMPENSATING() {
         //given
         saveOrder(OrderStatus.PAID);
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
-                .id(restaurantApprovalOutboxId)
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
+                .id(restaurantAcceptOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
                 .orderStatus(OrderStatus.PENDING)
@@ -284,7 +284,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         Optional<PaymentOutbox> after = paymentOutboxRepository.findById(paymentOutboxId);
 
@@ -298,13 +298,13 @@ class OrderRestaurantApprovalServiceRollbackTest {
         assertThat(after.get().getSagaStatus()).isEqualTo(SagaStatus.PROCESSING);
     }
 
-    @DisplayName("해당 주문에 대한 RestaurantApprovalOutbox에 대한 SAGA Status가 COMPENSATED 상태라면 롤백 처리를 완료했으므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
+    @DisplayName("해당 주문에 대한 RestaurantAcceptOutbox에 대한 SAGA Status가 COMPENSATED 상태라면 롤백 처리를 완료했으므로 취소 처리 로직을 추가적으로 진행하지 않는다.")
     @Test
     void failToRollbackOrder_whenOutboxStatusIsCOMPENSATED() {
         //given
         saveOrder(OrderStatus.PAID);
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
-                .id(restaurantApprovalOutboxId)
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
+                .id(restaurantAcceptOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.FAILED)
                 .orderStatus(OrderStatus.PENDING)
@@ -316,7 +316,7 @@ class OrderRestaurantApprovalServiceRollbackTest {
 
         //when
         Optional<PaymentOutbox> before = paymentOutboxRepository.findById(paymentOutboxId);
-        orderRestaurantApprovalService.rollback(request);
+        orderRestaurantAcceptService.rollback(request);
         Optional<Order> order = orderRepository.findById(orderId);
         Optional<PaymentOutbox> after = paymentOutboxRepository.findById(paymentOutboxId);
 
@@ -356,8 +356,8 @@ class OrderRestaurantApprovalServiceRollbackTest {
     }
 
     private void saveOutbox() {
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
-                .id(restaurantApprovalOutboxId)
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
+                .id(restaurantAcceptOutboxId)
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
                 .orderStatus(OrderStatus.PENDING)

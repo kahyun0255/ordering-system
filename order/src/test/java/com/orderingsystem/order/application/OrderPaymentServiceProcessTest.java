@@ -18,7 +18,7 @@ import com.orderingsystem.order.domain.model.outbox.ProcessedMessage;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
 import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
-import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
+import com.orderingsystem.order.domain.repository.outbox.RestaurantAcceptOutboxRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -52,7 +52,7 @@ class OrderPaymentServiceProcessTest {
     private ProcessedMessageRepository processedMessageRepository;
 
     @Autowired
-    private RestaurantApprovalOutboxRepository restaurantApprovalOutboxRepository;
+    private RestaurantAcceptOutboxRepository restaurantAcceptOutboxRepository;
 
     private final UUID sagaId = UUID.randomUUID();
     private final UUID paymentId = UUID.randomUUID();
@@ -134,7 +134,7 @@ class OrderPaymentServiceProcessTest {
         Optional<Order> order = orderRepository.findById(orderId);
         assertThat(order).isPresent();
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PENDING);
-        assertThat(restaurantApprovalOutboxRepository.count()).isZero();
+        assertThat(restaurantAcceptOutboxRepository.count()).isZero();
     }
 
     @DisplayName("ProcessedMessage에 이미 메시지가 저장되어 있으면 이미 해당 메시지가 처리 되었기에, 첫 호출도 즉시 스킵된다.")
@@ -167,7 +167,7 @@ class OrderPaymentServiceProcessTest {
         Optional<Order> savedOrder = orderRepository.findById(orderId);
         assertThat(savedOrder).isPresent();
         assertThat(savedOrder.get().getOrderStatus()).isEqualTo(OrderStatus.PENDING);
-        assertThat(restaurantApprovalOutboxRepository.count()).isZero();
+        assertThat(restaurantAcceptOutboxRepository.count()).isZero();
     }
 
     @DisplayName("동일 메시지가 재전달되면, 이미 ProcessedMessage에 저장되어 있으므로 재처리하지 않는다.")
@@ -191,7 +191,7 @@ class OrderPaymentServiceProcessTest {
 
         Optional<Order> order = orderRepository.findById(orderId);
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PAID);
-        assertThat(restaurantApprovalOutboxRepository.count()).isEqualTo(1L);
+        assertThat(restaurantAcceptOutboxRepository.count()).isEqualTo(1L);
 
         // when
         orderPaymentService.process(paymentResponse);
@@ -199,7 +199,7 @@ class OrderPaymentServiceProcessTest {
         // then
         Order savedOrder = orderRepository.findById(orderId).orElseThrow();
         assertThat(savedOrder.getOrderStatus()).isEqualTo(OrderStatus.PAID);
-        assertThat(restaurantApprovalOutboxRepository.count()).isEqualTo(1L);
+        assertThat(restaurantAcceptOutboxRepository.count()).isEqualTo(1L);
     }
 
     @DisplayName("Saga Status가 STARTED 상태가 아니라면, 늦게 도착한 메시지는 무시된다.")
@@ -225,7 +225,7 @@ class OrderPaymentServiceProcessTest {
         // then
         Order order = orderRepository.findById(orderId).orElseThrow();
         assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.APPROVED);
-        assertThat(restaurantApprovalOutboxRepository.count()).isZero();
+        assertThat(restaurantAcceptOutboxRepository.count()).isZero();
     }
 
     @DisplayName("해당 주문이 이미 승인된 상태라면, 주문 결제를 다시 처리하지 않는다.")

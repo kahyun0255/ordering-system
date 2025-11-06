@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
-import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
+import com.orderingsystem.order.domain.model.outbox.RestaurantAcceptOutbox;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -17,25 +17,25 @@ import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles("test")
 @DataJpaTest
-class RestaurantApprovalOutboxRepositoryTest {
+class restaurantAcceptOutboxRepositoryTest {
 
     @Autowired
-    private RestaurantApprovalOutboxRepository restaurantApprovalOutboxRepository;
+    private RestaurantAcceptOutboxRepository restaurantAcceptOutboxRepository;
 
     private final String type = "ORDER_SAGA";
 
-    @DisplayName("Type, SagaId, SagaStatus 조건에 맞는 RestaurantApprovalOutbox 객체들을 조회한다.")
+    @DisplayName("Type, SagaId, SagaStatus 조건에 맞는 RestaurantAcceptOutbox 객체들을 조회한다.")
     @Test
     void findByTypeAndSagaIdAndSagaStatusIn() {
         //given
         UUID sagaId = UUID.randomUUID();
-        RestaurantApprovalOutbox restaurantApprovalOutbox1 = getRestaurantApprovalOutbox(sagaId, SagaStatus.STARTED);
-        RestaurantApprovalOutbox restaurantApprovalOutbox2 = getRestaurantApprovalOutbox(sagaId, SagaStatus.SUCCEEDED);
+        RestaurantAcceptOutbox RestaurantAcceptOutbox1 = getRestaurantAcceptOutbox(sagaId, SagaStatus.STARTED);
+        RestaurantAcceptOutbox RestaurantAcceptOutbox2 = getRestaurantAcceptOutbox(sagaId, SagaStatus.SUCCEEDED);
 
-        restaurantApprovalOutboxRepository.saveAll(List.of(restaurantApprovalOutbox1, restaurantApprovalOutbox2));
+        restaurantAcceptOutboxRepository.saveAll(List.of(RestaurantAcceptOutbox1, RestaurantAcceptOutbox2));
 
         //when
-        Optional<RestaurantApprovalOutbox> result = restaurantApprovalOutboxRepository.findByTypeAndSagaIdAndSagaStatus(
+        Optional<RestaurantAcceptOutbox> result = restaurantAcceptOutboxRepository.findByTypeAndSagaIdAndSagaStatus(
                 type, sagaId, SagaStatus.STARTED);
 
         //then
@@ -43,48 +43,48 @@ class RestaurantApprovalOutboxRepositoryTest {
         assertThat(result.get().getSagaStatus()).isEqualTo(SagaStatus.STARTED);
     }
 
-    @DisplayName("조건에 맞는 RestaurantApprovalOutbox가 존재하면 True를 반환한다.")
+    @DisplayName("조건에 맞는 RestaurantAcceptOutbox가 존재하면 True를 반환한다.")
     @Test
     void existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus_True() {
         //given
         UUID sagaId = UUID.randomUUID();
-        RestaurantApprovalOutbox restaurantApprovalOutbox = getRestaurantApprovalOutbox(sagaId, OrderStatus.PENDING,
+        RestaurantAcceptOutbox RestaurantAcceptOutbox = getRestaurantAcceptOutbox(sagaId, OrderStatus.PENDING,
                 SagaStatus.STARTED);
 
-        restaurantApprovalOutboxRepository.saveAll(List.of(restaurantApprovalOutbox));
+        restaurantAcceptOutboxRepository.saveAll(List.of(RestaurantAcceptOutbox));
 
         //when
-        boolean result = restaurantApprovalOutboxRepository.existsByTypeAndSagaIdAndOrderStatusAndSagaStatus(
+        boolean result = restaurantAcceptOutboxRepository.existsByTypeAndSagaIdAndOrderStatusAndSagaStatus(
                 type, sagaId, OrderStatus.PENDING, SagaStatus.STARTED);
 
         //then
         assertThat(result).isTrue();
     }
 
-    @DisplayName("조건에 맞는 RestaurantApprovalOutbox가 없으면 False를 반환한다.")
+    @DisplayName("조건에 맞는 RestaurantAcceptOutbox가 없으면 False를 반환한다.")
     @Test
     void existsByTypeAndSagaIdAndSagaStatusAndOutboxStatus_False() {
         //given
         UUID sagaId = UUID.randomUUID();
-        RestaurantApprovalOutbox restaurantApprovalOutbox = getRestaurantApprovalOutbox(sagaId, OrderStatus.PENDING,
+        RestaurantAcceptOutbox restaurantAcceptOutbox = getRestaurantAcceptOutbox(sagaId, OrderStatus.PENDING,
                 SagaStatus.COMPENSATING);
 
-        restaurantApprovalOutboxRepository.saveAll(List.of(restaurantApprovalOutbox));
+        restaurantAcceptOutboxRepository.saveAll(List.of(restaurantAcceptOutbox));
 
         //when
-        boolean result = restaurantApprovalOutboxRepository.existsByTypeAndSagaIdAndOrderStatusAndSagaStatus(
+        boolean result = restaurantAcceptOutboxRepository.existsByTypeAndSagaIdAndOrderStatusAndSagaStatus(
                 type, sagaId, OrderStatus.PENDING, SagaStatus.STARTED);
 
         //then
         assertThat(result).isFalse();
     }
 
-    private RestaurantApprovalOutbox getRestaurantApprovalOutbox(UUID sagaId, SagaStatus sagaStatus) {
-        return getRestaurantApprovalOutbox(sagaId, OrderStatus.APPROVED, sagaStatus);
+    private RestaurantAcceptOutbox getRestaurantAcceptOutbox(UUID sagaId, SagaStatus sagaStatus) {
+        return getRestaurantAcceptOutbox(sagaId, OrderStatus.APPROVED, sagaStatus);
     }
 
-    private RestaurantApprovalOutbox getRestaurantApprovalOutbox(UUID sagaId, OrderStatus orderStatus, SagaStatus sagaStatus) {
-        return RestaurantApprovalOutbox.builder()
+    private RestaurantAcceptOutbox getRestaurantAcceptOutbox(UUID sagaId, OrderStatus orderStatus, SagaStatus sagaStatus) {
+        return RestaurantAcceptOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .createdAt(ZonedDateTime.now())

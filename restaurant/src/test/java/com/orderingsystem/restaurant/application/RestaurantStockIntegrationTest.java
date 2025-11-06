@@ -24,11 +24,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional
 public class RestaurantStockIntegrationTest {
 
     @TestConfiguration

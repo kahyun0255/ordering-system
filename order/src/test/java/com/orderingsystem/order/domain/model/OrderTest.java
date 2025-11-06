@@ -351,9 +351,9 @@ class OrderTest {
                 .hasMessage("결제를 진행할 수 없는 주문 상태입니다.");
     }
 
-    @DisplayName("Order Status가 PAID 상태면 APPROVED 상태로 갱신할 수 있다.")
+    @DisplayName("Order Status가 PAID 상태면 ACCEPTED 상태로 갱신할 수 있다.")
     @Test
-    void updateOrderStatusToApproved_whenOrderStatusIsPaid() {
+    void shouldUpdateOrderStatusToAccepted_whenStatusIsPaid() {
         //given
         UUID customerId = UUID.randomUUID();
 
@@ -364,6 +364,29 @@ class OrderTest {
                 .items(List.of(getOrderItem()))
                 .price(new Money(new BigDecimal("2.00")))
                 .orderStatus(OrderStatus.PAID)
+                .build();
+
+        //when
+        order.accept();
+
+        // then
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.ACCEPTED);
+        assertThat(order.getCustomerId()).isEqualTo(customerId);
+    }
+
+    @DisplayName("Order Status가 ACCEPTED 상태면 APPROVED 상태로 갱신할 수 있다.")
+    @Test
+    void shouldUpdateOrderStatusToApproved_whenStatusIsAccepted() {
+        //given
+        UUID customerId = UUID.randomUUID();
+
+        Order order = Order.builder()
+                .customerId(customerId)
+                .restaurantId(UUID.randomUUID())
+                .address(UUID.randomUUID())
+                .items(List.of(getOrderItem()))
+                .price(new Money(new BigDecimal("2.00")))
+                .orderStatus(OrderStatus.ACCEPTED)
                 .build();
 
         //when
