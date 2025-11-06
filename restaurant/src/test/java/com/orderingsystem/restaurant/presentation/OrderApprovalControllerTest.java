@@ -233,5 +233,106 @@ class OrderApprovalControllerTest extends ControllerTestSupport {
         assertThat(orderOutboxRepository.count()).isZero();
     }
 
+    @DisplayName("레스토랑의 상태가 ACTIVE가 아니라면 주문을 승인할 수 없다.")
+    @ParameterizedTest(name = "[{index}] 레스토랑 상태 : {0}")
+    @MethodSource("provideInactiveRestaurantStatuses")
+    void shouldNotApproveOrder_whenRestaurantIsNotActive(String status, RestaurantStatus restaurantStatus)
+            throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .name("레스토랑")
+                .status(restaurantStatus)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        Owner owner = Owner.builder()
+                .userId(UUID.randomUUID())
+                .name("소유자")
+                .build();
+        ownerRepository.save(owner);
+
+        restaurantOwnershipRepository.save(RestaurantOwnership.builder()
+                .restaurantId(restaurant.getRestaurantId())
+                .ownerId(owner.getUserId())
+                .build());
+
+        OrderApproval orderApproval = OrderApproval.builder()
+                .id(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .status(OrderApprovalStatus.ACCEPTED)
+                .restaurantId(restaurant.getRestaurantId())
+                .build();
+        orderApprovalRepository.save(orderApproval);
+
+        String token = buildToken(owner.getUserId(), "access", issuer, Instant.now().plusSeconds(10000));
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/restaurants/" + restaurant.getRestaurantId() + "/orders/" + UUID.randomUUID()
+                                + "/approve")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("레스토랑이 주문을 받을 수 없는 상태입니다."));
+
+        assertThat(orderOutboxRepository.count()).isZero();
+    }
+
+    private static Stream<Arguments> provideInactiveRestaurantStatuses() {
+        return Stream.of(
+                Arguments.of("관리자 승인 대기", RestaurantStatus.PENDING_APPROVAL),
+                Arguments.of("영업 전", RestaurantStatus.PRE_OPEN),
+                Arguments.of("일시 휴업", RestaurantStatus.TEMP_CLOSED),
+                Arguments.of("완전 폐업", RestaurantStatus.PERM_CLOSED),
+                Arguments.of("제재로 영업 정지", RestaurantStatus.SUSPENDED)
+        );
+    }
+
+    @DisplayName("레스토랑이 삭제되었으면 404를 반환한다.")
+    @Test
+    void shouldThrowNotFoundException_whenRestaurantIsDeleted() throws Exception {
+        //given
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .name("레스토랑")
+                .status(RestaurantStatus.DELETED)
+                .build();
+        restaurantRepository.save(restaurant);
+
+        Owner owner = Owner.builder()
+                .userId(UUID.randomUUID())
+                .name("소유자")
+                .build();
+        ownerRepository.save(owner);
+
+        restaurantOwnershipRepository.save(RestaurantOwnership.builder()
+                .restaurantId(restaurant.getRestaurantId())
+                .ownerId(owner.getUserId())
+                .build());
+
+        OrderApproval orderApproval = OrderApproval.builder()
+                .id(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .status(OrderApprovalStatus.ACCEPTED)
+                .restaurantId(restaurant.getRestaurantId())
+                .build();
+        orderApprovalRepository.save(orderApproval);
+
+        String token = buildToken(owner.getUserId(), "access", issuer, Instant.now().plusSeconds(10000));
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/restaurants/" + restaurant.getRestaurantId() + "/orders/" + UUID.randomUUID()
+                                + "/approve")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("레스토랑 정보를 찾을 수 없습니다."));
+
+        assertThat(orderOutboxRepository.count()).isZero();
+    }
 
 }
