@@ -8,9 +8,7 @@ import static org.mockito.Mockito.verify;
 import com.orderingsystem.common.exception.AccessDeniedException;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
-import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
 import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
-import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
 import com.orderingsystem.restaurant.domain.service.RestaurantStatusValidatorService;
 import java.util.Optional;
@@ -26,9 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class OrderApprovalFacadeTest {
 
     @Mock
-    private RestaurantOwnershipRepository restaurantOwnershipRepository;
-
-    @Mock
     private OrderApprovalService orderApprovalService;
 
     @Mock
@@ -36,6 +31,9 @@ class OrderApprovalFacadeTest {
 
     @Mock
     private RestaurantStatusValidatorService restaurantStatusValidatorService;
+
+    @Mock
+    private RestaurantAccessValidatorService restaurantAccessValidatorService;
 
     @InjectMocks
     private OrderApprovalFacade orderApprovalFacade;
@@ -48,22 +46,14 @@ class OrderApprovalFacadeTest {
         UUID restaurantId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
 
-        RestaurantOwnership restaurantOwnership = RestaurantOwnership.builder()
-                .id(100L)
-                .ownerId(ownerId)
-                .restaurantId(restaurantId)
-                .build();
-
         Restaurant restaurant = Restaurant.builder()
                 .restaurantId(restaurantId)
                 .name("레스토랑")
                 .status(RestaurantStatus.ACTIVE)
                 .build();
 
-        given(restaurantOwnershipRepository.findByOwnerIdAndRestaurantId(ownerId, restaurantId))
-                .willReturn(Optional.of(restaurantOwnership));
-
         given(restaurantRepository.findById(restaurantId)).willReturn(Optional.of(restaurant));
+        given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(true);
 
         //when
         orderApprovalFacade.approve(orderId, restaurantId, ownerId);
@@ -80,8 +70,7 @@ class OrderApprovalFacadeTest {
         UUID restaurantId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
 
-        given(restaurantOwnershipRepository.findByOwnerIdAndRestaurantId(ownerId, restaurantId))
-                .willReturn(Optional.empty());
+        given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(false);
 
         //when, then
         assertThatThrownBy(() -> orderApprovalFacade.approve(orderId, restaurantId, ownerId))
@@ -97,16 +86,8 @@ class OrderApprovalFacadeTest {
         UUID restaurantId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
 
-        RestaurantOwnership restaurantOwnership = RestaurantOwnership.builder()
-                .id(100L)
-                .ownerId(ownerId)
-                .restaurantId(restaurantId)
-                .build();
-
         //when
-        given(restaurantOwnershipRepository.findByOwnerIdAndRestaurantId(ownerId, restaurantId))
-                .willReturn(Optional.of(restaurantOwnership));
-
+        given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(true);
         given(restaurantRepository.findById(restaurantId)).willReturn(Optional.empty());
 
         //then

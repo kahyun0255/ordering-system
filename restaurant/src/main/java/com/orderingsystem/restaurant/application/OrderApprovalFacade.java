@@ -3,9 +3,7 @@ package com.orderingsystem.restaurant.application;
 import com.orderingsystem.common.exception.AccessDeniedException;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.Restaurant;
-import com.orderingsystem.restaurant.domain.model.RestaurantOwnership;
 import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
-import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantRepository;
 import com.orderingsystem.restaurant.domain.service.RestaurantStatusValidatorService;
 import java.util.Optional;
@@ -19,7 +17,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class OrderApprovalFacade {
 
-    private final RestaurantOwnershipRepository restaurantOwnershipRepository;
+    private final RestaurantAccessValidatorService restaurantAccessValidatorService;
     private final OrderApprovalService orderApprovalService;
     private final RestaurantStatusValidatorService restaurantStatusValidatorService;
     private final RestaurantRepository restaurantRepository;
@@ -27,7 +25,7 @@ public class OrderApprovalFacade {
     public void approve(UUID orderId, UUID restaurantId, UUID ownerId) {
         log.info("[{}] 유저가 [{}] 레스토랑의 [{}] 주문 승인 처리 시작.", ownerId, restaurantId, orderId);
 
-        if (!isOwnership(restaurantId, ownerId)) {
+        if (!restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)) {
             throw new AccessDeniedException("해당 레스토랑의 주문을 승인할 권한이 없습니다.");
         }
 
@@ -40,13 +38,6 @@ public class OrderApprovalFacade {
         restaurantStatusValidatorService.validateActive(restaurant.get(), orderId);
 
         orderApprovalService.approval(restaurantId, orderId, ownerId);
-    }
-
-    private boolean isOwnership(UUID restaurantId, UUID ownerId) {
-        Optional<RestaurantOwnership> restaurantOwnership = restaurantOwnershipRepository.findByOwnerIdAndRestaurantId(
-                ownerId, restaurantId);
-
-        return restaurantOwnership.isPresent();
     }
 
 }
