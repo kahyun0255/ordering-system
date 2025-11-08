@@ -66,9 +66,9 @@ public class RestaurantAccessValidatorService {
                 owner.getUserId(), restaurant.getRestaurantId());
 
         if (restaurantOwnerships.isEmpty()) {
-            log.warn("레스토랑 정보를 수정 할 권한이 없습니다. OwnerId : {}, Restaurant Id : {}",
+            log.warn("레스토랑 정보를 수정할 권한이 없습니다. OwnerId : {}, Restaurant Id : {}",
                     owner.getUserId(), restaurant.getRestaurantId());
-            throw new AccessDeniedException("레스토랑 정보를 수정 할 권한이 없습니다.");
+            throw new AccessDeniedException("레스토랑 정보를 수정할 권한이 없습니다.");
         }
     }
 }
