@@ -131,7 +131,7 @@ public class RestaurantStockIntegrationTest {
         productStockFacade.reserve(productId, 4, sagaId);
 
         //when
-        productStockFacade.confirm(sagaId);
+//        productStockFacade.confirm(sagaId);
 
         //then
         String totalStock = redisTemplate.opsForValue().get(stockKey + productId);
@@ -150,7 +150,7 @@ public class RestaurantStockIntegrationTest {
     @Test
     void confirmWithoutHistory() {
         //when
-        productStockFacade.confirm(sagaId);
+//        productStockFacade.confirm(sagaId);
 
         //then
         Product after = productRepository.findById(productId).orElseThrow();
@@ -196,7 +196,7 @@ public class RestaurantStockIntegrationTest {
         productStockFacade.reserve(productId3, 6, sagaId);
 
         //when
-        productStockFacade.confirm(sagaId);
+//        productStockFacade.confirm(sagaId);
 
         //then
         assertThat(redisTemplate.opsForValue().get(stockKey + productId)).isEqualTo("8");

@@ -34,6 +34,14 @@ public class OrderController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{orderId}/reject")
+    public ResponseEntity<Void> reject(@RequestHeader(value = "Authorization") String authorizationHeader,
+                                       @PathVariable UUID restaurantId, @PathVariable UUID orderId){
+        UUID ownerId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        orderApprovalFacade.reject(orderId, restaurantId, ownerId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping
     public ResponseEntity<Page<OrderResponse>> getOrders(@RequestHeader(value = "Authorization") String authorizationHeader,
                                                          @PathVariable UUID restaurantId,

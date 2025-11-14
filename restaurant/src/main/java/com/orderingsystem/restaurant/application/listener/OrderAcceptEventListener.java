@@ -19,7 +19,8 @@ public class OrderAcceptEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onOrderAccepted(OrderAcceptedEvent orderAcceptedEvent){
         UUID sagaId = orderAcceptedEvent.getSagaId();
-        productStockFacade.confirm(sagaId);
+        UUID orderId= orderAcceptedEvent.getOrderApproval().getOrderId();
+        productStockFacade.confirm(sagaId, orderId);
         log.info("{} 주문 접수 이벤트 수신 후 재고 확정 처리 완료.", sagaId);
     }
 

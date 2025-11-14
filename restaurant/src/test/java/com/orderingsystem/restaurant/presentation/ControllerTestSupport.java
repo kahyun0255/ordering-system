@@ -75,4 +75,18 @@ public abstract class ControllerTestSupport {
                 .compact();
     }
 
+    protected String buildToken(UUID userId) {
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
+
+        return Jwts.builder()
+                .subject(userId.toString())
+                .issuer(issuer)
+                .claim("userId", userId.toString())
+                .claim("typ", "access")
+                .expiration(Date.from(Instant.now().plusSeconds(10000)))
+                .issuedAt(new Date())
+                .signWith(key, SIG.HS256)
+                .compact();
+    }
+
 }

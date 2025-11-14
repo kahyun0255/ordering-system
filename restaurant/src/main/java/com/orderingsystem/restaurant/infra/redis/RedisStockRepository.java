@@ -29,6 +29,9 @@ public class RedisStockRepository implements StockCachePort {
     @Value("${key.reserved}")
     private String reserveKey;
 
+    @Value("${key.confirmed}")
+    private String confirmedKey;
+
     @Value("${stock.reserve.ttl-second}")
     private long reserveTtl;
 
@@ -61,6 +64,10 @@ public class RedisStockRepository implements StockCachePort {
 
     private String historyKey(UUID sagaId) {
         return historyKey + sagaId;
+    }
+
+    private String confirmedKey(UUID sagaId) {
+        return confirmedKey + sagaId;
     }
 
     @Override
@@ -97,7 +104,7 @@ public class RedisStockRepository implements StockCachePort {
     }
 
     @Override
-    public void confirm(Map<Object, Object> history, UUID sagaId) {
+    public void confirm(Map<Object, Object> history, UUID sagaId, UUID orderId) {
         if (history == null || history.isEmpty()) {
             log.warn("재고 예약 내역이 존재하지 않습니다. sagaId={}", sagaId);
             return;
@@ -123,6 +130,8 @@ public class RedisStockRepository implements StockCachePort {
         if (result == null || result == -1) {
             throw new IllegalStateException("재고 데이터가 존재하지 않습니다. " + history.keySet());
         }
+
+        redisTemplate.opsForHash().putAll(confirmedKey(orderId), history);
 
         log.info("{} 주문 예약 확정 완료. Redis 실제 재고 차감 및 예약 해제", sagaId);
     }
@@ -155,6 +164,27 @@ public class RedisStockRepository implements StockCachePort {
         }
 
         log.info("{} 주문 예약 취소 완료. Redis 예약 수량 복구 및 히스토리 삭제.", sagaId);
+    }
+
+    @Override
+    public Map<Object, Object> getConfirmed(UUID orderId) {
+        return redisTemplate.opsForHash().entries(confirmedKey(orderId));
+    }
+
+    @Override
+    public void restoreConfirmed(Map<Object, Object> confirmed, UUID orderId) {
+        if (confirmed == null || confirmed.isEmpty()){
+            return;
+        }
+
+        confirmed.forEach((pid,qty)->{
+            UUID productId = UUID.fromString(pid.toString());
+            redisTemplate.opsForValue().increment(stockKey(productId), Long.parseLong(qty.toString()));
+        });
+
+        redisTemplate.delete(confirmedKey(orderId));
+
+        log.info("[{}] 주문 거절/취소에 따른 재고 복구 완료.", orderId);
     }
 
     @Override

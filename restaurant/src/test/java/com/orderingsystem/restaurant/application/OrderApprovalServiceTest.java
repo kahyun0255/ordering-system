@@ -11,6 +11,7 @@ import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
 import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
 import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.repository.OrderApprovalRepository;
@@ -75,6 +76,47 @@ class OrderApprovalServiceTest {
 
         //when, then
         assertThatThrownBy(() -> orderApprovalService.approval(restaurantId, orderId, ownerId))
+                .isInstanceOf(RestaurantNotFoundException.class)
+                .hasMessage("주문 내역을 찾을 수 없습니다.");
+    }
+
+    @DisplayName("주문이 존재하면 주문이 거절된다.")
+    @Test
+    void shouldRejectOrder_whenOrderExists() {
+        //given
+        UUID restaurantId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+
+        OrderApproval orderApproval = mock(OrderApproval.class);
+        OrderRejectedEvent orderRejectedEvent = mock(OrderRejectedEvent.class);
+
+        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.of(orderApproval));
+        given(orderApproval.reject()).willReturn(orderRejectedEvent);
+        given(orderRejectedEvent.getOrderApproval()).willReturn(orderApproval);
+        given(orderApproval.getStatus()).willReturn(OrderApprovalStatus.REJECTED);
+
+        //when
+        orderApprovalService.reject(restaurantId, orderId, ownerId);
+
+        //then
+        verify(orderApprovalRepository).findByOrderId(orderId);
+        verify(orderApproval).reject();
+        verify(orderOutboxHelper).saveOrderOutboxMessage(any(), eq(OrderApprovalStatus.REJECTED), any(UUID.class));
+    }
+
+    @DisplayName("주문 거절시 주문이 존재하지 않으면 예외가 발생한다.")
+    @Test
+    void shouldThrowOrderNotFoundException_whenOrderDoesNotExist() {
+        //given
+        UUID restaurantId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+
+        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.empty());
+
+        //when, then
+        assertThatThrownBy(() -> orderApprovalService.reject(restaurantId, orderId, ownerId))
                 .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("주문 내역을 찾을 수 없습니다.");
     }

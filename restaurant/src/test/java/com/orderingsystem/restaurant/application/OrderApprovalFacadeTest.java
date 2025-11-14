@@ -35,6 +35,9 @@ class OrderApprovalFacadeTest {
     @Mock
     private RestaurantAccessValidatorService restaurantAccessValidatorService;
 
+    @Mock
+    private ProductStockFacade productStockFacade;
+
     @InjectMocks
     private OrderApprovalFacade orderApprovalFacade;
 
@@ -92,6 +95,65 @@ class OrderApprovalFacadeTest {
 
         //then
         assertThatThrownBy(() -> orderApprovalFacade.approve(orderId, restaurantId, ownerId))
+                .isInstanceOf(RestaurantNotFoundException.class)
+                .hasMessage("레스토랑 정보를 찾을 수 없습니다.");
+    }
+
+    @DisplayName("레스토랑 소유자라면 주문 거절 처리를 위임한다.")
+    @Test
+    void shouldRejectOrder_whenUserIsRestaurantOwner() {
+        //given
+        UUID orderId = UUID.randomUUID();
+        UUID restaurantId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+
+        Restaurant restaurant = Restaurant.builder()
+                .restaurantId(restaurantId)
+                .name("레스토랑")
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+
+        given(restaurantRepository.findById(restaurantId)).willReturn(Optional.of(restaurant));
+        given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(true);
+
+        //when
+        orderApprovalFacade.reject(orderId, restaurantId, ownerId);
+
+        //then
+        verify(orderApprovalService, times(1)).reject(restaurantId, orderId, ownerId);
+        verify(productStockFacade, times(1)).cancel(orderId);
+    }
+
+    @DisplayName("레스토랑 소유자가 아니면 주문 거절 시도시 예외가 발생한다.")
+    @Test
+    void shouldDenyOrderRejection_whenUserIsNotOwner() {
+        //given
+        UUID orderId = UUID.randomUUID();
+        UUID restaurantId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+
+        given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(false);
+
+        //when, then
+        assertThatThrownBy(() -> orderApprovalFacade.reject(orderId, restaurantId, ownerId))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("해당 레스토랑의 주문을 거절할 권한이 없습니다.");
+    }
+
+    @DisplayName("레스토랑이 존재하지 않으면 주문 거절시 예외가 발생한다.")
+    @Test
+    void shouldFailToRejectOrder_whenRestaurantNotFound() {
+        //given
+        UUID orderId = UUID.randomUUID();
+        UUID restaurantId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+
+        //when
+        given(restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)).willReturn(true);
+        given(restaurantRepository.findById(restaurantId)).willReturn(Optional.empty());
+
+        //then
+        assertThatThrownBy(() -> orderApprovalFacade.reject(orderId, restaurantId, ownerId))
                 .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("레스토랑 정보를 찾을 수 없습니다.");
     }

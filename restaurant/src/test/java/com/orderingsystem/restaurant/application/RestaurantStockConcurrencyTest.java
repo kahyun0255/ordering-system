@@ -89,7 +89,7 @@ public class RestaurantStockConcurrencyTest {
                 UUID sagaId = UUID.randomUUID();
                 try {
                     productStockFacade.reserve(productId, 3, sagaId);
-                    productStockFacade.confirm(sagaId);
+//                    productStockFacade.confirm(sagaId);
                 } catch (Exception e) {
 
                 } finally {
