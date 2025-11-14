@@ -9,9 +9,13 @@ public interface StockCachePort {
 
     Map<Object, Object> getHistory(UUID sagaId);
 
-    void confirm(Map<Object, Object> history, UUID sagaId);
+    void confirm(Map<Object, Object> history, UUID sagaId, UUID orderId);
 
     void cancelReservation(Map<Object, Object> history, UUID sagaId);
+
+    Map<Object, Object> getConfirmed(UUID orderId);
+
+    void restoreConfirmed(Map<Object, Object> confirmed, UUID orderId);
 
     void update(UUID productId, int quantity);
 

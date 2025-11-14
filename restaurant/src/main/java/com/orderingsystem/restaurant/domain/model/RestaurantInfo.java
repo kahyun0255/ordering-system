@@ -3,8 +3,8 @@ package com.orderingsystem.restaurant.domain.model;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
+import com.orderingsystem.restaurant.domain.event.orderaccept.OrderAcceptedEvent;
+import com.orderingsystem.restaurant.domain.event.orderaccept.OrderDeclinedEvent;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -61,31 +61,31 @@ public class RestaurantInfo {
         this.status = status;
     }
 
-    public OrderApprovedEvent approveOrder(List<String> failureMessages, UUID sagaId) {
+    public OrderAcceptedEvent acceptOrder(List<String> failureMessages, UUID sagaId) {
         this.orderApproval = OrderApproval.builder()
                 .id(UUID.randomUUID())
-                .restaurantId(this.getRestaurantId())
+                .restaurantId(this.restaurantId)
                 .orderId(this.orderDetail.getOrderId())
-                .status(OrderApprovalStatus.APPROVED)
+                .status(OrderApprovalStatus.ACCEPTED)
                 .build();
 
-        log.info("주문이 승인되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
+        log.info("주문이 접수되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
 
-        return new OrderApprovedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
+        return new OrderAcceptedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
                 ZonedDateTime.now());
     }
 
-    public OrderRejectedEvent rejectOrder(List<String> failureMessages, UUID sagaId) {
+    public OrderDeclinedEvent declineOrder(List<String> failureMessages, UUID sagaId) {
         this.orderApproval = OrderApproval.builder()
                 .id(UUID.randomUUID())
                 .restaurantId(this.getRestaurantId())
                 .orderId(this.orderDetail.getOrderId())
-                .status(OrderApprovalStatus.REJECTED)
+                .status(OrderApprovalStatus.DECLINED)
                 .build();
 
-        log.info("주문이 거절되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
+        log.info("주문 접수가 거절되었습니다. Order Id : {}", this.getOrderDetail().getOrderId());
 
-        return new OrderRejectedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
+        return new OrderDeclinedEvent(this.getOrderApproval(), this.getRestaurantId(), sagaId, failureMessages,
                 ZonedDateTime.now());
     }
 

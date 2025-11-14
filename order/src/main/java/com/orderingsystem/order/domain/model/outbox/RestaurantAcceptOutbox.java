@@ -19,12 +19,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "restaurant_approval_outbox")
+@Table(name = "restaurant_accept_outbox")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class RestaurantApprovalOutbox {
+public class RestaurantAcceptOutbox {
 
     @Id
     private UUID id;
@@ -51,7 +51,7 @@ public class RestaurantApprovalOutbox {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        RestaurantApprovalOutbox that = (RestaurantApprovalOutbox) o;
+        RestaurantAcceptOutbox that = (RestaurantAcceptOutbox) o;
         return Objects.equals(id, that.id);
     }
 

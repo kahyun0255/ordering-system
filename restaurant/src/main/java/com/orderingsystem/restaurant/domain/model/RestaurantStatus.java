@@ -24,6 +24,9 @@ public enum RestaurantStatus {
     private static final EnumSet<RestaurantStatus> PRODUCT_AVAILABLE_STATUSES =
             EnumSet.of(PRE_OPEN, ACTIVE, TEMP_CLOSED);
 
+    private static final EnumSet<RestaurantStatus> ORDER_ACCESSIBLE_STATUSES =
+            EnumSet.of(PRE_OPEN, ACTIVE, TEMP_CLOSED);
+
     public boolean ownerCanChangeTo(RestaurantStatus restaurantStatus) {
         if (restaurantStatus == null) {
             return false;
@@ -44,6 +47,10 @@ public enum RestaurantStatus {
 
     public boolean canManageProduct() {
         return PRODUCT_MANAGEABLE_STATUSES.contains(this);
+    }
+
+    public boolean canAccessOrders() {
+        return ORDER_ACCESSIBLE_STATUSES.contains(this);
     }
 
 }

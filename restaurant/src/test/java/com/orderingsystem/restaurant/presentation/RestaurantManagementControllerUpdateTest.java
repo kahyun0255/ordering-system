@@ -150,7 +150,7 @@ class RestaurantManagementControllerUpdateTest extends ControllerTestSupport {
                 .andDo(print())
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("Forbidden"))
-                .andExpect(jsonPath("$.message").value("레스토랑 정보를 수정 할 권한이 없습니다."));
+                .andExpect(jsonPath("$.message").value("레스토랑 정보를 수정할 권한이 없습니다."));
     }
 
     @DisplayName("현재 레스토랑 상태가 사용자가 변경할 수 없는 상태라면, 정보 변경에 실패하고 예외가 발생한다.")

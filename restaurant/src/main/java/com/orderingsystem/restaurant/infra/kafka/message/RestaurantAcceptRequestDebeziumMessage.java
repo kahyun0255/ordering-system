@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class RestaurantApprovalRequestDebeziumMessage {
+public class RestaurantAcceptRequestDebeziumMessage {
 
     private Payload before;
     private Payload after;

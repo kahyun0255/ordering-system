@@ -61,6 +61,10 @@ public class Product extends BaseEntity {
         this.quantity -= quantity;
     }
 
+    public void increaseStock(int quantity) {
+        this.quantity += quantity;
+    }
+
     public void updateName(String name) {
         validateName(name);
         this.name = name;

@@ -38,6 +38,7 @@ public class RestaurantStockConcurrencyTest {
     private String historyKey;
 
     private final UUID productId = UUID.randomUUID();
+    private final UUID orderId = UUID.randomUUID();
 
     @DisplayName("여러 스레드가 동시에 같은 상품 재고를 예약해도 일관성 있게 처리된다.")
     @Test
@@ -89,7 +90,7 @@ public class RestaurantStockConcurrencyTest {
                 UUID sagaId = UUID.randomUUID();
                 try {
                     productStockFacade.reserve(productId, 3, sagaId);
-                    productStockFacade.confirm(sagaId);
+                    productStockFacade.confirm(sagaId, orderId);
                 } catch (Exception e) {
 
                 } finally {

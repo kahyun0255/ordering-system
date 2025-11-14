@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -95,20 +94,26 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<String> handleResponseStatus(ResponseStatusException ex) {
-        if (ex.getStatusCode().is4xxClientError()) {
-            return ResponseEntity.status(ex.getStatusCode())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(ex.getReason());
+    public ResponseEntity<?> handleResponseStatus(ResponseStatusException ex) {
+        log.error(ex.getMessage(), ex);
+
+        HttpStatus status = (ex.getStatusCode() instanceof HttpStatus httpStatus)
+                ? httpStatus
+                : HttpStatus.valueOf(ex.getStatusCode().value());
+
+        if (status.is4xxClientError()) {
+            return ResponseEntity.status(status)
+                    .body(ErrorDTO.builder()
+                            .code(status.getReasonPhrase())
+                            .message(ex.getReason())
+                            .build());
         }
 
-        return ResponseEntity.status(ex.getStatusCode())
-                .body("""
-                {
-                  "code": "Internal Server Error",
-                  "message": "Unexpected error"
-                }
-                """);
+        return ResponseEntity.status(status)
+                .body(ErrorDTO.builder()
+                        .code(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                        .message("Unexpected error")
+                        .build());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

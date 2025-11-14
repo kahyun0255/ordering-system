@@ -12,7 +12,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class RestaurantApprovalRequestMessage {
+public class RestaurantAcceptRequestMessage {
 
     private UUID sagaId;
     private UUID orderId;

@@ -169,7 +169,7 @@ class RestaurantManagementFacadeUpdateTest extends ApplicationTestSupport {
                 () -> restaurantManagementFacade.updateRestaurant(request, restaurantId,
                         notOwnershipOwnerId))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("레스토랑 정보를 수정 할 권한이 없습니다.");
+                .hasMessage("레스토랑 정보를 수정할 권한이 없습니다.");
     }
 
 }

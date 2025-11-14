@@ -40,4 +40,25 @@ public class ProductStockService {
         }
     }
 
+    @Transactional
+    public void restore(Map<Object, Object> confirmed) {
+        if (confirmed == null || confirmed.isEmpty()) {
+            return;
+        }
+
+        Map<UUID, Integer> map = new HashMap<>();
+        List<UUID>ids = new ArrayList<>();
+
+        confirmed.forEach((pid, qty)->{
+            UUID id = UUID.fromString(pid.toString());
+            int q = Integer.parseInt(qty.toString());
+            map.put(id, q);
+            ids.add(id);
+        });
+
+        List<Product> products = productRepository.findAllById(ids);
+        for (Product p : products){
+            p.increaseStock(map.get(p.getProductId()));
+        }
+    }
 }

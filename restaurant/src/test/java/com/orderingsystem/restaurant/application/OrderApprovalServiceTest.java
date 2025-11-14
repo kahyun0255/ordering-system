@@ -1,429 +1,124 @@
 package com.orderingsystem.restaurant.application;
 
-import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
-import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
-import com.orderingsystem.restaurant.application.dto.request.OrderItemRequest;
-import com.orderingsystem.restaurant.application.dto.request.ApprovalRequest;
-import com.orderingsystem.restaurant.application.outbox.order.model.OrderEventPayload;
+import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
+import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
+import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.OrderApproval;
-import com.orderingsystem.restaurant.domain.model.Product;
-import com.orderingsystem.restaurant.domain.model.Restaurant;
-import com.orderingsystem.restaurant.domain.model.RestaurantProduct;
-import com.orderingsystem.restaurant.domain.model.RestaurantStatus;
-import com.orderingsystem.restaurant.domain.model.outbox.MessageType;
-import com.orderingsystem.restaurant.domain.model.outbox.OrderOutbox;
-import com.orderingsystem.restaurant.domain.model.outbox.ProcessedMessage;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.List;
+import com.orderingsystem.restaurant.domain.repository.OrderApprovalRepository;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-class OrderApprovalServiceTest extends ApplicationTestSupport {
+@ExtendWith(MockitoExtension.class)
+class OrderApprovalServiceTest {
 
-    @Autowired
+    @Mock
+    private OrderApprovalRepository orderApprovalRepository;
+
+    @Mock
+    private OrderOutboxHelper orderOutboxHelper;
+
+    @Mock
+    private RestaurantDataMapper restaurantDataMapper;
+
+    @InjectMocks
     private OrderApprovalService orderApprovalService;
 
-    private final UUID sagaId = UUID.randomUUID();
-    private final UUID orderId = UUID.randomUUID();
-    private final UUID restaurantId = UUID.randomUUID();
-    private final UUID productId = UUID.randomUUID();
-    private final BigDecimal productPrice = new BigDecimal("25.00");
-
-    @AfterEach
-    void tearDown() {
-        orderApprovalRepository.deleteAllInBatch();
-        orderOutboxRepository.deleteAllInBatch();
-        restaurantRepository.deleteAllInBatch();
-        productRepository.deleteAllInBatch();
-        restaurantProductRepository.deleteAllInBatch();
-        processedMessageRepository.deleteAllInBatch();
-    }
-
-    @DisplayName("레스토랑 승인에 성공한다.")
+    @DisplayName("주문이 존재하면 주문이 승인된다.")
     @Test
-    void approveRestaurantSuccessfully() {
+    void shouldApproveOrder_whenOrderExists() {
         //given
-        saveRestaurant();
-        saveProduct();
-        saveRestaurantProduct();
+        UUID restaurantId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
 
-        ApprovalRequest request = getApprovalRequest();
+        OrderApproval orderApproval = mock(OrderApproval.class);
+        OrderApprovedEvent orderApprovedEvent = mock(OrderApprovedEvent.class);
+
+        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.of(orderApproval));
+        given(orderApproval.approval()).willReturn(orderApprovedEvent);
+        given(orderApprovedEvent.getOrderApproval()).willReturn(orderApproval);
+        given(orderApproval.getStatus()).willReturn(OrderApprovalStatus.APPROVED);
 
         //when
-        orderApprovalService.approveOrder(request);
+        orderApprovalService.approval(restaurantId, orderId, ownerId);
 
         //then
-        Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
-        assertThat(orderApproval).isPresent();
-        assertThat(orderApproval.get().getStatus()).isEqualTo(OrderApprovalStatus.APPROVED);
+        verify(orderApprovalRepository).findByOrderId(orderId);
+        verify(orderApproval).approval();
+        verify(orderOutboxHelper).saveOrderOutboxMessage(any(), eq(OrderApprovalStatus.APPROVED), any(UUID.class));
     }
 
-    @DisplayName("레스토랑이 active 상태가 아니라면 거절된다.")
+    @DisplayName("주문 승인시 주문이 존재하지 않으면 예외가 발생한다.")
     @Test
-    void rejectOrder_whenRestaurantIsNotActive() throws JsonProcessingException {
+    void shouldThrowRestaurantNotFoundException_whenOrderDoesNotExist() {
         //given
-        saveRestaurant(RestaurantStatus.PRE_OPEN);
-        saveProduct();
-        saveRestaurantProduct();
-        ApprovalRequest request = getApprovalRequest();
+        UUID restaurantId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
 
-        //when
-        orderApprovalService.approveOrder(request);
-
-        //then
-        Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
-        assertThat(orderApproval).isPresent();
-        assertThat(orderApproval.get().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);
-
-        OrderEventPayload orderEventPayload = getOrderEventPayload();
-        assertThat(orderEventPayload.getFailureMessages()).isEqualTo(
-                List.of("레스토랑이 주문을 받을 수 없는 상태입니다. Order Id : " + orderId));
-    }
-
-    @DisplayName("주문이 결제가 되지 않았다면 거절된다.")
-    @Test
-    void rejectOrder_whenPaymentIsNotCompleted() throws JsonProcessingException {
-        //given
-        saveRestaurant();
-        saveProduct();
-        saveRestaurantProduct();
-        ApprovalRequest request = getApprovalRequest(RestaurantOrderStatus.PENDING);
-
-        //when
-        orderApprovalService.approveOrder(request);
-
-        //then
-        Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
-        assertThat(orderApproval).isPresent();
-        assertThat(orderApproval.get().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);
-
-        OrderEventPayload orderEventPayload = getOrderEventPayload();
-        assertThat(orderEventPayload.getFailureMessages()).isEqualTo(
-                List.of("해당 주문은 결제가 완료되지 않았습니다. Order Id : " + orderId));
-    }
-
-    @DisplayName("상품이 1개일 경우 주문할 수 없는 상태라면 거절된다.")
-    @Test
-    void rejectOrder_whenSingleProductIsUnavailable() throws JsonProcessingException {
-        //given
-        saveRestaurant();
-        saveProduct(false);
-        saveRestaurantProduct();
-
-        ApprovalRequest request = getApprovalRequest();
-
-        //when
-        orderApprovalService.approveOrder(request);
-
-        //then
-        Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
-        assertThat(orderApproval).isPresent();
-        assertThat(orderApproval.get().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);
-
-        OrderEventPayload orderEventPayload = getOrderEventPayload();
-        assertThat(orderEventPayload.getFailureMessages()).isEqualTo(
-                List.of("상품 Id가 " + productId + "인 상품은 주문이 불가능한 상태입니다."));
-    }
-
-    @DisplayName("상품이 2개일 경우 모두 주문할 수 없는 상태라면 거절된다.")
-    @Test
-    void rejectOrder_whenAllProductsAreUnavailable() throws JsonProcessingException {
-        //given
-        UUID productId1 = UUID.randomUUID();
-        UUID productId2 = UUID.randomUUID();
-
-        saveRestaurant();
-        saveProduct(productId1, false);
-        saveProduct(productId2, false);
-        saveRestaurantProduct(restaurantId, productId1);
-        saveRestaurantProduct(restaurantId, productId2);
-
-        ApprovalRequest request = ApprovalRequest.builder()
-                .sagaId(sagaId)
-                .orderId(orderId)
-                .restaurantId(restaurantId)
-                .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(List.of(OrderItemRequest.builder()
-                                .productId(productId1)
-                                .quantity(1)
-                                .build(),
-                        OrderItemRequest.builder()
-                                .productId(productId2)
-                                .quantity(1)
-                                .build()))
-                .price(productPrice.multiply(new BigDecimal(2)))
-                .createdAt(Instant.now())
-                .build();
-
-        //when
-        orderApprovalService.approveOrder(request);
-
-        //then
-        Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
-        assertThat(orderApproval).isPresent();
-        assertThat(orderApproval.get().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);
-
-        OrderEventPayload orderEventPayload = getOrderEventPayload();
-        assertThat(orderEventPayload.getFailureMessages()).isEqualTo(
-                List.of("상품 Id가 " + productId1 + "인 상품은 주문이 불가능한 상태입니다.",
-                        "상품 Id가 " + productId2 + "인 상품은 주문이 불가능한 상태입니다."));
-    }
-
-    @DisplayName("상품이 2개일 경우 하나라도 주문할 수 없는 상태라면 거절된다.")
-    @Test
-    void rejectOrder_whenAtLeastOneProductIsUnavailable() throws JsonProcessingException {
-        //given
-        UUID productId1 = UUID.randomUUID();
-        UUID productId2 = UUID.randomUUID();
-
-        saveRestaurant();
-        saveProduct(productId1, false);
-        saveProduct(productId2, true);
-        saveRestaurantProduct(restaurantId, productId1);
-        saveRestaurantProduct(restaurantId, productId2);
-
-        ApprovalRequest request = ApprovalRequest.builder()
-                .sagaId(sagaId)
-                .orderId(orderId)
-                .restaurantId(restaurantId)
-                .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(List.of(OrderItemRequest.builder()
-                                .productId(productId1)
-                                .quantity(1)
-                                .build(),
-                        OrderItemRequest.builder()
-                                .productId(productId2)
-                                .quantity(1)
-                                .build()))
-                .price(productPrice.multiply(new BigDecimal(2)))
-                .createdAt(Instant.now())
-                .build();
-
-        //when
-        orderApprovalService.approveOrder(request);
-
-        //then
-        Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
-        assertThat(orderApproval).isPresent();
-        assertThat(orderApproval.get().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);
-
-        OrderEventPayload orderEventPayload = getOrderEventPayload();
-        assertThat(orderEventPayload.getFailureMessages()).isEqualTo(
-                List.of("상품 Id가 " + productId1 + "인 상품은 주문이 불가능한 상태입니다."));
-    }
-
-    @DisplayName("상품의 금액과 주문 금액이 일치하지 않으면 거절된다.")
-    @Test
-    void rejectOrder_whenProductPriceDoesNotMatchOrderAmount() throws JsonProcessingException {
-        //given
-        saveRestaurant();
-        saveProduct();
-        saveRestaurantProduct();
-
-        ApprovalRequest request = ApprovalRequest.builder()
-                .sagaId(sagaId)
-                .orderId(orderId)
-                .restaurantId(restaurantId)
-                .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(List.of(OrderItemRequest.builder()
-                        .productId(productId)
-                        .quantity(1)
-                        .build()))
-                .price(productPrice.multiply(new BigDecimal(2)))
-                .createdAt(Instant.now())
-                .build();
-
-        //when
-        orderApprovalService.approveOrder(request);
-
-        //then
-        Optional<OrderApproval> orderApproval = orderApprovalRepository.findByOrderId(orderId);
-        assertThat(orderApproval).isPresent();
-        assertThat(orderApproval.get().getStatus()).isEqualTo(OrderApprovalStatus.REJECTED);
-
-        OrderEventPayload orderEventPayload = getOrderEventPayload();
-        assertThat(orderEventPayload.getFailureMessages()).isEqualTo(
-                List.of("해당 주문의 총 금액이 올바르지 않습니다. Order Id : " + orderId));
-    }
-
-    @DisplayName("해당 주문을 이미 처리하였으면 중복해서 처리하지 않는다.")
-    @Test
-    void doNotProcessOrder_whenAlreadyHandled() {
-        //given
-        orderOutboxRepository.save(OrderOutbox.builder()
-                .id(UUID.randomUUID())
-                .sagaId(sagaId)
-                .createdAt(ZonedDateTime.now())
-                .processedAt(ZonedDateTime.now())
-                .type(ORDER_SAGA_NAME)
-                .payload("payload")
-                .orderApprovalStatus(OrderApprovalStatus.APPROVED)
-                .build());
-
-        saveRestaurant();
-        saveProduct();
-        saveRestaurantProduct();
-
-        UUID messageId = UUID.randomUUID();
-        processedMessageRepository.save(ProcessedMessage.builder()
-                .messageId(messageId)
-                .messageType(MessageType.ORDER_APPROVAL)
-                .processedAt(ZonedDateTime.now())
-                .build());
-
-        ApprovalRequest request = ApprovalRequest.builder()
-                .id(messageId)
-                .sagaId(sagaId)
-                .orderId(orderId)
-                .restaurantId(restaurantId)
-                .restaurantOrderStatus(RestaurantOrderStatus.PAID)
-                .products(List.of(OrderItemRequest.builder()
-                        .productId(productId)
-                        .quantity(1)
-                        .build()))
-                .price(productPrice)
-                .createdAt(Instant.now())
-                .build();
-
-        //when
-        orderApprovalService.approveOrder(request);
-
-        //then
-        assertThat(orderApprovalRepository.count()).isEqualTo(0);
-    }
-
-    @DisplayName("레스토랑 정보를 찾을 수 없으면 예외가 발생한다.")
-    @Test
-    void throwException_whenRestaurantNotFound() {
-        //given
-        saveProduct();
-
-        ApprovalRequest request = getApprovalRequest();
+        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.empty());
 
         //when, then
-        assertThatThrownBy(() -> orderApprovalService.approveOrder(request))
+        assertThatThrownBy(() -> orderApprovalService.approval(restaurantId, orderId, ownerId))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessage("레스토랑을 찾을 수 없습니다.");
+                .hasMessage("주문 내역을 찾을 수 없습니다.");
     }
 
-    @DisplayName("해당 주문이 이미 승인된 상태로 저장되어 있으면, 중복해서 저장하지 않는다.")
+    @DisplayName("주문이 존재하면 주문이 거절된다.")
     @Test
-    void doNotSaveOrder_whenAlreadyApproved() {
+    void shouldRejectOrder_whenOrderExists() {
         //given
-        orderApprovalRepository.save(OrderApproval.builder()
-                .id(UUID.randomUUID())
-                .orderId(orderId)
-                .restaurantId(restaurantId)
-                .status(OrderApprovalStatus.APPROVED)
-                .build());
+        UUID restaurantId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
 
-        saveRestaurant();
-        saveProduct();
-        saveRestaurantProduct();
-        ApprovalRequest request = getApprovalRequest();
+        OrderApproval orderApproval = mock(OrderApproval.class);
+        OrderRejectedEvent orderRejectedEvent = mock(OrderRejectedEvent.class);
 
-        assertThat(orderApprovalRepository.count()).isEqualTo(1);
+        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.of(orderApproval));
+        given(orderApproval.reject()).willReturn(orderRejectedEvent);
+        given(orderRejectedEvent.getOrderApproval()).willReturn(orderApproval);
+        given(orderApproval.getStatus()).willReturn(OrderApprovalStatus.REJECTED);
 
         //when
-        orderApprovalService.approveOrder(request);
+        orderApprovalService.reject(restaurantId, orderId, ownerId);
 
         //then
-        assertThat(orderApprovalRepository.count()).isEqualTo(1);
+        verify(orderApprovalRepository).findByOrderId(orderId);
+        verify(orderApproval).reject();
+        verify(orderOutboxHelper).saveOrderOutboxMessage(any(), eq(OrderApprovalStatus.REJECTED), any(UUID.class));
     }
 
-    @DisplayName("레스토랑에 연결된 제품이 없으면 예외가 발생한다.")
+    @DisplayName("주문 거절시 주문이 존재하지 않으면 예외가 발생한다.")
     @Test
-    void throwException_whenRestaurantProductsMissing() {
-        // given
-        saveRestaurant();
-        saveProduct();
+    void shouldThrowOrderNotFoundException_whenOrderDoesNotExist() {
+        //given
+        UUID restaurantId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
 
-        ApprovalRequest request = getApprovalRequest();
+        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.empty());
 
-        // when, then
-        assertThatThrownBy(() -> orderApprovalService.approveOrder(request))
+        //when, then
+        assertThatThrownBy(() -> orderApprovalService.reject(restaurantId, orderId, ownerId))
                 .isInstanceOf(RestaurantNotFoundException.class)
-                .hasMessageContaining("레스토랑을 찾을 수 없습니다");
-    }
-
-    private void saveRestaurant(RestaurantStatus restaurantStatus) {
-        restaurantRepository.save(Restaurant.builder()
-                .restaurantId(restaurantId)
-                .name("restaurant")
-                .status(restaurantStatus)
-                .build());
-    }
-
-    private void saveRestaurant() {
-        saveRestaurant(RestaurantStatus.ACTIVE);
-    }
-
-    private void saveProduct() {
-        saveProduct(true);
-    }
-
-    private void saveProduct(boolean available) {
-        saveProduct(productId, available);
-    }
-
-    private void saveProduct(UUID productId, boolean available) {
-        productRepository.save(Product.builder()
-                .productId(productId)
-                .name("product")
-                .price(new Money(productPrice))
-                .available(available)
-                .build());
-    }
-
-    private void saveRestaurantProduct() {
-        saveRestaurantProduct(restaurantId, productId);
-    }
-
-    private void saveRestaurantProduct(UUID restaurantId, UUID productId) {
-        restaurantProductRepository.save(RestaurantProduct.builder()
-                .productId(productId)
-                .restaurantId(restaurantId)
-                .build());
-    }
-
-    private ApprovalRequest getApprovalRequest() {
-        return getApprovalRequest(RestaurantOrderStatus.PAID);
-    }
-
-    private ApprovalRequest getApprovalRequest(RestaurantOrderStatus restaurantOrderStatus) {
-        return ApprovalRequest.builder()
-                .id(UUID.randomUUID())
-                .sagaId(sagaId)
-                .orderId(orderId)
-                .restaurantId(restaurantId)
-                .restaurantOrderStatus(restaurantOrderStatus)
-                .products(List.of(OrderItemRequest.builder()
-                        .productId(productId)
-                        .quantity(1)
-                        .build()))
-                .price(productPrice)
-                .createdAt(Instant.now())
-                .build();
-    }
-
-    private OrderEventPayload getOrderEventPayload() throws JsonProcessingException {
-        Optional<List<OrderOutbox>> orderOutbox = orderOutboxRepository.findByType(ORDER_SAGA_NAME);
-        assertThat(orderOutbox).isPresent();
-        String payload = orderOutbox.get().get(0).getPayload();
-        return objectMapper.readValue(payload, OrderEventPayload.class);
+                .hasMessage("주문 내역을 찾을 수 없습니다.");
     }
 
 }

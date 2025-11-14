@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class RestaurantMessageConfigData {
 
+    private String restaurantAcceptRequestTopicName;
+    private String restaurantAcceptResponseTopicName;
     private String restaurantApprovalRequestTopicName;
     private String restaurantApprovalResponseTopicName;
     private String restaurantOwnerTopicName;

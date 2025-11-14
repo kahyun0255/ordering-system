@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.kafka.KafkaConsumer;
-import com.orderingsystem.restaurant.application.OrderApprovalService;
+import com.orderingsystem.restaurant.application.OrderAcceptService;
 import com.orderingsystem.restaurant.application.exception.RestaurantApplicationException;
-import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalRequestDebeziumMessage;
-import com.orderingsystem.restaurant.infra.kafka.message.RestaurantApprovalRequestMessage;
+import com.orderingsystem.restaurant.infra.kafka.message.RestaurantAcceptRequestDebeziumMessage;
+import com.orderingsystem.restaurant.infra.kafka.message.RestaurantAcceptRequestMessage;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
@@ -25,36 +25,36 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class RestaurantApprovalRequestKafkaListener implements KafkaConsumer<String> {
+public class RestaurantAcceptRequestKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final OrderApprovalService orderApprovalService;
+    private final OrderAcceptService orderAcceptService;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.restaurant-consumer-user-group-id}",
-            topics = "${restaurant-topic.restaurant-approval-request-topic-name}")
+            topics = "${restaurant-topic.restaurant-accept-request-topic-name}")
     public void receive(@Payload List<String> messages,
                         @Header(KafkaHeaders.RECEIVED_KEY) List<String> keys,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) List<Integer> partitions,
                         @Header(KafkaHeaders.OFFSET) List<Long> offsets) {
-        log.info("{}개의 Restaurant Approval Request 메시지를 받았습니다. keys : {}, partitions : {}, offsets : {}",
+        log.info("{}개의 Restaurant Accept Request 메시지를 받았습니다. keys : {}, partitions : {}, offsets : {}",
                 messages.size(), keys.toString(), partitions.toString(), offsets.toString());
 
         messages.forEach(message -> {
             try {
-                RestaurantApprovalRequestDebeziumMessage restaurantApprovalRequestDebeziumMessage =
-                        objectMapper.readValue(message, RestaurantApprovalRequestDebeziumMessage.class);
+                RestaurantAcceptRequestDebeziumMessage restaurantAcceptRequestDebeziumMessage =
+                        objectMapper.readValue(message, RestaurantAcceptRequestDebeziumMessage.class);
 
-                if (restaurantApprovalRequestDebeziumMessage.getBefore() == null &&
-                        restaurantApprovalRequestDebeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
+                if (restaurantAcceptRequestDebeziumMessage.getBefore() == null &&
+                        restaurantAcceptRequestDebeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
 
-                    RestaurantApprovalRequestMessage requestMessage =
-                            objectMapper.readValue(restaurantApprovalRequestDebeziumMessage.getAfter().getPayload(),
-                                    RestaurantApprovalRequestMessage.class);
+                    RestaurantAcceptRequestMessage requestMessage =
+                            objectMapper.readValue(restaurantAcceptRequestDebeziumMessage.getAfter().getPayload(),
+                                    RestaurantAcceptRequestMessage.class);
 
-                    log.info("주문 승인 시작. Order Id : {}", requestMessage.getOrderId());
-                    orderApprovalService.approveOrder(requestMessage.toApprovalRequest(
-                            UUID.fromString(restaurantApprovalRequestDebeziumMessage.getAfter().getId())));
+                    log.info("주문 접수 시작. Order Id : {}", requestMessage.getOrderId());
+                    orderAcceptService.accept(requestMessage.toApprovalRequest(
+                            UUID.fromString(restaurantAcceptRequestDebeziumMessage.getAfter().getId())));
                 }
             } catch (JsonMappingException e) {
                 log.info("Json 매핑에 실패했습니다. error : {}", e.getMessage());

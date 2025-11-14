@@ -100,7 +100,7 @@ class RestaurantManagementFacadeDeleteTest extends ApplicationTestSupport {
         //when, then
         assertThatThrownBy(() -> restaurantManagementFacade.deleteRestaurant(restaurantId, notOwnerId))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("레스토랑 정보를 수정 할 권한이 없습니다.");
+                .hasMessage("레스토랑 정보를 수정할 권한이 없습니다.");
     }
 
 }

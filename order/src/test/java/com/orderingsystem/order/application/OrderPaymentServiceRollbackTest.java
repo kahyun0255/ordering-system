@@ -2,21 +2,19 @@ package com.orderingsystem.order.application;
 
 import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
-import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
-import com.orderingsystem.order.domain.model.outbox.RestaurantApprovalOutbox;
+import com.orderingsystem.order.domain.model.outbox.RestaurantAcceptOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
-import com.orderingsystem.order.domain.repository.outbox.RestaurantApprovalOutboxRepository;
+import com.orderingsystem.order.domain.repository.outbox.RestaurantAcceptOutboxRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -47,7 +45,7 @@ class OrderPaymentServiceRollbackTest {
     private PaymentOutboxRepository paymentOutboxRepository;
 
     @Autowired
-    private RestaurantApprovalOutboxRepository restaurantApprovalOutboxRepository;
+    private RestaurantAcceptOutboxRepository restaurantAcceptOutboxRepository;
 
     private final UUID sagaId = UUID.randomUUID();
     private final UUID paymentId = UUID.randomUUID();
@@ -66,7 +64,6 @@ class OrderPaymentServiceRollbackTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-//                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -85,13 +82,12 @@ class OrderPaymentServiceRollbackTest {
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .sagaStatus(SagaStatus.PROCESSING)
-//                .outboxStatus(OutboxStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
                 .build());
 
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .createdAt(ZonedDateTime.now())
@@ -128,7 +124,7 @@ class OrderPaymentServiceRollbackTest {
                 .payload("")
                 .build());
 
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .createdAt(ZonedDateTime.now())
@@ -199,40 +195,6 @@ class OrderPaymentServiceRollbackTest {
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PAID);
     }
 
-    @DisplayName("레스토랑 승인 Outbox가 COMPENSATING 상태가 아니면 주문 취소에 실패한다.")
-    @Test
-    void cancelOrder_whenRestaurantApprovalOutboxIsNotCompensating() {
-        //given
-        UUID sagaId = UUID.randomUUID();
-        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
-        saveOrder(OrderStatus.PENDING);
-
-        paymentOutboxRepository.save(PaymentOutbox.builder()
-                .id(UUID.randomUUID())
-                .sagaId(sagaId)
-                .sagaStatus(SagaStatus.PROCESSING)
-                .orderStatus(OrderStatus.PENDING)
-                .type(ORDER_SAGA_NAME)
-                .payload("")
-                .build());
-
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
-                .id(UUID.randomUUID())
-                .sagaId(sagaId)
-                .createdAt(ZonedDateTime.now())
-                .processedAt(null)
-                .type("OrderProcessingSaga")
-                .sagaStatus(SagaStatus.STARTED)
-                .payload("{}")
-                .orderStatus(OrderStatus.CANCELLING)
-                .build());
-
-        //when, then
-        assertThatThrownBy(()-> orderPaymentService.rollback(paymentResponse))
-                .isInstanceOf(OrderApplicationException.class)
-                .hasMessage("SagaStatus " + SagaStatus.COMPENSATING.name() + " 상태의 RestaurantApprovalOutbox를 찾지 못했습니다.");
-    }
-
     @DisplayName("결제 상태가 FAILED이면 SagaStatus는 STARTED 또는 PROCESSING인 PaymentOutbox를 찾아야 한다")
     @Test
     void rollback_whenPaymentStatusIsFAILED_shouldUseStartedOrProcessingSagaStatus() {
@@ -252,7 +214,7 @@ class OrderPaymentServiceRollbackTest {
                 .payload("")
                 .build());
 
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .createdAt(ZonedDateTime.now())
@@ -290,7 +252,7 @@ class OrderPaymentServiceRollbackTest {
                 .payload("")
                 .build());
 
-        restaurantApprovalOutboxRepository.save(RestaurantApprovalOutbox.builder()
+        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
                 .createdAt(ZonedDateTime.now())

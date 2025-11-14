@@ -58,15 +58,20 @@ class RedisStockRepositoryTest {
     @Value("${key.history}")
     private String historyKey;
 
+    @Value("${key.confirmed}")
+    private String confirmedKey;
+
     private UUID productId;
     private UUID productId2;
     private UUID sagaId;
+    private UUID orderId;
 
     @BeforeEach
     void setUp() {
         productId = UUID.randomUUID();
         productId2 = UUID.randomUUID();
         sagaId = UUID.randomUUID();
+        orderId = UUID.randomUUID();
 
         ValueOperations<String, String> ops = redisTemplate.opsForValue();
         ops.set(stockKey + productId, "10");
@@ -128,12 +133,14 @@ class RedisStockRepositoryTest {
         Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
 
         //when
-        redisStockRepository.confirm(history, sagaId);
+        redisStockRepository.confirm(history, sagaId, orderId);
 
         //then
         assertThat(redisTemplate.opsForValue().get(stockKey + productId)).isEqualTo("7");
         assertThat(redisTemplate.opsForValue().get(reserveKey + productId)).isEqualTo("0");
         assertThat(redisTemplate.hasKey(historyKey + sagaId)).isFalse();
+        Map<Object, Object> confirmed = redisTemplate.opsForHash().entries(confirmedKey + orderId);
+        assertThat(confirmed).containsEntry(productId.toString(), "3");
     }
 
     @DisplayName("여러개의 상품을 주문 할 경우, 레스토랑 승인에 성공하면 각각의 상품에 대해 재고 차감, 예약 해제, 히스토리 삭제가 이루어진다.")
@@ -154,7 +161,7 @@ class RedisStockRepositoryTest {
         Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
 
         //when
-        redisStockRepository.confirm(history, sagaId);
+        redisStockRepository.confirm(history, sagaId, orderId);
 
         //then
         assertThat(redisTemplate.opsForValue().get(stockKey + productId1)).isEqualTo("5");
@@ -164,6 +171,10 @@ class RedisStockRepositoryTest {
         assertThat(redisTemplate.opsForValue().get(reserveKey + productId2)).isEqualTo("0");
 
         assertThat(redisTemplate.hasKey(historyKey + sagaId)).isFalse();
+
+        Map<Object, Object> confirmed = redisTemplate.opsForHash().entries(confirmedKey + orderId);
+        assertThat(confirmed).containsEntry(productId1.toString(), "5");
+        assertThat(confirmed).containsEntry(productId2.toString(), "7");
     }
 
     @DisplayName("히스토리가 비어있을 경우 아무 동작도 하지 않는다.")
@@ -173,7 +184,7 @@ class RedisStockRepositoryTest {
         Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
 
         //when
-        redisStockRepository.confirm(history, sagaId);
+        redisStockRepository.confirm(history, sagaId, orderId);
 
         //then
         assertThat(redisTemplate.hasKey(historyKey + sagaId)).isFalse();
@@ -190,7 +201,7 @@ class RedisStockRepositoryTest {
         Map<Object, Object> history = redisStockRepository.getHistory(sagaId);
 
         //when, then
-        assertThatThrownBy(() -> redisStockRepository.confirm(history, sagaId))
+        assertThatThrownBy(() -> redisStockRepository.confirm(history, sagaId, orderId))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("재고 데이터가 존재하지 않습니다. [" + missingProductId + "]");
     }
