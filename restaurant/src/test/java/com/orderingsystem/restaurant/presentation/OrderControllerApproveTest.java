@@ -81,7 +81,7 @@ class OrderControllerApproveTest extends ControllerTestSupport {
                                 + "/approve")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         //then
         Optional<OrderApproval> after = orderApprovalRepository.findById(orderApproval.getId());
