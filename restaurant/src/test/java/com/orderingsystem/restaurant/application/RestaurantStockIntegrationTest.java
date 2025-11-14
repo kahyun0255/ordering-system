@@ -65,6 +65,7 @@ public class RestaurantStockIntegrationTest {
     private UUID productId2;
     private UUID productId3;
     private UUID sagaId;
+    private UUID orderId;
 
     @BeforeEach
     void setUp() {
@@ -72,6 +73,7 @@ public class RestaurantStockIntegrationTest {
         productId2 = UUID.randomUUID();
         productId3 = UUID.randomUUID();
         sagaId = UUID.randomUUID();
+        orderId = UUID.randomUUID();
 
         Product product = Product.builder()
                 .productId(productId)
@@ -131,7 +133,7 @@ public class RestaurantStockIntegrationTest {
         productStockFacade.reserve(productId, 4, sagaId);
 
         //when
-//        productStockFacade.confirm(sagaId);
+        productStockFacade.confirm(sagaId, orderId);
 
         //then
         String totalStock = redisTemplate.opsForValue().get(stockKey + productId);
@@ -150,7 +152,7 @@ public class RestaurantStockIntegrationTest {
     @Test
     void confirmWithoutHistory() {
         //when
-//        productStockFacade.confirm(sagaId);
+        productStockFacade.confirm(sagaId, orderId);
 
         //then
         Product after = productRepository.findById(productId).orElseThrow();
@@ -196,7 +198,7 @@ public class RestaurantStockIntegrationTest {
         productStockFacade.reserve(productId3, 6, sagaId);
 
         //when
-//        productStockFacade.confirm(sagaId);
+        productStockFacade.confirm(sagaId, orderId);
 
         //then
         assertThat(redisTemplate.opsForValue().get(stockKey + productId)).isEqualTo("8");
@@ -270,7 +272,7 @@ public class RestaurantStockIntegrationTest {
     @Test
     void cancelReservationWithoutHistory() {
         //when, then
-        assertThatNoException().isThrownBy(()-> productStockFacade.cancelReservation(sagaId));
+        assertThatNoException().isThrownBy(() -> productStockFacade.cancelReservation(sagaId));
     }
 
 }
