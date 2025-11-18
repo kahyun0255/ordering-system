@@ -19,6 +19,8 @@ public class OrderFacade {
 
     private final RestaurantApi restaurantApi;
     private final OrderCreateService orderCreateService;
+    private final OrderCancelService orderCancelService;
+    private final OrderService orderService;
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final OrderDataMapper orderDataMapper;
 
@@ -27,6 +29,8 @@ public class OrderFacade {
 
         UUID sagaId = UUID.randomUUID();
         restaurantApi.validRestaurantAndProducts(createOrderRequest, sagaId);
+
+        orderService.checkCustomer(createOrderRequest.getCustomerId());
 
         OrderCreateEvent orderCreateEvent = orderCreateService.createOrder(createOrderRequest, failureMessages);
 
@@ -46,4 +50,12 @@ public class OrderFacade {
 
         return orderDataMapper.orderToCreateOrderResponse(orderCreateEvent.getOrder(), resultMessage);
     }
+
+    public void cancelOrder(UUID trackingId, UUID userId) {
+        log.info("[{}] 유저가 [{}] trackingId에 해당하는 주문을 취소.", userId, trackingId);
+
+        orderService.checkCustomer(userId);
+        orderCancelService.cancelOrder(trackingId, userId);
+    }
+
 }
