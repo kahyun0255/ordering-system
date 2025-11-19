@@ -12,6 +12,7 @@ import com.orderingsystem.restaurant.infra.kafka.message.ProductRequestDebeziumM
 import com.orderingsystem.restaurant.infra.kafka.message.ProductRequestMessage;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -52,10 +53,10 @@ public class ProductKafkaListener implements KafkaConsumer<String> {
                             objectMapper.readValue(productRequestDebeziumMessage.getAfter().getPayload(),
                                     ProductRequestMessage.class);
 
-                    if (requestMessage.getType().equals(SagaConstants.STOCK_RESERVE_CANCELLED_NAME)){
-                        productStockFacade.cancelReservation(requestMessage.getSagaId());
+                    if (requestMessage.getType().equals(SagaConstants.INVENTORY_COMPENSATE)) {
+                        productStockFacade.cancelByState(requestMessage.toProductRequest(
+                                UUID.fromString(productRequestDebeziumMessage.getAfter().getId())));
                     }
-
                 }
             } catch (JsonMappingException e) {
                 log.info("Json 매핑에 실패했습니다. error : {}", e.getMessage());

@@ -1,6 +1,6 @@
 package com.orderingsystem.restaurant.domain.service;
 
-import com.orderingsystem.restaurant.domain.event.orderaccept.OrderAcceptEvent;
+import com.orderingsystem.restaurant.domain.event.order.orderaccept.OrderAcceptEvent;
 import com.orderingsystem.restaurant.domain.model.RestaurantInfo;
 import java.util.List;
 import java.util.UUID;

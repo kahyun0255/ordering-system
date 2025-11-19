@@ -2,8 +2,8 @@ package com.orderingsystem.restaurant.application;
 
 import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
 import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
+import com.orderingsystem.restaurant.domain.event.order.orderapproval.OrderApprovedEvent;
+import com.orderingsystem.restaurant.domain.event.order.orderapproval.OrderRejectedEvent;
 import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
 import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.repository.OrderApprovalRepository;

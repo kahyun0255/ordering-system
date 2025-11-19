@@ -1,6 +1,12 @@
 package com.orderingsystem.restaurant.application;
 
+import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
+import com.orderingsystem.restaurant.application.outbox.order.OrderOutboxHelper;
+import com.orderingsystem.restaurant.domain.event.order.orderapproval.OrderCancelledEvent;
+import com.orderingsystem.restaurant.domain.exception.RestaurantNotFoundException;
+import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import com.orderingsystem.restaurant.domain.model.Product;
+import com.orderingsystem.restaurant.domain.repository.OrderApprovalRepository;
 import com.orderingsystem.restaurant.domain.repository.ProductRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductStockService {
 
     private final ProductRepository productRepository;
+    private final OrderApprovalRepository orderApprovalRepository;
+    private final OrderOutboxHelper orderOutboxHelper;
+    private final RestaurantDataMapper restaurantDataMapper;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void confirm(Map<Object, Object> history) {
@@ -34,10 +43,24 @@ public class ProductStockService {
 
         List<Product> products = productRepository.findAllById(productIds);
 
-        for (Product product : products){
+        for (Product product : products) {
             int quantity = productMap.get(product.getProductId());
             product.decreaseStock(quantity);
         }
+    }
+
+    @Transactional
+    public void cancel(Map<Object, Object> confirmed, UUID orderId, UUID sagaId) {
+        restore(confirmed);
+        OrderApproval orderApproval = orderApprovalRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RestaurantNotFoundException("주문 정보를 찾을 수 없습니다."));
+
+        OrderCancelledEvent orderCancelledEvent = orderApproval.cancel();
+
+        orderOutboxHelper.saveOrderOutboxMessage(
+                restaurantDataMapper.restaurantApprovalEventToOrderEventPayload(orderCancelledEvent),
+                orderCancelledEvent.getOrderApproval().getStatus(),
+                sagaId);
     }
 
     @Transactional
@@ -47,9 +70,9 @@ public class ProductStockService {
         }
 
         Map<UUID, Integer> map = new HashMap<>();
-        List<UUID>ids = new ArrayList<>();
+        List<UUID> ids = new ArrayList<>();
 
-        confirmed.forEach((pid, qty)->{
+        confirmed.forEach((pid, qty) -> {
             UUID id = UUID.fromString(pid.toString());
             int q = Integer.parseInt(qty.toString());
             map.put(id, q);
@@ -57,8 +80,17 @@ public class ProductStockService {
         });
 
         List<Product> products = productRepository.findAllById(ids);
-        for (Product p : products){
+        for (Product p : products) {
             p.increaseStock(map.get(p.getProductId()));
         }
     }
+
+    @Transactional
+    public void cancelReservation(UUID orderId) {
+        OrderApproval orderApproval = orderApprovalRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RestaurantNotFoundException("주문 정보를 찾을 수 없습니다."));
+
+        orderApproval.cancel();
+    }
+
 }

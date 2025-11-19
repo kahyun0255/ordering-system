@@ -1,4 +1,4 @@
-package com.orderingsystem.restaurant.domain.event.orderapproval;
+package com.orderingsystem.restaurant.domain.event.order.orderapproval;
 
 import com.orderingsystem.restaurant.domain.model.OrderApproval;
 import java.time.ZonedDateTime;

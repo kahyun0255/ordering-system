@@ -1,8 +1,8 @@
 package com.orderingsystem.restaurant.application.mapper;
 
 import com.orderingsystem.restaurant.application.outbox.order.model.OrderEventPayload;
-import com.orderingsystem.restaurant.domain.event.orderaccept.OrderAcceptEvent;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovalEvent;
+import com.orderingsystem.restaurant.domain.event.order.orderaccept.OrderAcceptEvent;
+import com.orderingsystem.restaurant.domain.event.order.orderapproval.OrderApprovalEvent;
 import org.springframework.stereotype.Component;
 
 @Component
