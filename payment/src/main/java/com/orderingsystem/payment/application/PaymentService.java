@@ -92,7 +92,6 @@ public class PaymentService {
 
         log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
 
-
         Payment payment = getPayment(paymentRequest.getOrderId());
         CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
         List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
