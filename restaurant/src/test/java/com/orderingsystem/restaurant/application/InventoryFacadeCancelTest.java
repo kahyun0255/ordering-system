@@ -27,10 +27,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class ProductStockFacadeCancelTest {
+class InventoryFacadeCancelTest {
 
     @Autowired
-    private ProductStockFacade productStockFacade;
+    private InventoryFacade inventoryFacade;
 
     @MockitoBean
     private OrderCancelService orderCancelService;
@@ -115,8 +115,8 @@ class ProductStockFacadeCancelTest {
 
         redisTemplate.opsForValue().set(stockKey + productId, "100");
 
-        productStockFacade.reserve(productId, 10, sagaId);
-        productStockFacade.confirm(sagaId, orderId);
+        inventoryFacade.reserve(productId, 10, sagaId);
+        inventoryFacade.confirm(sagaId, orderId);
 
         String beforeStock = redisTemplate.opsForValue().get(stockKey + productId);
         assertThat(beforeStock).isEqualTo("90");
@@ -129,7 +129,7 @@ class ProductStockFacadeCancelTest {
                 true);
 
         //when
-        productStockFacade.cancelByState(productRequest);
+        inventoryFacade.cancelByState(productRequest);
 
         //then
         String afterStock = redisTemplate.opsForValue().get(stockKey + productId);
@@ -159,7 +159,7 @@ class ProductStockFacadeCancelTest {
 
         redisTemplate.opsForValue().set(stockKey + productId, "100");
 
-        productStockFacade.reserve(productId, 10, sagaId);
+        inventoryFacade.reserve(productId, 10, sagaId);
 
         String beforeStock = redisTemplate.opsForValue().get(stockKey + productId);
         assertThat(beforeStock).isEqualTo("100");
@@ -175,7 +175,7 @@ class ProductStockFacadeCancelTest {
                 true);
 
         //when
-        productStockFacade.cancelByState(productRequest);
+        inventoryFacade.cancelByState(productRequest);
 
         //then
         String afterStock = redisTemplate.opsForValue().get(stockKey + productId);
@@ -205,7 +205,7 @@ class ProductStockFacadeCancelTest {
         assertThat(hasReserveBefore).isFalse();
 
         //when
-        productStockFacade.cancelByState(productRequest());
+        inventoryFacade.cancelByState(productRequest());
 
         //then
         assertThat(redisTemplate.hasKey(confirmedKey + orderId)).isFalse();
@@ -232,8 +232,8 @@ class ProductStockFacadeCancelTest {
 
         redisTemplate.opsForValue().set(stockKey + productId, "100");
 
-        productStockFacade.reserve(productId, 10, sagaId);
-        productStockFacade.confirm(sagaId, orderId);
+        inventoryFacade.reserve(productId, 10, sagaId);
+        inventoryFacade.confirm(sagaId, orderId);
 
         String beforeStock = redisTemplate.opsForValue().get(stockKey + productId);
         assertThat(beforeStock).isEqualTo("90");
@@ -246,7 +246,7 @@ class ProductStockFacadeCancelTest {
                 false);
 
         //when
-        productStockFacade.cancelByState(productRequest);
+        inventoryFacade.cancelByState(productRequest);
 
         //then
         String afterStock = redisTemplate.opsForValue().get(stockKey + productId);

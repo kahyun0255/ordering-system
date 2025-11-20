@@ -25,7 +25,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class ProductStockServiceCancelTest {
+class InventoryServiceCancelTest {
 
     @Mock
     private OrderApprovalRepository orderApprovalRepository;
@@ -37,7 +37,7 @@ class ProductStockServiceCancelTest {
     private OrderOutboxHelper orderOutboxHelper;
 
     @InjectMocks
-    private ProductStockService productStockService;
+    private InventoryService inventoryService;
 
     @DisplayName("주문을 취소할 때, 주문 내역이 존재하면 주문 취소에 성공한다.")
     @Test
@@ -60,7 +60,7 @@ class ProductStockServiceCancelTest {
         given(restaurantDataMapper.restaurantApprovalEventToOrderEventPayload(any())).willReturn(payload);
 
         //when
-        productStockService.cancel(confirmed, orderId, sagaId);
+        inventoryService.cancel(confirmed, orderId, sagaId);
 
         //then
         verify(orderOutboxHelper).saveOrderOutboxMessage(payload, OrderApprovalStatus.CANCELLED, sagaId);
@@ -78,7 +78,7 @@ class ProductStockServiceCancelTest {
         given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.empty());
 
         //when, then
-        assertThatThrownBy(() -> productStockService.cancel(confirmed, orderId, sagaId))
+        assertThatThrownBy(() -> inventoryService.cancel(confirmed, orderId, sagaId))
                 .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("주문 정보를 찾을 수 없습니다.");
     }
@@ -99,7 +99,7 @@ class ProductStockServiceCancelTest {
         given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.of(orderApproval));
 
         //when
-        productStockService.cancelReservation(orderId);
+        inventoryService.cancelReservation(orderId);
 
         //then
         assertThat(orderApproval.getStatus()).isEqualTo(OrderApprovalStatus.CANCELLED);
@@ -114,7 +114,7 @@ class ProductStockServiceCancelTest {
         given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.empty());
 
         //when, then
-        assertThatThrownBy(() -> productStockService.cancelReservation(orderId))
+        assertThatThrownBy(() -> inventoryService.cancelReservation(orderId))
                 .isInstanceOf(RestaurantNotFoundException.class)
                 .hasMessage("주문 정보를 찾을 수 없습니다.");
     }

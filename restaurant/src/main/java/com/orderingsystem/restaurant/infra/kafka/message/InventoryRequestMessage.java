@@ -10,7 +10,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class ProductRequestMessage {
+public class InventoryRequestMessage {
 
     private UUID orderId;
     private UUID sagaId;

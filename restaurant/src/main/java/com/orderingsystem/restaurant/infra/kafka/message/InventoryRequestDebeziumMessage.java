@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ProductRequestDebeziumMessage {
+public class InventoryRequestDebeziumMessage {
 
     private Payload before;
     private Payload after;

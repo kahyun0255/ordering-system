@@ -21,7 +21,7 @@ public class OrderApprovalFacade {
     private final OrderApprovalService orderApprovalService;
     private final RestaurantStatusValidatorService restaurantStatusValidatorService;
     private final RestaurantRepository restaurantRepository;
-    private final ProductStockFacade productStockFacade;
+    private final InventoryFacade inventoryFacade;
 
     public void approve(UUID orderId, UUID restaurantId, UUID ownerId) {
         log.info("[{}] 유저가 [{}] 레스토랑의 [{}] 주문 승인 처리 시작.", ownerId, restaurantId, orderId);
@@ -49,7 +49,7 @@ public class OrderApprovalFacade {
 
         orderApprovalService.reject(restaurantId, orderId, ownerId);
 
-        productStockFacade.cancel(orderId);
+        inventoryFacade.cancel(orderId);
     }
 
     private Restaurant getRestaurant(UUID restaurantId) {

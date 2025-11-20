@@ -11,10 +11,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ProductStockFacade {
+public class InventoryFacade {
 
     private final StockCachePort stockCachePort;
-    private final ProductStockService productStockService;
+    private final InventoryService inventoryService;
     private final OrderCancelService orderCancelService;
 
     public void reserve(UUID productId, int quantity, UUID sagaId) {
@@ -29,7 +29,7 @@ public class ProductStockFacade {
         }
 
         stockCachePort.confirm(history, sagaId, orderId);
-        productStockService.confirm(history);
+        inventoryService.confirm(history);
     }
 
     public void cancelByState(ProductRequest productRequest) {
@@ -43,14 +43,14 @@ public class ProductStockFacade {
 
         Map<Object, Object> confirmed = stockCachePort.getConfirmed(orderId);
         if (confirmed != null && !confirmed.isEmpty()) {
-            productStockService.cancel(confirmed, orderId, sagaId);
+            inventoryService.cancel(confirmed, orderId, sagaId);
             stockCachePort.restoreConfirmed(confirmed, orderId);
         }
 
         Map<Object, Object> history = stockCachePort.getHistory(sagaId);
         if (history!=null &&!history.isEmpty()){
             stockCachePort.cancelReservation(history, sagaId);
-            productStockService.cancelReservation(orderId);
+            inventoryService.cancelReservation(orderId);
         }
 
         log.warn("취소할 Redis 상태가 없습니다. orderId={}, sagaId={}", orderId, sagaId);
@@ -72,7 +72,7 @@ public class ProductStockFacade {
             return;
         }
 
-        productStockService.restore(confirmed);
+        inventoryService.restore(confirmed);
         stockCachePort.restoreConfirmed(confirmed, orderId);
     }
 }

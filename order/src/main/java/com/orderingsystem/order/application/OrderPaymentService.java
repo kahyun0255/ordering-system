@@ -121,7 +121,8 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         updatePaymentOutboxMessage(paymentOutbox, order.getOrderStatus(), sagaStatus);
 
         productOutboxHelper.saveProductOutboxMessage(
-                orderDataMapper.orderToStockReservationCancelEventPayload(order, paymentResponse.getSagaId(), SagaConstants.INVENTORY_COMPENSATE),
+                orderDataMapper.orderToStockReservationCancelEventPayload(order, paymentResponse.getSagaId(),
+                        SagaConstants.INVENTORY_COMPENSATE),
                 SagaConstants.INVENTORY_COMPENSATE,
                 sagaStatus,
                 paymentResponse.getSagaId()
