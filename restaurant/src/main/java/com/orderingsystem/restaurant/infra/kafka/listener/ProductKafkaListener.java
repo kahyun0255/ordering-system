@@ -54,6 +54,7 @@ public class ProductKafkaListener implements KafkaConsumer<String> {
                                     ProductRequestMessage.class);
 
                     if (requestMessage.getType().equals(SagaConstants.INVENTORY_COMPENSATE)) {
+                        log.info("주문 재고 KafkaListener 수신. Order Id : [{}]",requestMessage.getOrderId());
                         productStockFacade.cancelByState(requestMessage.toProductRequest(
                                 UUID.fromString(productRequestDebeziumMessage.getAfter().getId())));
                     }

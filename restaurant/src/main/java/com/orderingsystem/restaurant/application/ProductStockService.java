@@ -51,6 +51,8 @@ public class ProductStockService {
 
     @Transactional
     public void cancel(Map<Object, Object> confirmed, UUID orderId, UUID sagaId) {
+        log.info("주문 취소 시작. Order Id : [{}]", orderId);
+
         restore(confirmed);
         OrderApproval orderApproval = orderApprovalRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new RestaurantNotFoundException("주문 정보를 찾을 수 없습니다."));
