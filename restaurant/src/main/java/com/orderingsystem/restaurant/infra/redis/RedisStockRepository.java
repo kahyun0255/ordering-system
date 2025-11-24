@@ -131,6 +131,7 @@ public class RedisStockRepository implements StockCachePort {
             throw new IllegalStateException("재고 데이터가 존재하지 않습니다. " + history.keySet());
         }
 
+        System.out.println("<<<<  " + confirmedKey(orderId) + " " + history.toString());
         redisTemplate.opsForHash().putAll(confirmedKey(orderId), history);
 
         log.info("{} 주문 예약 확정 완료. Redis 실제 재고 차감 및 예약 해제", sagaId);
@@ -173,11 +174,11 @@ public class RedisStockRepository implements StockCachePort {
 
     @Override
     public void restoreConfirmed(Map<Object, Object> confirmed, UUID orderId) {
-        if (confirmed == null || confirmed.isEmpty()){
+        if (confirmed == null || confirmed.isEmpty()) {
             return;
         }
 
-        confirmed.forEach((pid,qty)->{
+        confirmed.forEach((pid, qty) -> {
             UUID productId = UUID.fromString(pid.toString());
             redisTemplate.opsForValue().increment(stockKey(productId), Long.parseLong(qty.toString()));
         });

@@ -6,12 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.kafka.KafkaConsumer;
-import com.orderingsystem.restaurant.application.ProductStockFacade;
+import com.orderingsystem.restaurant.application.InventoryFacade;
 import com.orderingsystem.restaurant.application.exception.RestaurantApplicationException;
-import com.orderingsystem.restaurant.infra.kafka.message.ProductRequestDebeziumMessage;
-import com.orderingsystem.restaurant.infra.kafka.message.ProductRequestMessage;
+import com.orderingsystem.restaurant.infra.kafka.message.InventoryRequestDebeziumMessage;
+import com.orderingsystem.restaurant.infra.kafka.message.InventoryRequestMessage;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -25,10 +26,10 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 @Slf4j
-public class ProductKafkaListener implements KafkaConsumer<String> {
+public class InventoryKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final ProductStockFacade productStockFacade;
+    private final InventoryFacade inventoryFacade;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.product-consumer-group-id}",
@@ -42,20 +43,21 @@ public class ProductKafkaListener implements KafkaConsumer<String> {
 
         messages.forEach(message -> {
             try {
-                ProductRequestDebeziumMessage productRequestDebeziumMessage =
-                        objectMapper.readValue(message, ProductRequestDebeziumMessage.class);
+                InventoryRequestDebeziumMessage inventoryRequestDebeziumMessage =
+                        objectMapper.readValue(message, InventoryRequestDebeziumMessage.class);
 
-                if (productRequestDebeziumMessage.getBefore() == null &&
-                        productRequestDebeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
+                if (inventoryRequestDebeziumMessage.getBefore() == null &&
+                        inventoryRequestDebeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
 
-                    ProductRequestMessage requestMessage =
-                            objectMapper.readValue(productRequestDebeziumMessage.getAfter().getPayload(),
-                                    ProductRequestMessage.class);
+                    InventoryRequestMessage requestMessage =
+                            objectMapper.readValue(inventoryRequestDebeziumMessage.getAfter().getPayload(),
+                                    InventoryRequestMessage.class);
 
-                    if (requestMessage.getType().equals(SagaConstants.STOCK_RESERVE_CANCELLED_NAME)){
-                        productStockFacade.cancelReservation(requestMessage.getSagaId());
+                    if (requestMessage.getType().equals(SagaConstants.INVENTORY_COMPENSATE)) {
+                        log.info("주문 재고 KafkaListener 수신. Order Id : [{}]",requestMessage.getOrderId());
+                        inventoryFacade.cancelByState(requestMessage.toProductRequest(
+                                UUID.fromString(inventoryRequestDebeziumMessage.getAfter().getId())));
                     }
-
                 }
             } catch (JsonMappingException e) {
                 log.info("Json 매핑에 실패했습니다. error : {}", e.getMessage());

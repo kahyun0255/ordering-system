@@ -131,4 +131,15 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorDTO> handleDomainException(DomainException e) {
+        log.error(e.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorDTO.builder()
+                        .code(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                        .message(e.getMessage())
+                        .build());
+    }
+
 }

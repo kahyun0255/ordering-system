@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,6 +60,13 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
                 .restaurantId(restaurantId)
                 .build();
         restaurantOwnershipRepository.save(restaurantOwnership);
+    }
+
+    @AfterEach
+    void tearDown() {
+        restaurantRepository.deleteAllInBatch();
+        ownerRepository.deleteAllInBatch();
+        restaurantOwnershipRepository.deleteAllInBatch();
     }
 
     @DisplayName("레스토랑의 소유자일경우 관리자 승인 대기, 영업 전, 영업 중, 일시 휴업 상태의 레스토랑에 상품 추가가 가능하다.")

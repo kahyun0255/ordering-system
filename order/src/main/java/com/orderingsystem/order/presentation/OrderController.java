@@ -2,7 +2,6 @@ package com.orderingsystem.order.presentation;
 
 import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.order.application.OrderFacade;
-import com.orderingsystem.order.application.OrderCreateService;
 import com.orderingsystem.order.application.OrderTrackingService;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.dto.response.OrderStatusResponse;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final OrderCreateService orderCreateService;
     private final CommonJwtUtil commonJwtUtil;
     private final OrderFacade orderFacade;
     private final OrderTrackingService orderTrackingService;
@@ -49,4 +47,13 @@ public class OrderController {
         log.info("주문 추적 시작 : {}", trackingId);
         return ResponseEntity.ok(orderTrackingService.trackOrder(trackingId));
     }
+
+    @PostMapping("/{trackingId}/cancel")
+    public ResponseEntity<Void> cancelOrder(@PathVariable UUID trackingId,
+                                            @RequestHeader("Authorization") String authorizationHeader) {
+        UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        orderFacade.cancelOrder(trackingId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
 }

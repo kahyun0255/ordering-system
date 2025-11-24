@@ -1,5 +1,7 @@
 package com.orderingsystem.order.application;
 
+import static com.orderingsystem.common.domain.status.OrderStatus.CANCELLING;
+
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.common.saga.SagaConstants;
@@ -57,7 +59,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
 
         if (order.getOrderStatus() == OrderStatus.APPROVED
                 || order.getOrderStatus() == OrderStatus.CANCELLED
-                || order.getOrderStatus() == OrderStatus.CANCELLING) {
+                || order.getOrderStatus() == CANCELLING) {
             log.info("주문이 이미 승인/취소 처리된 상태입니다. 결제 처리를 생략합니다. Order Id : {}", paymentResponse.getOrderId());
             return;
         }
@@ -119,8 +121,9 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         updatePaymentOutboxMessage(paymentOutbox, order.getOrderStatus(), sagaStatus);
 
         productOutboxHelper.saveProductOutboxMessage(
-                orderDataMapper.orderToStockReservationCancelEventPayload(order, paymentResponse.getSagaId(), SagaConstants.STOCK_RESERVE_CANCELLED_NAME),
-                SagaConstants.STOCK_RESERVE_CANCELLED_NAME,
+                orderDataMapper.orderToStockReservationCancelEventPayload(order, paymentResponse.getSagaId(),
+                        SagaConstants.INVENTORY_COMPENSATE),
+                SagaConstants.INVENTORY_COMPENSATE,
                 sagaStatus,
                 paymentResponse.getSagaId()
         );
@@ -144,7 +147,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
     private SagaStatus[] getCurrentSagaStatus(PaymentStatus paymentStatus) {
         return switch (paymentStatus) {
             case COMPLETED -> new SagaStatus[]{SagaStatus.STARTED};
-            case CANCELLED -> new SagaStatus[]{SagaStatus.PROCESSING};
+            case CANCELLED -> new SagaStatus[]{SagaStatus.PROCESSING, SagaStatus.COMPENSATING};
             case FAILED -> new SagaStatus[]{SagaStatus.STARTED, SagaStatus.PROCESSING};
         };
     }

@@ -27,7 +27,7 @@ public class PaymentValidateAndInitiateService {
 
         validateCreditEntry(payment, creditInfo, failureMessages);
         subtractCreditEntry(payment, creditInfo);
-        updateCreditHistory(payment, creditHistories, TransactionType.DEBIT, paymentRequest);
+        updateCreditHistory(payment, creditHistories, paymentRequest);
         validateCreditHistory(creditInfo, creditHistories, failureMessages);
 
         if (failureMessages.isEmpty()) {
@@ -51,12 +51,12 @@ public class PaymentValidateAndInitiateService {
     }
 
     private void updateCreditHistory(Payment payment, List<CreditHistory> creditHistories,
-                                     TransactionType transactionType, PaymentRequest paymentRequest) {
+                                     PaymentRequest paymentRequest) {
         creditHistories.add(CreditHistory.builder()
                 .id(UUID.randomUUID())
                 .customerId(payment.getCustomerId())
                 .amount(payment.getPrice())
-                .type(transactionType)
+                .type(TransactionType.DEBIT)
                 .orderId(paymentRequest.getOrderId())
                 .build());
     }

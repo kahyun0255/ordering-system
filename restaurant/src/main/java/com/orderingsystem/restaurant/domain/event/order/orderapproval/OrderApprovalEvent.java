@@ -1,4 +1,4 @@
-package com.orderingsystem.restaurant.domain.event.orderapproval;
+package com.orderingsystem.restaurant.domain.event.order.orderapproval;
 
 import com.orderingsystem.common.domain.event.DomainEvent;
 import com.orderingsystem.restaurant.domain.model.OrderApproval;

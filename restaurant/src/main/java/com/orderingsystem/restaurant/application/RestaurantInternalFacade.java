@@ -13,14 +13,14 @@ public class RestaurantInternalFacade {
 
     private final RestaurantValidationService restaurantValidationService;
     private final RestaurantAccessValidatorService restaurantAccessValidatorService;
-    private final ProductStockFacade productStockFacade;
+    private final InventoryFacade inventoryFacade;
 
     public void validateRestaurant(UUID restaurantId, RestaurantValidationApplicationRequest restaurantValidationRequest) {
         Restaurant restaurant = restaurantAccessValidatorService.findRestaurant(restaurantId);
         restaurantValidationService.validate(restaurant, restaurantValidationRequest);
 
         for (Item item : restaurantValidationRequest.getItems()){
-            productStockFacade.reserve(item.getProductId(), item.getQuantity(), restaurantValidationRequest.getSagaId());
+            inventoryFacade.reserve(item.getProductId(), item.getQuantity(), restaurantValidationRequest.getSagaId());
         }
     }
 

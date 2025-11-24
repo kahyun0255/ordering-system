@@ -2,8 +2,9 @@ package com.orderingsystem.restaurant.domain.model;
 
 import com.orderingsystem.common.domain.BaseEntity;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderApprovedEvent;
-import com.orderingsystem.restaurant.domain.event.orderapproval.OrderRejectedEvent;
+import com.orderingsystem.restaurant.domain.event.order.orderapproval.OrderApprovedEvent;
+import com.orderingsystem.restaurant.domain.event.order.orderapproval.OrderCancelledEvent;
+import com.orderingsystem.restaurant.domain.event.order.orderapproval.OrderRejectedEvent;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -56,6 +57,16 @@ public class OrderApproval extends BaseEntity {
         this.status = OrderApprovalStatus.REJECTED;
 
         return new OrderRejectedEvent(this, this.restaurantId, ZonedDateTime.now());
+    }
+
+    public OrderCancelledEvent cancel() {
+        if (this.status.equals(OrderApprovalStatus.APPROVED) || this.status.equals(OrderApprovalStatus.REJECTED)) {
+            log.info("{} 레스토랑에서 {} 주문을 취소할 수 없는 상태입니다. 상태 : {}", this.restaurantId, this.orderId, this.status);
+            throw new IllegalArgumentException("주문을 취소할 수 없는 상태입니다.");
+        }
+        this.status = OrderApprovalStatus.CANCELLED;
+
+        return new OrderCancelledEvent(this, this.restaurantId, ZonedDateTime.now());
     }
 
 }

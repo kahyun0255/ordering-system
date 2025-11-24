@@ -36,7 +36,7 @@ class OrderApprovalFacadeTest {
     private RestaurantAccessValidatorService restaurantAccessValidatorService;
 
     @Mock
-    private ProductStockFacade productStockFacade;
+    private InventoryFacade inventoryFacade;
 
     @InjectMocks
     private OrderApprovalFacade orderApprovalFacade;
@@ -121,7 +121,7 @@ class OrderApprovalFacadeTest {
 
         //then
         verify(orderApprovalService, times(1)).reject(restaurantId, orderId, ownerId);
-        verify(productStockFacade, times(1)).cancel(orderId);
+        verify(inventoryFacade, times(1)).cancel(orderId);
     }
 
     @DisplayName("레스토랑 소유자가 아니면 주문 거절 시도시 예외가 발생한다.")

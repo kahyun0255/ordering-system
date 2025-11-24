@@ -28,7 +28,7 @@ public class PaymentValidateAndCancelService {
         }
 
         addCreditEntry(payment, creditEntry);
-        updateCreditHistory(payment, creditHistories, TransactionType.CREDIT);
+        updateCreditHistory(payment, creditHistories);
 
         PaymentCancelledEvent paymentCancelledEvent = payment.cancel();
         log.info("결제가 취소되었습니다. Order Id : {}", payment.getOrderId());
@@ -39,13 +39,13 @@ public class PaymentValidateAndCancelService {
         creditEntry.addCreditAmount(payment.getPrice());
     }
 
-    private void updateCreditHistory(Payment payment, List<CreditHistory> creditHistories,
-                                     TransactionType transactionType) {
+    private void updateCreditHistory(Payment payment, List<CreditHistory> creditHistories) {
         creditHistories.add(CreditHistory.builder()
                 .id(UUID.randomUUID())
                 .customerId(payment.getCustomerId())
+                .orderId(payment.getOrderId())
                 .amount(payment.getPrice())
-                .type(transactionType)
+                .type(TransactionType.CREDIT)
                 .paidAt(ZonedDateTime.now())
                 .build());
     }

@@ -172,6 +172,17 @@ public class Order extends AggregateRoot {
         return new OrderCancelledEvent(this, ZonedDateTime.now());
     }
 
+    public OrderCancelledEvent requestCancelByCustomer(List<String> failureMessages) {
+        if (orderStatus != OrderStatus.PENDING && orderStatus != OrderStatus.PAID
+                && orderStatus != OrderStatus.ACCEPTED) {
+            throw new OrderDomainException("주문을 취소할 수 없는 상태입니다.");
+        }
+        orderStatus = OrderStatus.CANCELLING;
+        updateFailureMessages(failureMessages);
+
+        return new OrderCancelledEvent(this, ZonedDateTime.now());
+    }
+
     public void cancel(List<String> failureMessages) {
         if (!(orderStatus == OrderStatus.CANCELLING || orderStatus == OrderStatus.PENDING)) {
             throw new OrderDomainException("주문을 취소 완료할 수 없는 상태입니다.");

@@ -92,20 +92,19 @@ public class PaymentService {
 
         log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
 
-
         Payment payment = getPayment(paymentRequest.getOrderId());
         CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
         List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
         List<String> failureMessages = new ArrayList<>();
 
-        PaymentEvent paymentEvent = paymentValidateAndCancelService.validateAndCancel(
-                payment, creditEntry, creditHistories, failureMessages);
+        PaymentEvent paymentEvent = paymentValidateAndCancelService.validateAndCancel(payment, creditEntry,
+                creditHistories, failureMessages);
 
         if (failureMessages.isEmpty()) {
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
         }
 
-        persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
+        persistCancelDataBase(payment, creditHistories, failureMessages);
 
         orderOutboxHelper.saveOrderOutboxMessage(
                 paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(),
@@ -178,8 +177,8 @@ public class PaymentService {
         }
     }
 
-    private void persistCancelDataBase(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
-                                       List<String> failureMassages, Money price) {
+    private void persistCancelDataBase(Payment payment, List<CreditHistory> creditHistories,
+                                       List<String> failureMassages) {
         paymentRepository.save(payment);
         if (failureMassages.isEmpty()) {
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
