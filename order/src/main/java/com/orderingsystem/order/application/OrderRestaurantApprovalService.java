@@ -1,6 +1,11 @@
 package com.orderingsystem.order.application;
 
+import com.orderingsystem.common.saga.SagaStatus;
+import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.dto.response.RestaurantOrderDecisionResponse;
+import com.orderingsystem.order.application.mapper.OrderDataMapper;
+import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
+import com.orderingsystem.order.domain.event.OrderRejectedEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.outbox.MessageType;
@@ -21,17 +26,49 @@ public class OrderRestaurantApprovalService {
 
     private final OrderRepository orderRepository;
     private final ProcessedMessageRepository processedMessageRepository;
+    private final PaymentOutboxHelper paymentOutboxHelper;
+    private final OrderDataMapper orderDataMapper;
 
     @Transactional
-    public void approve(RestaurantOrderDecisionResponse restaurantOrderDecisionResponse) {
-        if (checkAndMarkProcessed(restaurantOrderDecisionResponse, MessageType.RESTAURANT_APPROVAL)) {
+    public void approve(RestaurantOrderDecisionResponse response) {
+        if (checkAndMarkProcessed(response, MessageType.RESTAURANT_APPROVAL)) {
             return;
         }
 
-        Order order = findOrder(restaurantOrderDecisionResponse.getOrderId());
+        Order order = findOrder(response.getOrderId());
         order.approve();
 
-        log.info("주문이 승인되었습니다. Order Id : {}", restaurantOrderDecisionResponse.getOrderId());
+        log.info("주문이 승인되었습니다. Order Id : {}", response.getOrderId());
+    }
+
+    @Transactional
+    public void rejecting(RestaurantOrderDecisionResponse response) {
+        log.info("레스토랑 주문 거절 처리 시작. Order Id : {}", response.getOrderId());
+        if (checkAndMarkProcessed(response, MessageType.RESTAURANT_REJECT)) {
+            return;
+        }
+
+        Order order = findOrder(response.getOrderId());
+        OrderRejectedEvent orderRejectedEvent = order.rejecting();
+
+        SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(orderRejectedEvent.getOrder()
+                .getOrderStatus());
+
+        paymentOutboxHelper.savePaymentOutboxMessage(
+                orderDataMapper.orderRejectedEventToOrderPaymentEventPayload(orderRejectedEvent, response.getSagaId()),
+                orderRejectedEvent.getOrder().getOrderStatus(),
+                sagaStatus,
+                response.getSagaId()
+        );
+
+        log.info("레스토랑 거절로 인해 주문을 rejecting 처리했습니다. order Id : {}", orderRejectedEvent.getOrder().getId());
+    }
+
+    @Transactional
+    public void reject(PaymentResponse response) {
+        Order order = findOrder(response.getOrderId());
+        order.reject();
+        log.info("주문 reject 처리 완료. orderId : {}", response.getOrderId());
     }
 
     private boolean checkAndMarkProcessed(RestaurantOrderDecisionResponse restaurantOrderDecisionResponse,

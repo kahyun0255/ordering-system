@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.Money;
+import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
@@ -117,7 +118,7 @@ class PaymentServiceCancelTest {
         Optional<Payment> beforePayment = paymentRepository.findByOrderId(orderId);
         assertThat(beforePayment.get().getStatus()).isEqualTo(PaymentStatus.COMPLETED);
 
-        paymentService.cancelPayment(paymentRequest);
+        paymentService.cancelPayment(paymentRequest, OrderStatus.CANCELLING);
 
         //then
         Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
@@ -151,7 +152,7 @@ class PaymentServiceCancelTest {
                 .build());
 
         //when
-        paymentService.cancelPayment(paymentRequest);
+        paymentService.cancelPayment(paymentRequest, OrderStatus.CANCELLING);
 
         //then
         Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
@@ -197,7 +198,7 @@ class PaymentServiceCancelTest {
                 .build());
 
         //when
-        paymentService.cancelPayment(paymentRequest);
+        paymentService.cancelPayment(paymentRequest, OrderStatus.CANCELLING);
 
         //then
         Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
@@ -234,7 +235,7 @@ class PaymentServiceCancelTest {
                 .build());
 
         //when
-        paymentService.cancelPayment(paymentRequest);
+        paymentService.cancelPayment(paymentRequest, OrderStatus.CANCELLING);
 
         //then
         Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
@@ -259,9 +260,67 @@ class PaymentServiceCancelTest {
                 .build();
 
         //when, then
-        assertThatThrownBy(() -> paymentService.cancelPayment(paymentRequest))
+        assertThatThrownBy(() -> paymentService.cancelPayment(paymentRequest,
+                OrderStatus.CANCELLING))
                 .isInstanceOf(PaymentApplicationException.class)
                 .hasMessage("해당 주문에 대한 결제 정보를 찾지 못했습니다. Order Id : " + orderId);
+    }
+
+    @DisplayName("주문 상태가 REJECTING이면 validateAndRefund가 호출되고, 상태는 CANCELLED가 된다.")
+    @Test
+    void shouldRefundPayment_whenOrderStatusIsRejecting() {
+        //given
+        PaymentRequest paymentRequest = PaymentRequest.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .orderId(orderId)
+                .customerId(customerId)
+                .price(new BigDecimal("25.00"))
+                .createdAt(Instant.now())
+                .paymentOrderStatus(PaymentOrderStatus.PENDING)
+                .build();
+
+        //when
+        paymentService.cancelPayment(paymentRequest, OrderStatus.REJECTING);
+
+        //then
+        Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
+        assertThat(payment).isPresent();
+        assertThat(payment.get().getStatus()).isEqualTo(PaymentStatus.REFUNDED);
+    }
+
+    @DisplayName("실패 메시지가 존재할 경우 CreditHistory는 저장되지 않는다.")
+    @Test
+    void shouldNotSaveCreditHistory_whenFailureMessagesExist() {
+        // given
+        UUID negativeOrderId = UUID.randomUUID();
+
+        paymentRepository.save(Payment.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .orderId(negativeOrderId)
+                .price(new Money(new BigDecimal("-25.00")))
+                .status(PaymentStatus.COMPLETED)
+                .build());
+
+        PaymentRequest paymentRequest = PaymentRequest.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .orderId(negativeOrderId)
+                .customerId(customerId)
+                .price(new BigDecimal("-25.00"))
+                .createdAt(Instant.now())
+                .paymentOrderStatus(PaymentOrderStatus.CANCELLED)
+                .build();
+
+        long beforeCount = creditHistoryRepository.count();
+
+        // when
+        paymentService.cancelPayment(paymentRequest, OrderStatus.CANCELLING);
+
+        // then
+        long afterCount = creditHistoryRepository.count();
+        assertThat(afterCount).isEqualTo(beforeCount);
     }
 
 }

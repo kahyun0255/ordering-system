@@ -147,7 +147,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
     private SagaStatus[] getCurrentSagaStatus(PaymentStatus paymentStatus) {
         return switch (paymentStatus) {
             case COMPLETED -> new SagaStatus[]{SagaStatus.STARTED};
-            case CANCELLED -> new SagaStatus[]{SagaStatus.PROCESSING, SagaStatus.COMPENSATING};
+            case CANCELLED, REFUNDED -> new SagaStatus[]{SagaStatus.PROCESSING, SagaStatus.COMPENSATING};
             case FAILED -> new SagaStatus[]{SagaStatus.STARTED, SagaStatus.PROCESSING};
         };
     }

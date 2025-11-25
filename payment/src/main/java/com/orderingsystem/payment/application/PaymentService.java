@@ -3,6 +3,7 @@ package com.orderingsystem.payment.application;
 import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 
 import com.orderingsystem.common.domain.Money;
+import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.payment.application.dto.request.PaymentRequest;
 import com.orderingsystem.payment.application.exception.PaymentApplicationException;
@@ -82,7 +83,7 @@ public class PaymentService {
     }
 
     @Transactional
-    public void cancelPayment(PaymentRequest paymentRequest) {
+    public void cancelPayment(PaymentRequest paymentRequest, OrderStatus orderStatus) {
         if (checkAndMarkProcessed(paymentRequest, MessageType.CANCEL_PAYMENT) &&
                 isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
             log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 취소 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
@@ -97,8 +98,17 @@ public class PaymentService {
         List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
         List<String> failureMessages = new ArrayList<>();
 
-        PaymentEvent paymentEvent = paymentValidateAndCancelService.validateAndCancel(payment, creditEntry,
-                creditHistories, failureMessages);
+        PaymentEvent paymentEvent = null;
+
+        if (orderStatus.equals(OrderStatus.CANCELLING)) {
+            paymentEvent = paymentValidateAndCancelService.validateAndCancel(payment, creditEntry,
+                    creditHistories, failureMessages);
+
+
+        } else if (orderStatus.equals(OrderStatus.REJECTING)) {
+            paymentEvent = paymentValidateAndCancelService.validateAndRefund(payment, creditEntry,
+                    creditHistories, failureMessages);
+        }
 
         if (failureMessages.isEmpty()) {
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
