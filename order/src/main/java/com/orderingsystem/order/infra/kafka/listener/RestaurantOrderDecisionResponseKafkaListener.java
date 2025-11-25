@@ -65,6 +65,12 @@ public class RestaurantOrderDecisionResponseKafkaListener implements KafkaConsum
                         log.info("주문 승인 진행. Order Id : {}", responseMessage.getOrderId());
                         orderRestaurantApprovalService.approve(responseMessage.toDecisionResponse(
                                 UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())));
+                    } else if (OrderApprovalStatus.REJECTED.name()
+                            .equals(responseMessage.getOrderApprovalStatus().name())) {
+                        log.info("주문 거절 진행. Order Id : {}", responseMessage.getOrderId());
+                        orderRestaurantApprovalService.rejecting(responseMessage.toDecisionResponse(
+                                UUID.fromString(restaurantResponseDebeziumMessage.getAfter().getId())
+                        ));
                     }
                 }
             } catch (JsonMappingException e) {

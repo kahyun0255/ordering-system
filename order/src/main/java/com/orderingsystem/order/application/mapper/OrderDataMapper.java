@@ -15,6 +15,7 @@ import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantAp
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
+import com.orderingsystem.order.domain.event.OrderRejectedEvent;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderAddress;
 import com.orderingsystem.order.domain.model.OrderItem;
@@ -132,4 +133,15 @@ public class OrderDataMapper {
                 .build();
     }
 
+    public OrderPaymentEventPayload orderRejectedEventToOrderPaymentEventPayload(OrderRejectedEvent orderRejectedEvent, UUID sagaId) {
+        return OrderPaymentEventPayload.builder()
+                .orderId(orderRejectedEvent.getOrder().getId().toString())
+                .sagaId(sagaId.toString())
+                .customerId(orderRejectedEvent.getOrder().getCustomerId().toString())
+                .price(orderRejectedEvent.getOrder().getPrice().getAmount())
+                .createdAt(orderRejectedEvent.getCreatedAt())
+                .paymentOrderStatus(PaymentOrderStatus.CANCELLED.name())
+                .failureMessage(orderRejectedEvent.getOrder().getFailureMessageList())
+                .build();
+    }
 }

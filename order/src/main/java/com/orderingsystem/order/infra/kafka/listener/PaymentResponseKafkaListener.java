@@ -6,6 +6,7 @@ import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.OrderPaymentService;
+import com.orderingsystem.order.application.OrderRestaurantApprovalService;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.infra.kafka.message.PaymentResponseDebeziumMessage;
 import com.orderingsystem.order.infra.kafka.message.PaymentResponseMessage;
@@ -29,6 +30,7 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
     private final OrderPaymentService orderPaymentService;
+    private final OrderRestaurantApprovalService orderRestaurantApprovalService;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.payment-response-consumer-group-id}",
@@ -66,6 +68,9 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
                     } else if (PaymentStatus.FAILED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                         log.info("결제 실패. order Id : {}", paymentResponseMessage.getOrderId());
                         orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse(
+                                UUID.fromString(debeziumMessage.getAfter().getId())));
+                    } else if (PaymentStatus.REFUNDED.name().equals(paymentResponseMessage.getPaymentStatus())) {
+                        orderRestaurantApprovalService.reject(paymentResponseMessage.toPaymentResponse(
                                 UUID.fromString(debeziumMessage.getAfter().getId())));
                     }
                 }

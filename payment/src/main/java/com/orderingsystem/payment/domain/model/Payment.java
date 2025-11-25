@@ -6,6 +6,7 @@ import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.payment.domain.event.PaymentCancelledEvent;
 import com.orderingsystem.payment.domain.event.PaymentCompletedEvent;
 import com.orderingsystem.payment.domain.event.PaymentFailedEvent;
+import com.orderingsystem.payment.domain.event.PaymentRefundedEvent;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -88,5 +89,10 @@ public class Payment extends AggregateRoot {
     public PaymentCancelledEvent cancel() {
         this.status = PaymentStatus.CANCELLED;
         return new PaymentCancelledEvent(this, ZonedDateTime.now());
+    }
+
+    public PaymentRefundedEvent refund() {
+        this.status = PaymentStatus.REFUNDED;
+        return new PaymentRefundedEvent(this, ZonedDateTime.now());
     }
 }

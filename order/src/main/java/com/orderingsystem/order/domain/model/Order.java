@@ -5,6 +5,7 @@ import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.order.domain.event.OrderCancelledEvent;
 import com.orderingsystem.order.domain.event.OrderPaidEvent;
+import com.orderingsystem.order.domain.event.OrderRejectedEvent;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
@@ -162,6 +163,11 @@ public class Order extends AggregateRoot {
         orderStatus = OrderStatus.APPROVED;
     }
 
+    public OrderRejectedEvent rejecting() {
+        orderStatus = OrderStatus.REJECTING;
+        return new OrderRejectedEvent(this, ZonedDateTime.now());
+    }
+
     public OrderCancelledEvent initCancel(List<String> failureMessages) {
         if (orderStatus != OrderStatus.PAID) {
             throw new OrderDomainException("주문을 취소할 수 없는 상태입니다.");
@@ -189,6 +195,10 @@ public class Order extends AggregateRoot {
         }
         orderStatus = OrderStatus.CANCELLED;
         updateFailureMessages(failureMessages);
+    }
+
+    public void reject() {
+        orderStatus = OrderStatus.REJECTED;
     }
 
     public List<String> getFailureMessageList() {

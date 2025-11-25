@@ -3,6 +3,7 @@ package com.orderingsystem.payment.infra.kafka.listener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
+import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.kafka.KafkaSingleConsumer;
 import com.orderingsystem.payment.application.PaymentService;
@@ -36,7 +37,8 @@ public class PaymentRequestKafkaListener implements KafkaSingleConsumer<String> 
                         @Header(KafkaHeaders.OFFSET) Long offset) {
 
         try {
-            PaymentRequestDebeziumMessage debeziumMessage = objectMapper.readValue(message, PaymentRequestDebeziumMessage.class);
+            PaymentRequestDebeziumMessage debeziumMessage = objectMapper.readValue(message,
+                    PaymentRequestDebeziumMessage.class);
 
             if (debeziumMessage.getBefore() == null && debeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
                 log.info("PaymentRequestKafkaListener에서 메시지를 받았습니다. message : {}, key : {}, partition : {}, offset: {}",
@@ -51,7 +53,8 @@ public class PaymentRequestKafkaListener implements KafkaSingleConsumer<String> 
                     paymentService.completePayment(requestMessage.toPaymentRequest());
                 } else if (PaymentOrderStatus.CANCELLED.equals(requestMessage.getPaymentOrderStatus())) {
                     log.info("결제 취소 진행. order Id : {}", requestMessage.getOrderId());
-                    paymentService.cancelPayment(requestMessage.toPaymentRequest());
+                    paymentService.cancelPayment(requestMessage.toPaymentRequest(),
+                            OrderStatus.valueOf(debeziumMessage.getAfter().getOrderStatus()));
                 }
             }
 
