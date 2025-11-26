@@ -1,0 +1,58 @@
+package com.orderingsystem.payment.application;
+
+import com.orderingsystem.common.domain.Money;
+import com.orderingsystem.payment.application.dto.request.CreditApplicationRequest;
+import com.orderingsystem.payment.application.dto.response.BalanceResponse;
+import com.orderingsystem.payment.domain.event.CreditEvent;
+import com.orderingsystem.payment.domain.exception.PaymentDomainException;
+import com.orderingsystem.payment.domain.model.CreditEntry;
+import com.orderingsystem.payment.domain.model.CreditHistory;
+import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
+import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
+import com.orderingsystem.payment.domain.service.CreditDepositService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class CreditService {
+
+    private final CreditEntryRepository creditEntryRepository;
+    private final CreditHistoryRepository creditHistoryRepository;
+    private final CreditDepositService creditDepositService;
+
+    @Transactional
+    public BalanceResponse deposit(UUID userId, CreditApplicationRequest request) {
+        log.info("[{}] 유저가 [{}] 금액 입금 요청.", userId, request.getAmount());
+
+        CreditEntry entry = creditEntryRepository.findByCustomerId(userId)
+                .orElseGet(() -> creditEntryRepository.save(CreditEntry.create(userId)));
+
+        Money money = new Money(request.getAmount());
+        List<CreditHistory> creditHistories = creditHistoryRepository.findByCustomerId(userId);
+        List<String> failureMessages = new ArrayList<>();
+
+        CreditEvent creditEvent = creditDepositService.deposit(entry, money, creditHistories, failureMessages);
+
+        if (failureMessages.isEmpty()) {
+            creditEntryRepository.save(creditEvent.getCreditEntry());
+            creditHistoryRepository.save(creditEvent.getCreditHistory());
+        } else {
+            log.warn("크레딧 입금 검증 실패. userId : [{}], failureMessage : [{}]", userId, failureMessages.toString());
+            throw new PaymentDomainException(failureMessages.toString());
+        }
+
+        log.info("[{}] 유저에게 [{}] 금액 입금 완료.", userId, request.getAmount());
+
+        return BalanceResponse.builder()
+                .balance(creditEvent.getCreditEntry().getTotalCreditAmount().getAmount())
+                .build();
+    }
+
+}
