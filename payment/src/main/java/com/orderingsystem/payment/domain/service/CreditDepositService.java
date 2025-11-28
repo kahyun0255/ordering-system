@@ -37,6 +37,7 @@ public class CreditDepositService {
                 .id(UUID.randomUUID())
                 .amount(money)
                 .paidAt(ZonedDateTime.now())
+                .customerId(entry.getCustomerId())
                 .build();
 
         return CreditEvent.builder()
