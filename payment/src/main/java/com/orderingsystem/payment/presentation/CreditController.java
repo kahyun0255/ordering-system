@@ -29,4 +29,11 @@ public class CreditController {
         return ResponseEntity.ok(creditService.deposit(userId, creditRequest.toApplicationRequest()));
     }
 
+    @PostMapping("/withdraw")
+    public ResponseEntity<BalanceResponse> withdraw(@RequestHeader("Authorization") String authorizationHeader,
+                                                    @Valid @RequestBody CreditRequest creditRequest){
+        UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        return ResponseEntity.ok(creditService.withdraw(userId, creditRequest.toApplicationRequest()));
+    }
+
 }

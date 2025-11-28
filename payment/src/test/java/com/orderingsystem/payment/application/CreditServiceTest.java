@@ -22,6 +22,7 @@ import com.orderingsystem.payment.domain.model.TransactionType;
 import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
 import com.orderingsystem.payment.domain.service.CreditDepositService;
+import com.orderingsystem.payment.domain.service.CreditWithdrawService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +45,9 @@ class CreditServiceTest {
 
     @Mock
     private CreditDepositService creditDepositService;
+
+    @Mock
+    private CreditWithdrawService creditWithdrawService;
 
     @InjectMocks
     private CreditService creditService;
@@ -117,6 +121,82 @@ class CreditServiceTest {
 
         //when, then
         assertThatThrownBy(() -> creditService.deposit(userId, request))
+                .isInstanceOf(PaymentDomainException.class)
+                .hasMessageContaining(msg);
+
+        verify(creditEntryRepository, never()).save(any(CreditEntry.class));
+        verify(creditHistoryRepository, never()).save(any(CreditHistory.class));
+    }
+
+    @DisplayName("credit 검증에 문제가 없으면 출금 후 잔액을 반환한다.")
+    @Test
+    void shouldReturnBalanceAfterWithdrawal_whenCreditValidationPasses() {
+        //given
+        UUID userId = UUID.randomUUID();
+
+        CreditApplicationRequest request = mock(CreditApplicationRequest.class);
+
+        CreditEntry creditEntry = mock(CreditEntry.class);
+        given(creditEntryRepository.findByCustomerId(eq(userId))).willReturn(Optional.of(creditEntry));
+
+        given(request.getAmount()).willReturn(BigDecimal.valueOf(1000));
+
+        List<CreditHistory> histories = List.of(
+                CreditHistory.builder()
+                        .customerId(userId)
+                        .type(TransactionType.CREDIT)
+                        .amount(new Money(new BigDecimal("1000")))
+                        .build(),
+                CreditHistory.builder()
+                        .customerId(userId)
+                        .type(TransactionType.DEBIT)
+                        .amount(new Money(new BigDecimal("300")))
+                        .build()
+        );
+        given(creditHistoryRepository.findByCustomerId(eq(userId))).willReturn(histories);
+
+        CreditEvent creditEvent = mock(CreditEvent.class);
+        given(creditWithdrawService.withdraw(same(creditEntry), any(Money.class), anyList(), anyList()))
+                .willReturn(creditEvent);
+
+        CreditHistory creditHistory = mock(CreditHistory.class);
+        given(creditEvent.getCreditEntry()).willReturn(creditEntry);
+        given(creditEvent.getCreditHistory()).willReturn(creditHistory);
+        given(creditEvent.getCreditEntry().getTotalCreditAmount()).willReturn(new Money(BigDecimal.valueOf(1000)));
+
+        //when
+        BalanceResponse response = creditService.withdraw(userId, request);
+
+        //then
+        verify(creditWithdrawService).withdraw(same(creditEntry), any(Money.class), anyList(), anyList());
+        assertThat(response.getBalance().compareTo(BigDecimal.valueOf(1000))).isZero();
+    }
+
+    @DisplayName("credit 검증에 문제가 발생하면 출금에 실패하고, 예외가 발생한다.")
+    @Test
+    void shouldThrowException_whenWithdrawalFailsDueToInvalidCredit() {
+        //given
+        UUID userId = UUID.randomUUID();
+        CreditApplicationRequest request = mock(CreditApplicationRequest.class);
+        given(request.getAmount()).willReturn(BigDecimal.valueOf(1000));
+
+        CreditEntry entry = mock(CreditEntry.class);
+        given(creditEntryRepository.findByCustomerId(userId)).willReturn(Optional.of(entry));
+        given(creditHistoryRepository.findByCustomerId(userId)).willReturn(List.of());
+
+        String msg = "Credit History 이력 총합이 현재 크레딧과 일치하지 않습니다.";
+
+        given(creditWithdrawService.withdraw(
+                same(entry), any(Money.class), anyList(), anyList()
+        )).willAnswer(inv -> {
+            @SuppressWarnings("unchecked")
+            List<String> failures = inv.getArgument(3, List.class);
+            failures.add(msg);
+            return mock(CreditEvent.class);
+        });
+
+        //when, then
+        assertThatThrownBy(() -> creditService.withdraw(userId, request))
                 .isInstanceOf(PaymentDomainException.class)
                 .hasMessageContaining(msg);
 

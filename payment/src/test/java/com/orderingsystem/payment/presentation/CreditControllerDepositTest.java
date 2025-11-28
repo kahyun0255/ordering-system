@@ -5,7 +5,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
@@ -13,52 +12,25 @@ import com.orderingsystem.payment.domain.model.TransactionType;
 import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
 import com.orderingsystem.payment.presentation.request.CreditRequest;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.Jwts.SIG;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import javax.crypto.SecretKey;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-class CreditControllerTest {
+class CreditControllerDepositTest extends ControllerTestSupport {
 
     @Autowired
     private CreditEntryRepository creditEntryRepository;
 
     @Autowired
     private CreditHistoryRepository creditHistoryRepository;
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Value("${jwt.secret-key}")
-    protected String secretKey;
-
-    @Value("${jwt.issuer}")
-    protected String issuer;
 
     @AfterEach
     void tearDown() {
@@ -390,20 +362,6 @@ class CreditControllerTest {
         assertThat(afterCreditEntry.get().getTotalCreditAmount().getAmount()
                 .compareTo(totalCreditAmount.getAmount())).isZero();
         assertThat(creditHistoryRepository.count()).isEqualTo(1L);
-    }
-
-    private String buildToken(UUID userId) {
-        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
-
-        return Jwts.builder()
-                .subject(userId.toString())
-                .issuer(issuer)
-                .claim("userId", userId.toString())
-                .claim("typ", "access")
-                .expiration(Date.from(Instant.now().plusSeconds(10000)))
-                .issuedAt(new Date())
-                .signWith(key, SIG.HS256)
-                .compact();
     }
 
 }
