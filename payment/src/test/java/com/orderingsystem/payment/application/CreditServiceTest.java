@@ -16,6 +16,7 @@ import com.orderingsystem.payment.application.dto.request.CreditApplicationReque
 import com.orderingsystem.payment.application.dto.response.BalanceResponse;
 import com.orderingsystem.payment.domain.event.CreditEvent;
 import com.orderingsystem.payment.domain.exception.PaymentDomainException;
+import com.orderingsystem.payment.domain.exception.PaymentNotFoundException;
 import com.orderingsystem.payment.domain.model.CreditEntry;
 import com.orderingsystem.payment.domain.model.CreditHistory;
 import com.orderingsystem.payment.domain.model.TransactionType;
@@ -202,6 +203,38 @@ class CreditServiceTest {
 
         verify(creditEntryRepository, never()).save(any(CreditEntry.class));
         verify(creditHistoryRepository, never()).save(any(CreditHistory.class));
+    }
+
+    @DisplayName("계좌가 존재하면 잔액 조회에 성공한다.")
+    @Test
+    void shouldReturnBalance_whenAccountExists() {
+        //given
+        UUID userId = UUID.randomUUID();
+
+        CreditEntry creditEntry = mock(CreditEntry.class);
+
+        given(creditEntryRepository.findByCustomerId(userId)).willReturn(Optional.of(creditEntry));
+        given(creditEntry.getTotalCreditAmount()).willReturn(new Money(BigDecimal.valueOf(10000)));
+
+        //when
+        BalanceResponse balance = creditService.getBalance(userId);
+
+        //then
+        assertThat(balance.getBalance().compareTo(BigDecimal.valueOf(10000))).isZero();
+    }
+
+    @DisplayName("계좌가 존재하지 않으면 예외가 발생한다.")
+    @Test
+    void shouldThrowException_whenAccountDoesNotExist() {
+        //given
+        UUID userId = UUID.randomUUID();
+
+        given(creditEntryRepository.findByCustomerId(userId)).willReturn(Optional.empty());
+
+        //when, then
+        assertThatThrownBy(()->creditService.getBalance(userId))
+                .isInstanceOf(PaymentNotFoundException.class)
+                .hasMessage("계좌가 존재하지 않습니다.");
     }
 
 }

@@ -14,6 +14,7 @@ import com.orderingsystem.payment.domain.service.CreditDepositService;
 import com.orderingsystem.payment.domain.service.CreditWithdrawService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,6 +84,21 @@ public class CreditService {
 
         return BalanceResponse.builder()
                 .balance(creditEvent.getCreditEntry().getTotalCreditAmount().getAmount())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public BalanceResponse getBalance(UUID userId) {
+        log.info("[{}] 유저가 잔액 조회를 요청.", userId);
+
+        Optional<CreditEntry> creditEntry = creditEntryRepository.findByCustomerId(userId);
+        if (creditEntry.isEmpty()){
+            log.info("[{}] 유저의 계좌가 존재하지 않습니다.", userId);
+            throw new PaymentNotFoundException("계좌가 존재하지 않습니다.");
+        }
+
+        return BalanceResponse.builder()
+                .balance(creditEntry.get().getTotalCreditAmount().getAmount())
                 .build();
     }
 
