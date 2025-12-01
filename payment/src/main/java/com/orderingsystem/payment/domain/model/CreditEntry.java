@@ -8,6 +8,7 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -32,6 +33,22 @@ public class CreditEntry extends BaseEntity {
     @AttributeOverride(name = "amount", column = @Column(name = "totalCreditAmount"))
     private Money totalCreditAmount;
 
+    public static CreditEntry create(UUID userId) {
+        return CreditEntry.builder()
+                .id(UUID.randomUUID())
+                .customerId(userId)
+                .totalCreditAmount(new Money(BigDecimal.ZERO))
+                .build();
+    }
+
+    public void addCreditAmount(Money amount) {
+        totalCreditAmount = totalCreditAmount.add(amount);
+    }
+
+    public void subtractCreditAmount(Money amount) {
+        totalCreditAmount = totalCreditAmount.subtract(amount);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -47,13 +64,5 @@ public class CreditEntry extends BaseEntity {
     @Override
     public int hashCode() {
         return Objects.hash(id);
-    }
-
-    public void addCreditAmount(Money amount) {
-        totalCreditAmount = totalCreditAmount.add(amount);
-    }
-
-    public void subtractCreditAmount(Money amount) {
-        totalCreditAmount = totalCreditAmount.subtract(amount);
     }
 }
