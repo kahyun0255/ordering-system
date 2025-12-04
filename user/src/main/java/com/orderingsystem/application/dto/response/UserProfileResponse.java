@@ -1,7 +1,7 @@
 package com.orderingsystem.application.dto.response;
 
 import com.orderingsystem.domain.model.UserStatus;
-import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.common.domain.status.UserType;
 import lombok.Builder;
 import lombok.Getter;
 

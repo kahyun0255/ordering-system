@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.common.util.CommonJwtUtil;
-import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.presentation.request.SignUpRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

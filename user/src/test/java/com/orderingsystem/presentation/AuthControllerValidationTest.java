@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.common.util.CommonJwtUtil;
-import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.presentation.request.SignInRequest;
 import com.orderingsystem.presentation.request.SignUpRequest;
 import org.junit.jupiter.api.DisplayName;

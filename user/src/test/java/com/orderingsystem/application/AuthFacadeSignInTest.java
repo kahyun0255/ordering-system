@@ -8,7 +8,7 @@ import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.exception.UserNotFoundException;
 import com.orderingsystem.domain.model.User;
-import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;

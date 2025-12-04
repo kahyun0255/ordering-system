@@ -1,6 +1,7 @@
 package com.orderingsystem.domain.model;
 
 import com.orderingsystem.common.domain.AggregateRoot;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.event.UserDeletedEvent;
 import jakarta.persistence.Column;

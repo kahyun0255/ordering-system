@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.domain.model.User;
-import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.presentation.request.UpdateUserRequest;
 import io.jsonwebtoken.Jwts;
