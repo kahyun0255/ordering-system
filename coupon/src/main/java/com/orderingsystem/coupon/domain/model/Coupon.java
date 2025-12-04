@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -64,5 +65,37 @@ public class Coupon extends AggregateRoot {
 
     @PositiveOrZero
     private Long issuedCount;
+
+    public static Coupon create(DiscountType discountType, BigDecimal amountOff, Long percentOff,
+                                BigDecimal maxDiscountAmount, BigDecimal minDiscountAmount, LocalDateTime validFrom,
+                                LocalDateTime validUntil, Long issueLimit) {
+        return Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .discountType(discountType)
+                .status(CouponStatus.SCHEDULED)
+                .amountOff(amountOff)
+                .percentOff(percentOff)
+                .maxDiscountAmount(maxDiscountAmount)
+                .minDiscountAmount(minDiscountAmount)
+                .validFrom(validFrom)
+                .validUntil(validUntil)
+                .issueLimit(issueLimit)
+                .issuedCount(0L)
+                .build();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Coupon coupon = (Coupon) o;
+        return Objects.equals(couponId, coupon.couponId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(couponId);
+    }
 
 }
