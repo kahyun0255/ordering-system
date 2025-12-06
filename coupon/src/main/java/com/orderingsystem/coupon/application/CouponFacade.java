@@ -15,13 +15,13 @@ public class CouponFacade {
 
     private final CreateCouponService createCouponService;
 
-    public void createCoupon(CreateCouponApplicationRequest request, UserType userType, UUID userId) {
+    public UUID createCoupon(CreateCouponApplicationRequest request, UserType userType, UUID userId) {
         if (!UserType.ADMIN.equals(userType)) {
             log.info("관리자가 아닌 유저가 쿠폰 생성 시도. UserId : [{}], UserType : [{}]", userId, userType);
             throw new AccessDeniedException("쿠폰 생성이 불가능합니다.");
         }
 
-        createCouponService.create(request, userId);
+        return createCouponService.create(request, userId);
     }
 
 }

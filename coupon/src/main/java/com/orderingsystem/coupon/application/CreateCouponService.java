@@ -17,7 +17,7 @@ public class CreateCouponService {
     private final CouponRepository couponRepository;
 
     @Transactional
-    public void create(CreateCouponApplicationRequest request, UUID userId) {
+    public UUID create(CreateCouponApplicationRequest request, UUID userId) {
         log.info("[{}] 유저가 쿠폰 생성 요청. 쿠폰 정보 : [{}]", userId, request.toString());
 
         Coupon coupon = Coupon.create(request.getDiscountType(), request.getAmountOff(), request.getPercentOff(),
@@ -25,6 +25,8 @@ public class CreateCouponService {
                 request.getValidUntil(), request.getIssueLimit());
 
         couponRepository.save(coupon);
+
+        return coupon.getCouponId();
     }
 
 }

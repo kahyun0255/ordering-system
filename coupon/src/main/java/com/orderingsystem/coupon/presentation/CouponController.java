@@ -5,10 +5,10 @@ import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.coupon.application.CouponFacade;
 import com.orderingsystem.coupon.presentation.request.CreateCouponRequest;
 import jakarta.validation.Valid;
+import java.net.URI;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -28,8 +28,8 @@ public class CouponController {
                                              @RequestBody @Valid CreateCouponRequest createCouponRequest) {
         UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
         UserType userType = commonJwtUtil.getUserRoleFromToken(authorizationHeader);
-        couponFacade.createCoupon(createCouponRequest.toApplicationRequest(), userType, userId);
-        return ResponseEntity.ok().build();
+        UUID couponId = couponFacade.createCoupon(createCouponRequest.toApplicationRequest(), userType, userId);
+        return ResponseEntity.created(URI.create("/api/coupons/"+couponId)).build();
     }
 
 }
