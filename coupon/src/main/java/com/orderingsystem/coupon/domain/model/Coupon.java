@@ -84,6 +84,10 @@ public class Coupon extends AggregateRoot {
                 .build();
     }
 
+    public void increaseIssuedCount() {
+        this.issuedCount++;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -97,5 +101,4 @@ public class Coupon extends AggregateRoot {
     public int hashCode() {
         return Objects.hashCode(couponId);
     }
-
 }

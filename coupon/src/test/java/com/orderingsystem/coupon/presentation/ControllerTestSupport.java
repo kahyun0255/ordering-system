@@ -49,4 +49,8 @@ public abstract class ControllerTestSupport {
                 .compact();
     }
 
+    protected String buildToken(UUID userId) {
+        return buildToken(userId, UserType.CUSTOMER);
+    }
+
 }

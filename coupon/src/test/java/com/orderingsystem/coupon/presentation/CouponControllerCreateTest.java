@@ -58,7 +58,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(request))
                                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         //then
         List<Coupon> coupons = couponRepository.findAll();

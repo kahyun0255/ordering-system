@@ -37,7 +37,6 @@ public class IssuedCoupon extends BaseEntity {
     @Column(nullable = false)
     private UUID couponId;
 
-    @Column(nullable = false)
     private UUID orderId;
 
     @Enumerated(EnumType.STRING)
@@ -48,5 +47,15 @@ public class IssuedCoupon extends BaseEntity {
 
     private LocalDateTime usedAt;
     private LocalDateTime expiredAt;
+
+    public static IssuedCoupon create(UUID userId, UUID couponId, LocalDateTime issuedAt, LocalDateTime expiredAt) {
+        return IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(couponId)
+                .status(IssuedCouponStatus.ISSUED)
+                .issuedAt(issuedAt)
+                .expiredAt(expiredAt)
+                .build();
+    }
 
 }
