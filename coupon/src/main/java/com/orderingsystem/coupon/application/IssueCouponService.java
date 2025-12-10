@@ -44,7 +44,6 @@ public class IssueCouponService {
             try {
                 couponIssueMessagePublisher.publish(couponIssuedEvent);
             } catch (Exception e) {
-                //TODO: Kafka 롤백(재고 복구, 중복 이력 삭제)
                 couponCachePort.increaseStock(couponId);
                 couponCachePort.removeIssuedUser(couponId, userId);
 
