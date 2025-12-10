@@ -5,6 +5,7 @@ import com.orderingsystem.coupon.application.port.out.CouponCachePort;
 import com.orderingsystem.coupon.application.port.out.CouponIssueMessagePublisher;
 import com.orderingsystem.coupon.domain.event.CouponIssuedEvent;
 import com.orderingsystem.coupon.domain.exception.CouponNotFoundException;
+import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.IssuedCoupon;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
@@ -60,7 +61,7 @@ public class IssueCouponService {
     }
 
     private void ensureCouponExists(UUID couponId, UUID userId) {
-        if (!couponCachePort.exists(couponId)){
+        if (!couponCachePort.exists(couponId)) {
             log.info("존재하지 않는 쿠폰 발급 요청. couponId : [{}], userId : [{}]", couponId, userId);
             throw new CouponNotFoundException("존재하지 않는 쿠폰입니다.");
         }
@@ -80,13 +81,30 @@ public class IssueCouponService {
             return;
         }
 
+        List<UUID> couponIds = requests.stream()
+                .map(CouponIssueApplicationRequest::getCouponId)
+                .distinct()
+                .toList();
+
+        Map<UUID, Coupon> couponMap = couponRepository.findAllByCouponIdIn(couponIds).stream()
+                .collect(Collectors.toMap(Coupon::getCouponId, c -> c));
+
         List<IssuedCoupon> issuedCoupons = new ArrayList<>();
 
         for (CouponIssueApplicationRequest request : requests) {
             log.info("[{}] 유저에 대한 쿠폰 [{}] 저장.", request.getCouponId(), request.getUserId());
 
+            Coupon coupon = couponMap.get(request.getCouponId());
+
+            if (coupon == null) {
+                log.error("쿠폰 정보를 찾을 수 없습니다. couponId: {}", request.getCouponId());
+                continue;
+            }
+
+            LocalDateTime expiredAt = request.getIssuedAt().plusDays(coupon.getValidDays());
+
             IssuedCoupon issuedCoupon = IssuedCoupon.create(request.getUserId(), request.getCouponId(),
-                    request.getIssuedAt(), request.getExpiredAt());
+                    request.getIssuedAt(), expiredAt);
             issuedCoupons.add(issuedCoupon);
         }
         issuedCouponRepository.saveAll(issuedCoupons);

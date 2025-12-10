@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,6 +41,9 @@ public class CreateCouponRequest {
     private LocalDateTime validFrom;
 
     private LocalDateTime validUntil;
+
+    @Positive(message = "유효 기간은 1일 이상이어야 합니다.")
+    private Integer validDays;
 
     @PositiveOrZero(message = "발행 개수는 0 이상이어야 합니다.")
     private Long issueLimit;
@@ -78,6 +82,7 @@ public class CreateCouponRequest {
                 .validUntil(this.validUntil)
                 .issueLimit(this.issueLimit)
                 .name(this.name)
+                .validDays(this.validDays)
                 .build();
     }
 

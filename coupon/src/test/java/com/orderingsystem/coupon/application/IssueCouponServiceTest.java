@@ -9,13 +9,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.orderingsystem.coupon.application.dto.request.CouponIssueApplicationRequest;
 import com.orderingsystem.coupon.application.port.out.CouponCachePort;
 import com.orderingsystem.coupon.application.port.out.CouponIssueMessagePublisher;
 import com.orderingsystem.coupon.domain.event.CouponIssuedEvent;
 import com.orderingsystem.coupon.domain.exception.CouponNotFoundException;
+import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.IssuedCoupon;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
@@ -197,35 +197,43 @@ class IssueCouponServiceTest {
         verifyNoInteractions(issuedCouponRepository, couponRepository);
     }
 
-    @DisplayName("쿠폰 저장 요청이 들어오면 쿠폰 발급 정보를 저장하고 쿠폰별 집계 수만큼 쿠폰 발급 개수를 증가시킨다.")
+    @DisplayName("쿠폰 저장 요청이 들어오면 쿠폰 발급 정보를 저장하고, 유효기간(expiredAt)이 정책에 맞게 계산되었는지 검증한다.")
     @Test
-    void shouldPersistIssuedCouponsAndIncrementCountByAggregate() {
+    void shouldPersistIssuedCouponsAndVerifyExpirationDate() {
         //given
-        UUID coupon1 = UUID.randomUUID();
-        UUID coupon2 = UUID.randomUUID();
+        UUID couponId1 = UUID.randomUUID();
+        UUID couponId2 = UUID.randomUUID();
+
+        LocalDateTime fixedIssuedAt = LocalDateTime.of(2025, 1, 1, 12, 0, 0);
+
+        Coupon mockCoupon1 = mock(Coupon.class);
+        given(mockCoupon1.getCouponId()).willReturn(couponId1);
+        given(mockCoupon1.getValidDays()).willReturn(30);
+
+        Coupon mockCoupon2 = mock(Coupon.class);
+        given(mockCoupon2.getCouponId()).willReturn(couponId2);
+        given(mockCoupon2.getValidDays()).willReturn(7);
+
+        given(couponRepository.findAllByCouponIdIn(any()))
+                .willReturn(List.of(mockCoupon1, mockCoupon2));
 
         CouponIssueApplicationRequest r1 = mock(CouponIssueApplicationRequest.class);
         CouponIssueApplicationRequest r2 = mock(CouponIssueApplicationRequest.class);
         CouponIssueApplicationRequest r3 = mock(CouponIssueApplicationRequest.class);
 
-        given(r1.getCouponId()).willReturn(coupon1);
-        given(r2.getCouponId()).willReturn(coupon1);
-        given(r3.getCouponId()).willReturn(coupon2);
-
+        given(r1.getCouponId()).willReturn(couponId1);
         given(r1.getUserId()).willReturn(UUID.randomUUID());
+        given(r1.getIssuedAt()).willReturn(fixedIssuedAt);
+
+        given(r2.getCouponId()).willReturn(couponId1);
         given(r2.getUserId()).willReturn(UUID.randomUUID());
+        given(r2.getIssuedAt()).willReturn(fixedIssuedAt);
+
+        given(r3.getCouponId()).willReturn(couponId2);
         given(r3.getUserId()).willReturn(UUID.randomUUID());
-
-        given(r1.getIssuedAt()).willReturn(LocalDateTime.now());
-        given(r2.getIssuedAt()).willReturn(LocalDateTime.now());
-        given(r3.getIssuedAt()).willReturn(LocalDateTime.now());
-
-        given(r1.getExpiredAt()).willReturn(LocalDateTime.now().plusDays(30));
-        given(r2.getExpiredAt()).willReturn(LocalDateTime.now().plusDays(30));
-        given(r3.getExpiredAt()).willReturn(LocalDateTime.now().plusDays(30));
+        given(r3.getIssuedAt()).willReturn(fixedIssuedAt);
 
         List<CouponIssueApplicationRequest> requests = Arrays.asList(r1, r2, r3);
-
         ArgumentCaptor<List<IssuedCoupon>> saveCap = ArgumentCaptor.forClass(List.class);
 
         //when
@@ -233,12 +241,25 @@ class IssueCouponServiceTest {
 
         //then
         verify(issuedCouponRepository).saveAll(saveCap.capture());
-        List<IssuedCoupon> saved = saveCap.getValue();
-        assertThat(saved).hasSize(3);
+        List<IssuedCoupon> savedCoupons = saveCap.getValue();
 
-        verify(couponRepository).increaseIssuedCount(coupon1, 2L);
-        verify(couponRepository).increaseIssuedCount(coupon2, 1L);
-        verifyNoMoreInteractions(couponRepository);
+        assertThat(savedCoupons).hasSize(3);
+
+        IssuedCoupon saved1 = savedCoupons.get(0);
+        assertThat(saved1.getCouponId()).isEqualTo(couponId1);
+        assertThat(saved1.getIssuedAt()).isEqualTo(fixedIssuedAt);
+        assertThat(saved1.getExpiredAt()).isEqualTo(fixedIssuedAt.plusDays(30));
+
+        IssuedCoupon saved2 = savedCoupons.get(1);
+        assertThat(saved2.getCouponId()).isEqualTo(couponId1);
+        assertThat(saved2.getExpiredAt()).isEqualTo(fixedIssuedAt.plusDays(30));
+
+        IssuedCoupon saved3 = savedCoupons.get(2);
+        assertThat(saved3.getCouponId()).isEqualTo(couponId2);
+        assertThat(saved3.getExpiredAt()).isEqualTo(fixedIssuedAt.plusDays(7));
+
+        verify(couponRepository).increaseIssuedCount(couponId1, 2L);
+        verify(couponRepository).increaseIssuedCount(couponId2, 1L);
     }
 
 }

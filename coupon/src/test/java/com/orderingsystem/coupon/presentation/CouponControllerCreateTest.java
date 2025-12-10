@@ -51,6 +51,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
                 .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
                 .issueLimit(10000L)
+                .validDays(10)
                 .build();
 
         //when
@@ -75,6 +76,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
         assertThat(coupon.getStatus()).isEqualTo(CouponStatus.SCHEDULED);
         assertThat(coupon.getName()).isEqualTo(request.getName());
         assertThat(coupon.getIssuedCount()).isEqualTo(0L);
+        assertThat(coupon.getValidDays()).isEqualTo(request.getValidDays());
     }
 
     @DisplayName("관리자가 아닌 유저가 쿠폰 생성시 쿠폰 생성이 불가능하고, 403을 반환한다.")
@@ -628,6 +630,68 @@ class CouponControllerCreateTest extends ControllerTestSupport {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("name: 쿠폰 이름은 필수입니다."));
+
+        assertThat(couponRepository.count()).isZero();
+    }
+
+    @DisplayName("쿠폰 발급 후 유효기간이 0일이면 쿠폰 생성에 실패하고 400을 반환한다.")
+    @Test
+    void shouldReturn400_whenCouponValidityIsZero() throws Exception {
+        //given
+        UUID userId = UUID.randomUUID();
+        String token = buildToken(userId, UserType.ADMIN);
+
+        CreateCouponRequest request = CreateCouponRequest.builder()
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
+                .amountOff(BigDecimal.valueOf(2000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 5, 23, 59))
+                .issueLimit(10000L)
+                .validDays(0)
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/coupons")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("validDays: 유효 기간은 1일 이상이어야 합니다."));
+
+        assertThat(couponRepository.count()).isZero();
+    }
+
+    @DisplayName("쿠폰 발급 후 유효기간이 음수라면 쿠폰 생성에 실패하고 400을 반환한다.")
+    @Test
+    void shouldReturn400_whenCouponValidityIsNegative() throws Exception {
+        //given
+        UUID userId = UUID.randomUUID();
+        String token = buildToken(userId, UserType.ADMIN);
+
+        CreateCouponRequest request = CreateCouponRequest.builder()
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
+                .amountOff(BigDecimal.valueOf(2000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 5, 23, 59))
+                .issueLimit(10000L)
+                .validDays(-1)
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/coupons")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("validDays: 유효 기간은 1일 이상이어야 합니다."));
 
         assertThat(couponRepository.count()).isZero();
     }

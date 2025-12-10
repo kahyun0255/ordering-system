@@ -21,5 +21,6 @@ public class CreateCouponApplicationRequest {
     private LocalDateTime validFrom;
     private LocalDateTime validUntil;
     private Long issueLimit;
+    private Integer validDays;
 
 }

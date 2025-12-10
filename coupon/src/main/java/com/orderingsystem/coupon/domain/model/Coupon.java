@@ -61,6 +61,7 @@ public class Coupon extends AggregateRoot {
 
     private LocalDateTime validFrom;
     private LocalDateTime validUntil;
+    private Integer validDays;
 
     @PositiveOrZero
     private Long issueLimit;
@@ -70,7 +71,7 @@ public class Coupon extends AggregateRoot {
 
     public static Coupon create(DiscountType discountType, BigDecimal amountOff, Long percentOff,
                                 BigDecimal maxDiscountAmount, BigDecimal minDiscountAmount, LocalDateTime validFrom,
-                                LocalDateTime validUntil, Long issueLimit, String name) {
+                                LocalDateTime validUntil, Long issueLimit, String name, Integer validDays) {
         return Coupon.builder()
                 .couponId(UUID.randomUUID())
                 .discountType(discountType)
@@ -84,6 +85,7 @@ public class Coupon extends AggregateRoot {
                 .issueLimit(issueLimit)
                 .issuedCount(0L)
                 .name(name)
+                .validDays(validDays)
                 .build();
     }
 

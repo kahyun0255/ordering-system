@@ -12,6 +12,5 @@ public class CouponIssueApplicationRequest {
     private UUID couponId;
     private UUID userId;
     private LocalDateTime issuedAt;
-    private LocalDateTime expiredAt;
 
 }
