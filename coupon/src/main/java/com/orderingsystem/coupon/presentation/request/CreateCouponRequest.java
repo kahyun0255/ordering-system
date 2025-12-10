@@ -5,6 +5,7 @@ import com.orderingsystem.coupon.domain.model.DiscountType;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
@@ -18,6 +19,9 @@ public class CreateCouponRequest {
 
     @NotNull(message = "쿠폰 타입은 필수입니다.")
     private DiscountType discountType;
+
+    @NotBlank(message = "쿠폰 이름은 필수입니다.")
+    private String name;
 
     @PositiveOrZero(message = "할인 금액은 0 이상이어야 합니다.")
     private BigDecimal amountOff;
@@ -73,6 +77,7 @@ public class CreateCouponRequest {
                 .validFrom(this.validFrom)
                 .validUntil(this.validUntil)
                 .issueLimit(this.issueLimit)
+                .name(this.name)
                 .build();
     }
 

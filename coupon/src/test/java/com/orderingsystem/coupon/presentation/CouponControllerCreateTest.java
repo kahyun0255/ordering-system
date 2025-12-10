@@ -45,6 +45,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -72,6 +73,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
         assertThat(coupon.getValidUntil()).isEqualTo(request.getValidUntil());
         assertThat(coupon.getIssueLimit()).isEqualTo(request.getIssueLimit());
         assertThat(coupon.getStatus()).isEqualTo(CouponStatus.SCHEDULED);
+        assertThat(coupon.getName()).isEqualTo(request.getName());
         assertThat(coupon.getIssuedCount()).isEqualTo(0L);
     }
 
@@ -85,6 +87,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -121,6 +124,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .amountOff(BigDecimal.valueOf(2000))
+                .name("쿠폰")
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
                 .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
@@ -149,6 +153,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(-1))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -178,6 +183,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(-1))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -207,6 +213,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(null)
@@ -236,6 +243,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.PERCENTAGE)
+                .name("쿠폰")
                 .amountOff(null)
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -266,6 +274,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.PERCENTAGE)
+                .name("쿠폰")
                 .percentOff(0L)
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -295,6 +304,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.PERCENTAGE)
+                .name("쿠폰")
                 .percentOff(101L)
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -324,6 +334,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.PERCENTAGE)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(1000))
                 .percentOff(10L)
                 .minDiscountAmount(BigDecimal.valueOf(10000))
@@ -355,6 +366,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(null)
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -385,6 +397,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .percentOff(10L)
                 .minDiscountAmount(BigDecimal.valueOf(10000))
@@ -410,12 +423,13 @@ class CouponControllerCreateTest extends ControllerTestSupport {
     @DisplayName("FIXED_AMOUNT 타입인데 maxDiscountAmount가 채워지면 400을 반환한다.")
     @Test
     void shouldReturn400_whenFixedAmountTypeButMaxDiscountAmountPresent() throws Exception {
-        //gvien
+        //given
         UUID userId = UUID.randomUUID();
         String token = buildToken(userId, UserType.ADMIN);
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .maxDiscountAmount(BigDecimal.valueOf(5000)) // 금지
                 .minDiscountAmount(BigDecimal.valueOf(10000))
@@ -447,6 +461,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.PERCENTAGE)
+                .name("쿠폰")
                 .percentOff(10L)
                 .maxDiscountAmount(BigDecimal.valueOf(-1))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
@@ -477,6 +492,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(-1))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -506,6 +522,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -535,6 +552,7 @@ class CouponControllerCreateTest extends ControllerTestSupport {
 
         CreateCouponRequest request = CreateCouponRequest.builder()
                 .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
                 .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
@@ -551,6 +569,65 @@ class CouponControllerCreateTest extends ControllerTestSupport {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("periodValid: 유효기간 종료는 시작 이후여야 합니다."));
+
+        assertThat(couponRepository.count()).isZero();
+    }
+
+    @DisplayName("쿠폰 이름이 비어있으면 쿠폰 생성에 실패하고 400을 반환한다.")
+    @Test
+    void shouldReturn400_whenCouponNameIsBlank() throws Exception {
+        //given
+        UUID userId = UUID.randomUUID();
+        String token = buildToken(userId, UserType.ADMIN);
+
+        CreateCouponRequest request = CreateCouponRequest.builder()
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .name("")
+                .amountOff(BigDecimal.valueOf(2000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 5, 23, 59))
+                .issueLimit(10000L)
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/coupons")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("name: 쿠폰 이름은 필수입니다."));
+
+        assertThat(couponRepository.count()).isZero();
+    }
+
+    @DisplayName("쿠폰 이름이 null이면 쿠폰 생성에 실패하고 400을 반환한다.")
+    @Test
+    void shouldReturn400_whenCouponNameIsNull() throws Exception {
+        //given
+        UUID userId = UUID.randomUUID();
+        String token = buildToken(userId, UserType.ADMIN);
+
+        CreateCouponRequest request = CreateCouponRequest.builder()
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .amountOff(BigDecimal.valueOf(2000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 5, 23, 59))
+                .issueLimit(10000L)
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/coupons")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("name: 쿠폰 이름은 필수입니다."));
 
         assertThat(couponRepository.count()).isZero();
     }

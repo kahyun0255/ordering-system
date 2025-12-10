@@ -22,7 +22,7 @@ public class CreateCouponService {
 
         Coupon coupon = Coupon.create(request.getDiscountType(), request.getAmountOff(), request.getPercentOff(),
                 request.getMaxDiscountAmount(), request.getMinDiscountAmount(), request.getValidFrom(),
-                request.getValidUntil(), request.getIssueLimit());
+                request.getValidUntil(), request.getIssueLimit(), request.getName());
 
         couponRepository.save(coupon);
 

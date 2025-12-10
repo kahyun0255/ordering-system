@@ -13,6 +13,7 @@ import lombok.ToString;
 public class CreateCouponApplicationRequest {
 
     private DiscountType discountType;
+    private String name;
     private BigDecimal amountOff;
     private Long percentOff;
     private BigDecimal maxDiscountAmount;
