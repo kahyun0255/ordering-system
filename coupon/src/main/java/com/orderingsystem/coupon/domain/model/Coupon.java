@@ -33,6 +33,8 @@ public class Coupon extends AggregateRoot {
     @Id
     private UUID couponId;
 
+    private String name;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DiscountType discountType;

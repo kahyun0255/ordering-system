@@ -33,7 +33,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class IssueCouponServiceTest {
+class IssueFindCouponServiceTest {
 
     @Mock
     private CouponCachePort couponCachePort;
