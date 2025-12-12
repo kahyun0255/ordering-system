@@ -1,7 +1,10 @@
 package com.orderingsystem.coupon.infra.redis;
 
 import com.orderingsystem.coupon.application.port.out.CouponCachePort;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,6 +62,22 @@ public class RedisCouponRepository implements CouponCachePort {
     @Override
     public boolean exists(UUID couponId) {
         return redisTemplate.hasKey(stockKey(couponId));
+    }
+
+    public void enableCoupon(UUID couponId, Long issueLimit, LocalDateTime validUntil) {
+        String key = stockKey(couponId);
+        String value = issueLimit.toString();
+
+        if (validUntil != null) {
+            long ttlSeconds = Duration.between(LocalDateTime.now(), validUntil).getSeconds();
+
+            if (ttlSeconds > 0) {
+                redisTemplate.opsForValue().set(key, value, ttlSeconds, TimeUnit.SECONDS);
+                return;
+            }
+        }
+
+        redisTemplate.opsForValue().set(key, value);
     }
 
 }

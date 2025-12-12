@@ -6,6 +6,7 @@ import com.orderingsystem.coupon.application.port.out.CouponIssueMessagePublishe
 import com.orderingsystem.coupon.domain.event.CouponIssuedEvent;
 import com.orderingsystem.coupon.domain.exception.CouponNotFoundException;
 import com.orderingsystem.coupon.domain.model.Coupon;
+import com.orderingsystem.coupon.domain.model.CouponStatus;
 import com.orderingsystem.coupon.domain.model.IssuedCoupon;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
@@ -92,7 +93,7 @@ public class IssueCouponService {
         List<IssuedCoupon> issuedCoupons = new ArrayList<>();
 
         for (CouponIssueApplicationRequest request : requests) {
-            log.info("[{}] 유저에 대한 쿠폰 [{}] 저장.", request.getCouponId(), request.getUserId());
+            log.info("[{}] 유저에 대한 쿠폰 [{}] 저장.", request.getUserId(), request.getCouponId());
 
             Coupon coupon = couponMap.get(request.getCouponId());
 
@@ -101,7 +102,11 @@ public class IssueCouponService {
                 continue;
             }
 
-            LocalDateTime expiredAt = request.getIssuedAt().plusDays(coupon.getValidDays());
+            LocalDateTime expiredAt = null;
+
+            if (coupon.getValidDays() != null) {
+                expiredAt = request.getIssuedAt().plusDays(coupon.getValidDays());
+            }
 
             IssuedCoupon issuedCoupon = IssuedCoupon.create(request.getUserId(), request.getCouponId(),
                     request.getIssuedAt(), expiredAt);
@@ -115,6 +120,12 @@ public class IssueCouponService {
         countMap.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> couponRepository.increaseIssuedCount(entry.getKey(), entry.getValue()));
+    }
+
+    @Transactional
+    public void updateCouponStatus(UUID couponId, CouponStatus couponStatus) {
+        couponRepository.updateStatus(couponId, couponStatus);
+        log.info("쿠폰 상태 변경 완료. couponId : [{}], status : {}", couponId, couponStatus);
     }
 
 }

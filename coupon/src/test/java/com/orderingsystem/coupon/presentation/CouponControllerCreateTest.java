@@ -48,8 +48,8 @@ class CouponControllerCreateTest extends ControllerTestSupport {
                 .name("쿠폰")
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
-                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .validFrom(LocalDateTime.now().plusDays(10))
+                .validUntil(LocalDateTime.now().plusDays(20))
                 .issueLimit(10000L)
                 .validDays(10)
                 .build();
@@ -74,6 +74,49 @@ class CouponControllerCreateTest extends ControllerTestSupport {
         assertThat(coupon.getValidUntil()).isEqualTo(request.getValidUntil());
         assertThat(coupon.getIssueLimit()).isEqualTo(request.getIssueLimit());
         assertThat(coupon.getStatus()).isEqualTo(CouponStatus.SCHEDULED);
+        assertThat(coupon.getName()).isEqualTo(request.getName());
+        assertThat(coupon.getIssuedCount()).isEqualTo(0L);
+        assertThat(coupon.getValidDays()).isEqualTo(request.getValidDays());
+    }
+
+    @DisplayName("관리자 권한을 가진 유저가 쿠폰을 생성할 때 validFrom이 과거라면 바로 ACTIVE 상태가 된다.")
+    @Test
+    void shouldSetCouponActiveImmediately_whenValidFromIsPastAndUserIsAdmin() throws Exception {
+        //given
+        UUID userId = UUID.randomUUID();
+        String token = buildToken(userId, UserType.ADMIN);
+
+        CreateCouponRequest request = CreateCouponRequest.builder()
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .name("쿠폰")
+                .amountOff(BigDecimal.valueOf(2000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.now().minusDays(20))
+                .validUntil(LocalDateTime.now().minusDays(10))
+                .issueLimit(10000L)
+                .validDays(10)
+                .build();
+
+        //when
+        mockMvc.perform(
+                        post("/api/coupons")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .content(objectMapper.writeValueAsString(request))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated());
+
+        //then
+        List<Coupon> coupons = couponRepository.findAll();
+        assertThat(coupons.size()).isEqualTo(1);
+
+        Coupon coupon = coupons.get(0);
+        assertThat(coupon.getDiscountType()).isEqualTo(request.getDiscountType());
+        assertThat(coupon.getAmountOff().compareTo(request.getAmountOff())).isZero();
+        assertThat(coupon.getMinDiscountAmount().compareTo(request.getMinDiscountAmount())).isZero();
+        assertThat(coupon.getValidFrom()).isEqualTo(request.getValidFrom());
+        assertThat(coupon.getValidUntil()).isEqualTo(request.getValidUntil());
+        assertThat(coupon.getIssueLimit()).isEqualTo(request.getIssueLimit());
+        assertThat(coupon.getStatus()).isEqualTo(CouponStatus.ACTIVE);
         assertThat(coupon.getName()).isEqualTo(request.getName());
         assertThat(coupon.getIssuedCount()).isEqualTo(0L);
         assertThat(coupon.getValidDays()).isEqualTo(request.getValidDays());

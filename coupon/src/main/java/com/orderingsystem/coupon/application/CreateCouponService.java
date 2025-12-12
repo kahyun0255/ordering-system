@@ -1,6 +1,7 @@
 package com.orderingsystem.coupon.application;
 
 import com.orderingsystem.coupon.application.dto.request.CreateCouponApplicationRequest;
+import com.orderingsystem.coupon.application.port.out.CouponSchedulerPort;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import java.util.UUID;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateCouponService {
 
     private final CouponRepository couponRepository;
+    private final CouponSchedulerPort couponSchedulerPort;
 
     @Transactional
     public UUID create(CreateCouponApplicationRequest request, UUID userId) {
@@ -24,7 +26,11 @@ public class CreateCouponService {
                 request.getMaxDiscountAmount(), request.getMinDiscountAmount(), request.getValidFrom(),
                 request.getValidUntil(), request.getIssueLimit(), request.getName(), request.getValidDays());
 
-        couponRepository.save(coupon);
+        Coupon savedCoupon = couponRepository.save(coupon);
+
+        couponSchedulerPort.scheduleCouponStart(
+                savedCoupon.getCouponId(), savedCoupon.getIssueLimit(),
+                savedCoupon.getValidFrom(), savedCoupon.getValidUntil());
 
         return coupon.getCouponId();
     }

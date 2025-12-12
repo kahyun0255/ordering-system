@@ -1,9 +1,12 @@
 package com.orderingsystem.coupon.application;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import com.orderingsystem.coupon.application.dto.request.CreateCouponApplicationRequest;
+import com.orderingsystem.coupon.application.port.out.CouponSchedulerPort;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.DiscountType;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
@@ -24,6 +27,9 @@ class CreateCouponServiceTest {
     @Mock
     private CouponRepository couponRepository;
 
+    @Mock
+    private CouponSchedulerPort couponSchedulerPort;
+
     @InjectMocks
     private CreateCouponService createCouponService;
 
@@ -35,11 +41,15 @@ class CreateCouponServiceTest {
                 .discountType(DiscountType.FIXED_AMOUNT)
                 .amountOff(BigDecimal.valueOf(2000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.of(2025,12,4,0,0))
-                .validUntil(LocalDateTime.of(2025,12,20,0,0))
+                .validFrom(LocalDateTime.of(2025, 12, 4, 0, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
                 .issueLimit(10_000L)
                 .build();
+
         UUID userId = UUID.randomUUID();
+
+        given(couponRepository.save(any(Coupon.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         createCouponService.create(request, userId);
@@ -54,9 +64,12 @@ class CreateCouponServiceTest {
         assertThat(saved.getPercentOff()).isNull();
         assertThat(saved.getMaxDiscountAmount()).isNull();
         assertThat(saved.getMinDiscountAmount()).isEqualByComparingTo("10000");
-        assertThat(saved.getValidFrom()).isEqualTo(LocalDateTime.of(2025,12,4,0,0));
-        assertThat(saved.getValidUntil()).isEqualTo(LocalDateTime.of(2025,12,20,0,0));
+        assertThat(saved.getValidFrom()).isEqualTo(LocalDateTime.of(2025, 12, 4, 0, 0));
+        assertThat(saved.getValidUntil()).isEqualTo(LocalDateTime.of(2025, 12, 20, 0, 0));
         assertThat(saved.getIssueLimit()).isEqualTo(10_000L);
+
+        verify(couponSchedulerPort).scheduleCouponStart(saved.getCouponId(), request.getIssueLimit(),
+                request.getValidFrom(), request.getValidUntil());
     }
 
 }
