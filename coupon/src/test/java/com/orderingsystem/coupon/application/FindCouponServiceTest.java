@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.BDDMockito.given;
 
+import com.orderingsystem.coupon.application.dto.response.CouponResponse;
 import com.orderingsystem.coupon.application.dto.response.IssuedCouponResponse;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
@@ -103,11 +104,93 @@ class FindCouponServiceTest {
                         tuple(coupon1.getCouponId(), coupon1.getName(), issuedCoupon1.getId(),
                                 issuedCoupon1.getStatus(), issuedCoupon1.getIssuedAt(), issuedCoupon1.getUsedAt(),
                                 issuedCoupon1.getExpiredAt(), coupon1.getDiscountType(), coupon1.getAmountOff(),
-                                coupon1.getPercentOff(), coupon1.getMaxDiscountAmount(), coupon1.getMinDiscountAmount()),
+                                coupon1.getPercentOff(), coupon1.getMaxDiscountAmount(),
+                                coupon1.getMinDiscountAmount()),
                         tuple(coupon2.getCouponId(), coupon2.getName(), issuedCoupon2.getId(),
                                 issuedCoupon2.getStatus(), issuedCoupon2.getIssuedAt(), issuedCoupon2.getUsedAt(),
                                 issuedCoupon2.getExpiredAt(), coupon2.getDiscountType(), coupon2.getAmountOff(),
                                 coupon2.getPercentOff(), coupon2.getMaxDiscountAmount(), coupon2.getMinDiscountAmount())
+                );
+    }
+
+    @DisplayName("쿠폰 정보를 조회할 수 있다.")
+    @Test
+    void shouldRetrieveCoupons_whenUserIsValid() {
+        //given
+        UUID userId = UUID.randomUUID();
+        List<CouponStatus> couponStatus = List.of(CouponStatus.ACTIVE);
+
+        UUID couponId1 = UUID.randomUUID();
+        UUID couponId2 = UUID.randomUUID();
+
+        Coupon coupon1 = Coupon.builder()
+                .couponId(couponId1)
+                .name("쿠폰1")
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .status(CouponStatus.ACTIVE)
+                .amountOff(BigDecimal.valueOf(1000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .issueLimit(1000L)
+                .build();
+
+        Coupon coupon2 = Coupon.builder()
+                .couponId(couponId2)
+                .name("쿠폰2")
+                .discountType(DiscountType.PERCENTAGE)
+                .status(CouponStatus.ACTIVE)
+                .percentOff(10L)
+                .maxDiscountAmount(BigDecimal.valueOf(3000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .issueLimit(1000L)
+                .build();
+
+        given(couponRepository.findAllByStatusIn(couponStatus)).willReturn(List.of(coupon1, coupon2));
+
+        //when
+        List<CouponResponse> responses = findCouponService.getCoupons(userId, couponStatus);
+
+        //then
+        assertThat(responses).hasSize(2)
+                .extracting(
+                        "couponId", "couponName", "discountType", "couponStatus", "amountOff", "percentOff",
+                        "maxDiscountAmount", "minDiscountAmount", "validFrom", "validUntil", "validDays", "issueLimit",
+                        "issuedCount"
+                )
+                .containsExactlyInAnyOrder(
+                        tuple(
+                                coupon1.getCouponId(),
+                                coupon1.getName(),
+                                coupon1.getDiscountType(),
+                                coupon1.getStatus(),
+                                coupon1.getAmountOff(),
+                                coupon1.getPercentOff(),
+                                coupon1.getMaxDiscountAmount(),
+                                coupon1.getMinDiscountAmount(),
+                                coupon1.getValidFrom(),
+                                coupon1.getValidUntil(),
+                                coupon1.getValidDays(),
+                                coupon1.getIssueLimit(),
+                                coupon1.getIssuedCount()
+                        ),
+                        tuple(
+                                coupon2.getCouponId(),
+                                coupon2.getName(),
+                                coupon2.getDiscountType(),
+                                coupon2.getStatus(),
+                                coupon2.getAmountOff(),
+                                coupon2.getPercentOff(),
+                                coupon2.getMaxDiscountAmount(),
+                                coupon2.getMinDiscountAmount(),
+                                coupon2.getValidFrom(),
+                                coupon2.getValidUntil(),
+                                coupon2.getValidDays(),
+                                coupon2.getIssueLimit(),
+                                coupon2.getIssuedCount()
+                        )
                 );
     }
 

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.orderingsystem.coupon.application.dto.response.CouponResponse;
 import com.orderingsystem.coupon.application.dto.response.IssuedCouponResponse;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
@@ -58,7 +59,7 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .couponId(couponId2)
                 .name("쿠폰2")
                 .discountType(DiscountType.PERCENTAGE)
-                .status(CouponStatus.ACTIVE)
+                .status(CouponStatus.SCHEDULED)
                 .percentOff(10L)
                 .maxDiscountAmount(BigDecimal.valueOf(3000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
@@ -71,7 +72,7 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .couponId(couponId3)
                 .name("쿠폰3")
                 .discountType(DiscountType.PERCENTAGE)
-                .status(CouponStatus.ACTIVE)
+                .status(CouponStatus.ARCHIVED)
                 .percentOff(10L)
                 .maxDiscountAmount(BigDecimal.valueOf(3000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
@@ -84,7 +85,7 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .couponId(couponId4)
                 .name("다른 사용자가 발급한 쿠폰")
                 .discountType(DiscountType.PERCENTAGE)
-                .status(CouponStatus.ACTIVE)
+                .status(CouponStatus.PAUSED)
                 .percentOff(10L)
                 .maxDiscountAmount(BigDecimal.valueOf(3000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
@@ -160,7 +161,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
         String json = mvcResult.getResponse().getContentAsString();
 
         List<IssuedCouponResponse> responses =
-                objectMapper.readValue(json, new TypeReference<List<IssuedCouponResponse>>() {});
+                objectMapper.readValue(json, new TypeReference<List<IssuedCouponResponse>>() {
+                });
 
         assertThat(responses).hasSize(3)
                 .extracting("couponId", "couponName", "issuedCouponStatus")
@@ -189,7 +191,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
         String json = mvcResult.getResponse().getContentAsString();
 
         List<IssuedCouponResponse> responses =
-                objectMapper.readValue(json, new TypeReference<List<IssuedCouponResponse>>() {});
+                objectMapper.readValue(json, new TypeReference<List<IssuedCouponResponse>>() {
+                });
 
         assertThat(responses).hasSize(1)
                 .extracting("couponId", "couponName", "issuedCouponStatus")
@@ -218,7 +221,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
         String json = mvcResult.getResponse().getContentAsString();
 
         List<IssuedCouponResponse> responses =
-                objectMapper.readValue(json, new TypeReference<List<IssuedCouponResponse>>() {});
+                objectMapper.readValue(json, new TypeReference<List<IssuedCouponResponse>>() {
+                });
 
         assertThat(responses).hasSize(2)
                 .extracting("couponId", "couponName", "issuedCouponStatus")
@@ -227,6 +231,81 @@ class CouponControllerFindTest extends ControllerTestSupport {
                         tuple(couponId3, "쿠폰3", IssuedCouponStatus.USED)
                 );
 
+    }
+
+    @DisplayName("쿠폰 상태(status)에 따라 사용자가 발급받은 쿠폰을 필터링 조회할 수 있다.")
+    @Test
+    void shouldFilterUserCouponsByStatus_whenValidStatusesAreProvided() throws Exception {
+        //given
+        String token = buildToken(userId);
+
+        //when
+        MvcResult mvcResult = mockMvc.perform(
+                        get("/api/coupons")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .param("status", "ACTIVE")
+                                .param("status", "SCHEDULED"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        //then
+        String json = mvcResult.getResponse().getContentAsString();
+
+        List<CouponResponse> responses =
+                objectMapper.readValue(json, new TypeReference<List<CouponResponse>>() {
+                });
+
+        assertThat(responses).hasSize(2)
+                .extracting("couponId", "couponName", "couponStatus")
+                .containsExactlyInAnyOrder(
+                        tuple(couponId1, "쿠폰1", CouponStatus.ACTIVE),
+                        tuple(couponId2, "쿠폰2", CouponStatus.SCHEDULED)
+                );
+    }
+
+    @DisplayName("쿠폰 조회시 상태를 지정하지 않으면 ACTIVE 상태의 쿠폰을 조회한다.")
+    @Test
+    void shouldRetrieveOnlyActiveCoupons_whenStatusIsNotProvided() throws Exception {
+        //given
+        String token = buildToken(userId);
+
+        //when
+        MvcResult mvcResult = mockMvc.perform(
+                        get("/api/coupons")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        //then
+        String json = mvcResult.getResponse().getContentAsString();
+
+        List<CouponResponse> responses =
+                objectMapper.readValue(json, new TypeReference<List<CouponResponse>>() {
+                });
+
+        assertThat(responses).hasSize(1)
+                .extracting(
+                        "couponId", "couponName", "discountType", "couponStatus", "amountOff", "percentOff",
+                        "maxDiscountAmount", "minDiscountAmount", "validFrom", "validUntil", "validDays", "issueLimit",
+                        "issuedCount"
+                )
+                .containsExactlyInAnyOrder(
+                        tuple(
+                                couponId1,
+                                "쿠폰1",
+                                DiscountType.FIXED_AMOUNT,
+                                CouponStatus.ACTIVE,
+                                new BigDecimal("1000.00"),
+                                null,
+                                null,
+                                new BigDecimal("10000.00"),
+                                LocalDateTime.of(2025, 12, 10, 12, 0),
+                                LocalDateTime.of(2025, 12, 20, 0, 0),
+                                null,
+                                1000L,
+                                null
+                        )
+                );
     }
 
 }

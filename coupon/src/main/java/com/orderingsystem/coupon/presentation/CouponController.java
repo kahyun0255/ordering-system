@@ -5,7 +5,9 @@ import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.coupon.application.CouponFacade;
 import com.orderingsystem.coupon.application.FindCouponService;
 import com.orderingsystem.coupon.application.IssueCouponService;
+import com.orderingsystem.coupon.application.dto.response.CouponResponse;
 import com.orderingsystem.coupon.application.dto.response.IssuedCouponResponse;
+import com.orderingsystem.coupon.domain.model.CouponStatus;
 import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
 import com.orderingsystem.coupon.presentation.request.CreateCouponRequest;
 import jakarta.validation.Valid;
@@ -58,6 +60,13 @@ public class CouponController {
             @RequestParam(value = "status", defaultValue = "ISSUED") List<IssuedCouponStatus> couponStatuses) {
         UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
         return ResponseEntity.ok(findCouponService.getIssuedCoupons(userId, couponStatuses));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CouponResponse>> getCoupons(@RequestHeader("Authorization") String authorizationHeader,
+                                                           @RequestParam(value = "status", defaultValue = "ACTIVE") List<CouponStatus> couponStatuses) {
+        UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        return ResponseEntity.ok(findCouponService.getCoupons(userId, couponStatuses));
     }
 
 }

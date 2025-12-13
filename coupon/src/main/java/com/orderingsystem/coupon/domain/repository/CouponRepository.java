@@ -3,6 +3,7 @@ package com.orderingsystem.coupon.domain.repository;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,4 +24,6 @@ public interface CouponRepository extends JpaRepository<Coupon, UUID> {
     void updateStatus(UUID couponId, CouponStatus couponStatus);
 
     List<Coupon> findAllByStatusAndValidUntilAfter(CouponStatus status, LocalDateTime validUntilAfter);
+
+    List<Coupon> findAllByStatusIn(Collection<CouponStatus> statuses);
 }
