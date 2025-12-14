@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.common.exception.AccessDeniedException;
 import com.orderingsystem.coupon.application.dto.request.CreateCouponApplicationRequest;
+import com.orderingsystem.coupon.application.port.out.CouponCachePort;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +28,9 @@ class CouponFacadeTest {
 
     @Mock
     private CouponManagementService couponManagementService;
+
+    @Mock
+    private CouponCachePort couponCachePort;
 
     @InjectMocks
     private CouponFacade couponFacade;

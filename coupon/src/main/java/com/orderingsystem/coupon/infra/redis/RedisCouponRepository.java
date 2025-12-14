@@ -64,6 +64,11 @@ public class RedisCouponRepository implements CouponCachePort {
         return redisTemplate.hasKey(stockKey(couponId));
     }
 
+    @Override
+    public void deleteCouponStock(UUID couponId) {
+        redisTemplate.delete(stockKey(couponId));
+    }
+
     public void enableCoupon(UUID couponId, Long issueLimit, LocalDateTime validUntil) {
         String key = stockKey(couponId);
         String value = issueLimit.toString();

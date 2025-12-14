@@ -16,4 +16,6 @@ public interface CouponCachePort {
 
     boolean exists(UUID couponId);
 
+    void deleteCouponStock(UUID couponId);
+
 }

@@ -10,6 +10,7 @@ import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
 import com.orderingsystem.coupon.domain.model.DiscountType;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
+import com.orderingsystem.coupon.infra.redis.RedisCouponRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -28,6 +29,9 @@ class CouponManagementControllerTest extends ControllerTestSupport {
 
     @Autowired
     private CouponRepository couponRepository;
+
+    @Autowired
+    private RedisCouponRepository redisCouponRepository;
 
     @AfterEach
     void tearDown() {
@@ -49,6 +53,9 @@ class CouponManagementControllerTest extends ControllerTestSupport {
 
         couponRepository.save(coupon);
 
+        redisCouponRepository.enableCoupon(coupon.getCouponId(), 1000L, LocalDateTime.now());
+        assertThat(redisCouponRepository.exists(coupon.getCouponId())).isTrue();
+
         String token = buildToken(UUID.randomUUID(), UserType.ADMIN);
 
         //when
@@ -61,6 +68,8 @@ class CouponManagementControllerTest extends ControllerTestSupport {
         Optional<Coupon> after = couponRepository.findById(coupon.getCouponId());
         assertThat(after).isPresent();
         assertThat(after.get().getStatus()).isEqualTo(CouponStatus.PAUSED);
+
+        assertThat(redisCouponRepository.exists(coupon.getCouponId())).isFalse();
     }
 
     @DisplayName("관리자가 아닌 유저는 쿠폰을 정지시킬 수 없고, 403을 반환한다.")
@@ -79,6 +88,9 @@ class CouponManagementControllerTest extends ControllerTestSupport {
 
         couponRepository.save(coupon);
 
+        redisCouponRepository.enableCoupon(coupon.getCouponId(), 1000L, LocalDateTime.now());
+        assertThat(redisCouponRepository.exists(coupon.getCouponId())).isTrue();
+
         String token = buildToken(UUID.randomUUID(), userType);
 
         //when
@@ -93,6 +105,8 @@ class CouponManagementControllerTest extends ControllerTestSupport {
         Optional<Coupon> after = couponRepository.findById(coupon.getCouponId());
         assertThat(after).isPresent();
         assertThat(after.get().getStatus()).isEqualTo(CouponStatus.ACTIVE);
+
+        assertThat(redisCouponRepository.exists(coupon.getCouponId())).isTrue();
     }
 
     private static Stream<Arguments> provideNonAdminRoles(){

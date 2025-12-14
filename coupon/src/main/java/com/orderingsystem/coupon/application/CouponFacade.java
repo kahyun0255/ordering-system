@@ -3,6 +3,7 @@ package com.orderingsystem.coupon.application;
 import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.common.exception.AccessDeniedException;
 import com.orderingsystem.coupon.application.dto.request.CreateCouponApplicationRequest;
+import com.orderingsystem.coupon.application.port.out.CouponCachePort;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ public class CouponFacade {
 
     private final CreateCouponService createCouponService;
     private final CouponManagementService couponManagementService;
+    private final CouponCachePort couponCachePort;
 
     public UUID createCoupon(CreateCouponApplicationRequest request, UserType userType, UUID userId) {
         if (!UserType.ADMIN.equals(userType)) {
@@ -32,5 +34,7 @@ public class CouponFacade {
         }
 
         couponManagementService.pause(couponId, userId);
+        couponCachePort.deleteCouponStock(couponId);
     }
+
 }
