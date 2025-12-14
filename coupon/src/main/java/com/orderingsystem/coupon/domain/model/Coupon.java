@@ -93,6 +93,10 @@ public class Coupon extends AggregateRoot {
         this.issuedCount++;
     }
 
+    public void pause() {
+        this.status = CouponStatus.PAUSED;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {

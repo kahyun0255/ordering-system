@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class CouponFacade {
 
     private final CreateCouponService createCouponService;
+    private final CouponManagementService couponManagementService;
 
     public UUID createCoupon(CreateCouponApplicationRequest request, UserType userType, UUID userId) {
         if (!UserType.ADMIN.equals(userType)) {
@@ -24,4 +25,12 @@ public class CouponFacade {
         return createCouponService.create(request, userId);
     }
 
+    public void pauseCoupon(UUID couponId, UUID userId, UserType userType) {
+        if (!UserType.ADMIN.equals(userType)) {
+            log.info("관리자가 아닌 유저가 쿠폰 정지 시도. UserId : [{}], UserType : [{}]", userId, userType);
+            throw new AccessDeniedException("쿠폰 정지가 불가능합니다.");
+        }
+
+        couponManagementService.pause(couponId, userId);
+    }
 }
