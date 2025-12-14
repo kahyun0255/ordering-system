@@ -34,7 +34,14 @@ public class CouponFacade {
         }
 
         couponManagementService.pause(couponId, userId);
-        couponCachePort.deleteCouponStock(couponId);
     }
 
+    public void resumeCoupon(UUID couponId, UUID userId, UserType userType) {
+        if (!UserType.ADMIN.equals(userType)) {
+            log.info("관리자가 아닌 유저가 쿠폰 재시작 시도. UserId : [{}], UserType : [{}]", userId, userType);
+            throw new AccessDeniedException("쿠폰 재시작이 불가능합니다.");
+        }
+
+        couponManagementService.resume(couponId, userId);
+    }
 }

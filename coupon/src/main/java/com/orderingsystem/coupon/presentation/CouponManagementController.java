@@ -29,4 +29,13 @@ public class CouponManagementController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{couponId}/resume")
+    public ResponseEntity<Void> resumeCoupon(@RequestHeader("Authorization") String authorizationHeader,
+                                            @PathVariable UUID couponId) {
+        UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        UserType userType = commonJwtUtil.getUserRoleFromToken(authorizationHeader);
+        couponFacade.resumeCoupon(couponId, userId, userType);
+        return ResponseEntity.ok().build();
+    }
+
 }

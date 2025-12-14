@@ -97,6 +97,13 @@ public class Coupon extends AggregateRoot {
         this.status = CouponStatus.PAUSED;
     }
 
+    public void resume() {
+        if (this.status != CouponStatus.PAUSED) {
+            throw new IllegalStateException("정지된 쿠폰만 재시작할 수 있습니다.");
+        }
+        this.status = CouponStatus.ACTIVE;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
