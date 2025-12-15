@@ -1,11 +1,13 @@
 package com.orderingsystem.coupon.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.BDDMockito.given;
 
 import com.orderingsystem.coupon.application.dto.response.CouponResponse;
 import com.orderingsystem.coupon.application.dto.response.IssuedCouponResponse;
+import com.orderingsystem.coupon.domain.exception.CouponNotFoundException;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
 import com.orderingsystem.coupon.domain.model.DiscountType;
@@ -16,6 +18,7 @@ import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -192,6 +195,58 @@ class FindCouponServiceTest {
                                 coupon2.getIssuedCount()
                         )
                 );
+    }
+
+    @DisplayName("쿠폰 id로 쿠폰 정보를 조회할 수 있다.")
+    @Test
+    void shouldRetrieveCouponByCouponCode_whenValidCodeProvided() {
+        //given
+        Coupon coupon = Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .name("쿠폰")
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .status(CouponStatus.ACTIVE)
+                .amountOff(BigDecimal.valueOf(1000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .issueLimit(1000L)
+                .issuedCount(10L)
+                .build();
+
+        given(couponRepository.findById(coupon.getCouponId())).willReturn(Optional.of(coupon));
+
+        //when
+        CouponResponse response = findCouponService.getCoupon(UUID.randomUUID(), coupon.getCouponId());
+
+        //then
+        assertThat(response.getCouponId()).isEqualTo(coupon.getCouponId());
+        assertThat(response.getCouponName()).isEqualTo(coupon.getName());
+        assertThat(response.getDiscountType()).isEqualTo(coupon.getDiscountType());
+        assertThat(response.getCouponStatus()).isEqualTo(coupon.getStatus());
+        assertThat(response.getAmountOff()).isEqualTo(coupon.getAmountOff());
+        assertThat(response.getPercentOff()).isEqualTo(coupon.getPercentOff());
+        assertThat(response.getMaxDiscountAmount()).isEqualTo(coupon.getMaxDiscountAmount());
+        assertThat(response.getMinDiscountAmount()).isEqualTo(coupon.getMinDiscountAmount());
+        assertThat(response.getValidFrom()).isEqualTo(coupon.getValidFrom());
+        assertThat(response.getValidUntil()).isEqualTo(coupon.getValidUntil());
+        assertThat(response.getValidDays()).isEqualTo(coupon.getValidDays());
+        assertThat(response.getIssueLimit()).isEqualTo(coupon.getIssueLimit());
+        assertThat(response.getIssuedCount()).isEqualTo(coupon.getIssuedCount());
+    }
+
+    @DisplayName("쿠폰 id로 쿠폰 조회시 해당 쿠폰이 존재하지 않으면 예외가 발생한다.")
+    @Test
+    void shouldThrowException_whenCouponIdDoesNotExist() {
+        //given
+        UUID couponId = UUID.randomUUID();
+
+        given(couponRepository.findById(couponId)).willReturn(Optional.empty());
+
+        //when, then
+        assertThatThrownBy(() -> findCouponService.getCoupon(UUID.randomUUID(), couponId))
+                .isInstanceOf(CouponNotFoundException.class)
+                .hasMessage("쿠폰이 존재하지 않습니다.");
     }
 
 }

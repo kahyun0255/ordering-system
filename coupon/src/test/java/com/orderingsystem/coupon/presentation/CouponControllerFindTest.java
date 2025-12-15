@@ -3,6 +3,7 @@ package com.orderingsystem.coupon.presentation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,6 +18,7 @@ import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -306,6 +308,65 @@ class CouponControllerFindTest extends ControllerTestSupport {
                                 null
                         )
                 );
+    }
+
+    @DisplayName("쿠폰 id로 쿠폰 정보를 조회할 수 있다.")
+    @Test
+    void shouldRetrieveCouponByCouponCode_whenValidCodeProvided() throws Exception {
+        //given
+        String token = buildToken(userId);
+
+        Coupon coupon = Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .name("쿠폰")
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .status(CouponStatus.ACTIVE)
+                .amountOff(BigDecimal.valueOf(1000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .issueLimit(1000L)
+                .build();
+
+        couponRepository.save(coupon);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/coupons/" + coupon.getCouponId())
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.couponId").value(coupon.getCouponId().toString()))
+                .andExpect(jsonPath("$.couponName").value(coupon.getName()))
+                .andExpect(jsonPath("$.discountType").value(coupon.getDiscountType().toString()))
+                .andExpect(jsonPath("$.couponStatus").value(coupon.getStatus().toString()))
+                .andExpect(jsonPath("$.amountOff").value(coupon.getAmountOff().doubleValue()))
+                .andExpect(jsonPath("$.percentOff").value(coupon.getPercentOff()))
+                .andExpect(jsonPath("$.maxDiscountAmount").value(coupon.getMaxDiscountAmount()))
+                .andExpect(jsonPath("$.minDiscountAmount").value(coupon.getMinDiscountAmount().doubleValue()))
+                .andExpect(jsonPath("$.validFrom").value(coupon.getValidFrom().format(formatter)))
+                .andExpect(jsonPath("$.validUntil").value(coupon.getValidUntil().format(formatter)))
+                .andExpect(jsonPath("$.validDays").value(coupon.getValidDays()))
+                .andExpect(jsonPath("$.issueLimit").value(coupon.getIssueLimit()))
+                .andExpect(jsonPath("$.issuedCount").value(coupon.getIssuedCount()));
+    }
+
+    @DisplayName("쿠폰 id로 쿠폰 정보 조회시 쿠폰이 없으면 404를 반환한다.")
+    @Test
+    void shouldReturn404_whenCouponCodeIsInvalid() throws Exception {
+        //given
+        String token = buildToken(userId);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/coupons/" + UUID.randomUUID())
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("쿠폰이 존재하지 않습니다."));
     }
 
 }
