@@ -369,4 +369,134 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("쿠폰이 존재하지 않습니다."));
     }
 
+    @DisplayName("발급된 쿠폰 id로 발급한 쿠폰 정보를 조회할 수 있다.")
+    @Test
+    void shouldRetrieveIssuedCouponById_whenValidIdProvided() throws Exception {
+        //given
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+        Coupon coupon = Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .name("쿠폰")
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .status(CouponStatus.ACTIVE)
+                .amountOff(BigDecimal.valueOf(1000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .issueLimit(1000L)
+                .build();
+
+        couponRepository.save(coupon);
+
+        IssuedCoupon issuedCoupon = IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(coupon.getCouponId())
+                .status(IssuedCouponStatus.ISSUED)
+                .issuedAt(LocalDateTime.now().withNano(0))
+                .expiredAt(LocalDateTime.now().plusDays(1).withNano(0))
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(issuedCoupon);
+
+        String token = buildToken(userId);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/coupons/issued/" + savedIssuedCoupon.getId())
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.couponId").value(coupon.getCouponId().toString()))
+                .andExpect(jsonPath("$.couponName").value(coupon.getName()))
+                .andExpect(jsonPath("$.issuedCouponId").value(issuedCoupon.getId().toString()))
+                .andExpect(jsonPath("$.issuedCouponStatus").value(issuedCoupon.getStatus().toString()))
+                .andExpect(jsonPath("$.issuedAt").value(issuedCoupon.getIssuedAt().format(formatter)))
+                .andExpect(jsonPath("$.usedAt").value(issuedCoupon.getUsedAt()))
+                .andExpect(jsonPath("$.expiredAt").value(issuedCoupon.getExpiredAt().format(formatter)))
+                .andExpect(jsonPath("$.discountType").value(coupon.getDiscountType().toString()))
+                .andExpect(jsonPath("$.amountOff").value(coupon.getAmountOff().doubleValue()))
+                .andExpect(jsonPath("$.percentOff").value(coupon.getPercentOff()))
+                .andExpect(jsonPath("$.maxDiscountAmount").value(coupon.getMaxDiscountAmount()))
+                .andExpect(jsonPath("$.minOrderAmount").value(coupon.getMinDiscountAmount().doubleValue()));
+    }
+
+    @DisplayName("발급된 쿠폰 id로 발급한 쿠폰 정보를 조회시 쿠폰이 없으면 404를 반환한다.")
+    @Test
+    void shouldReturn404_whenIssuedCouponIdIsInvalid() throws Exception {
+        //given
+        IssuedCoupon issuedCoupon = IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(UUID.randomUUID())
+                .status(IssuedCouponStatus.ISSUED)
+                .issuedAt(LocalDateTime.now().withNano(0))
+                .expiredAt(LocalDateTime.now().plusDays(1).withNano(0))
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(issuedCoupon);
+
+        String token = buildToken(userId);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/coupons/issued/" + savedIssuedCoupon.getId())
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("쿠폰이 존재하지 않습니다."));
+    }
+
+    @DisplayName("발급된 쿠폰 id로 발급한 쿠폰 정보를 조회시 발급된 쿠폰 정보가 없으면 404를 반환한다.")
+    @Test
+    void shouldReturn404_whenIssuedCouponNotFoundById() throws Exception {
+        //given
+        String token = buildToken(userId);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/coupons/issued/" + 10000)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("발급한 쿠폰 정보가 존재하지 않습니다."));
+    }
+
+    @DisplayName("발급된 쿠폰 id로 발급한 쿠폰 정보 조회시 본인이 발급한 쿠폰이 아니라면 403을 반환한다.")
+    @Test
+    void shouldReturn403_whenUserTriesToAccessOthersIssuedCoupon() throws Exception {
+        //given
+        Coupon coupon = Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .name("쿠폰")
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .status(CouponStatus.ACTIVE)
+                .amountOff(BigDecimal.valueOf(1000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
+                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .issueLimit(1000L)
+                .build();
+
+        couponRepository.save(coupon);
+
+        IssuedCoupon issuedCoupon = IssuedCoupon.builder()
+                .userId(UUID.randomUUID())
+                .couponId(coupon.getCouponId())
+                .status(IssuedCouponStatus.ISSUED)
+                .issuedAt(LocalDateTime.now().withNano(0))
+                .expiredAt(LocalDateTime.now().plusDays(1).withNano(0))
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(issuedCoupon);
+
+        String token = buildToken(userId);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/coupons/issued/" + savedIssuedCoupon.getId())
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("Forbidden"))
+                .andExpect(jsonPath("$.message").value("발급한 쿠폰 정보를 조회할 권한이 없습니다."));
+    }
+
 }

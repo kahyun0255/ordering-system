@@ -1,5 +1,6 @@
 package com.orderingsystem.coupon.application;
 
+import com.orderingsystem.common.exception.AccessDeniedException;
 import com.orderingsystem.coupon.application.dto.response.CouponResponse;
 import com.orderingsystem.coupon.application.dto.response.IssuedCouponResponse;
 import com.orderingsystem.coupon.domain.exception.CouponNotFoundException;
@@ -40,29 +41,11 @@ public class FindCouponService {
         Map<UUID, Coupon> couponMap = coupons.stream()
                 .collect(Collectors.toMap(Coupon::getCouponId, coupon -> coupon));
 
-        return buildIssueCouponResponse(issuedCoupons, couponMap);
-    }
-
-    private List<IssuedCouponResponse> buildIssueCouponResponse(List<IssuedCoupon> issuedCoupons,
-                                                                Map<UUID, Coupon> couponMap) {
         return issuedCoupons.stream()
                 .map(issuedCoupon -> {
                     Coupon coupon = couponMap.get(issuedCoupon.getCouponId());
 
-                    return IssuedCouponResponse.builder()
-                            .couponId(issuedCoupon.getCouponId())
-                            .couponName(coupon.getName())
-                            .issuedCouponId(issuedCoupon.getId())
-                            .issuedCouponStatus(issuedCoupon.getStatus())
-                            .issuedAt(issuedCoupon.getIssuedAt())
-                            .usedAt(issuedCoupon.getUsedAt())
-                            .expiredAt(issuedCoupon.getExpiredAt())
-                            .discountType(coupon.getDiscountType())
-                            .amountOff(coupon.getAmountOff())
-                            .percentOff(coupon.getPercentOff())
-                            .maxDiscountAmount(coupon.getMaxDiscountAmount())
-                            .minOrderAmount(coupon.getMinDiscountAmount())
-                            .build();
+                    return buildIssueCouponResponse(issuedCoupon, coupon);
                 }).toList();
     }
 
@@ -79,6 +62,33 @@ public class FindCouponService {
     public CouponResponse getCoupon(UUID userId, UUID couponId) {
         Coupon coupon = findCoupon(userId, couponId);
         return buildCouponResponse(coupon);
+    }
+
+    @Transactional(readOnly = true)
+    public IssuedCouponResponse getIssuedCoupon(UUID userId, Long issuedCouponId) {
+        IssuedCoupon issuedCoupon = findIssuedCoupon(userId, issuedCouponId);
+        ensureUserOwnsIssuedCoupon(userId, issuedCoupon);
+
+        Coupon coupon = findCoupon(userId, issuedCoupon.getCouponId());
+
+        return buildIssueCouponResponse(issuedCoupon, coupon);
+    }
+
+    private IssuedCoupon findIssuedCoupon(UUID userId, Long issuedCouponId) {
+        Optional<IssuedCoupon> issuedCoupon = issuedCouponRepository.findById(issuedCouponId);
+        if (issuedCoupon.isEmpty()) {
+            log.info("[{}] 유저가 발급한 쿠폰 정보가 존재하지 않는 쿠폰 발급 요청. issuedCouponId : [{}]", userId, issuedCouponId);
+            throw new CouponNotFoundException("발급한 쿠폰 정보가 존재하지 않습니다.");
+        }
+
+        return issuedCoupon.get();
+    }
+
+    private void ensureUserOwnsIssuedCoupon(UUID userId, IssuedCoupon issuedCoupon) {
+        if (!issuedCoupon.getUserId().equals(userId)) {
+            log.info("[{}] 유저가 본인이 발급하지 않은 발급 쿠폰 정보 조회 요청. issuedCouponId : [{}]", userId, issuedCoupon.getId());
+            throw new AccessDeniedException("발급한 쿠폰 정보를 조회할 권한이 없습니다.");
+        }
     }
 
     private Coupon findCoupon(UUID userId, UUID couponId) {
@@ -106,6 +116,23 @@ public class FindCouponService {
                 .validDays(coupon.getValidDays())
                 .issueLimit(coupon.getIssueLimit())
                 .issuedCount(coupon.getIssuedCount())
+                .build();
+    }
+
+    private IssuedCouponResponse buildIssueCouponResponse(IssuedCoupon issuedCoupon, Coupon coupon) {
+        return IssuedCouponResponse.builder()
+                .couponId(issuedCoupon.getCouponId())
+                .couponName(coupon.getName())
+                .issuedCouponId(issuedCoupon.getId())
+                .issuedCouponStatus(issuedCoupon.getStatus())
+                .issuedAt(issuedCoupon.getIssuedAt())
+                .usedAt(issuedCoupon.getUsedAt())
+                .expiredAt(issuedCoupon.getExpiredAt())
+                .discountType(coupon.getDiscountType())
+                .amountOff(coupon.getAmountOff())
+                .percentOff(coupon.getPercentOff())
+                .maxDiscountAmount(coupon.getMaxDiscountAmount())
+                .minOrderAmount(coupon.getMinDiscountAmount())
                 .build();
     }
 

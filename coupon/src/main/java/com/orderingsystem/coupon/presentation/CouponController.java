@@ -7,7 +7,6 @@ import com.orderingsystem.coupon.application.FindCouponService;
 import com.orderingsystem.coupon.application.IssueCouponService;
 import com.orderingsystem.coupon.application.dto.response.CouponResponse;
 import com.orderingsystem.coupon.application.dto.response.IssuedCouponResponse;
-import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
 import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
 import com.orderingsystem.coupon.presentation.request.CreateCouponRequest;
@@ -72,9 +71,16 @@ public class CouponController {
 
     @GetMapping("/{couponId}")
     public ResponseEntity<CouponResponse> getCoupon(@RequestHeader("Authorization") String authorizationHeader,
-                                            @PathVariable UUID couponId) {
+                                                    @PathVariable UUID couponId) {
         UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
         return ResponseEntity.ok(findCouponService.getCoupon(userId, couponId));
+    }
+
+    @GetMapping("/issued/{issuedCouponId}")
+    public ResponseEntity<IssuedCouponResponse> getIssuedCoupon(
+            @RequestHeader("Authorization") String authorizationHeader, @PathVariable Long issuedCouponId) {
+        UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        return ResponseEntity.ok(findCouponService.getIssuedCoupon(userId, issuedCouponId));
     }
 
 }
