@@ -104,6 +104,10 @@ public class Coupon extends AggregateRoot {
         this.status = CouponStatus.ACTIVE;
     }
 
+    public void terminate() {
+        this.status = CouponStatus.ARCHIVED;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {

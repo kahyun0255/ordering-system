@@ -21,4 +21,6 @@ public interface CouponCachePort {
 
     void enableCoupon(UUID couponId, Long issueLimit, LocalDateTime validUntil);
 
+    void setExpireIssuedUserKey(UUID couponId);
+
 }

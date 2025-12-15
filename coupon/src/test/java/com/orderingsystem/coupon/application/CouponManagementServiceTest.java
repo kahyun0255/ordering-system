@@ -94,7 +94,7 @@ class CouponManagementServiceTest {
         verify(couponCachePort, times(1)).enableCoupon(eq(couponId), anyLong(), any(LocalDateTime.class));
     }
 
-    @DisplayName("쿠폰이 존재하지 않으면 쿠폰 재시작시 예외가 발생한다.")
+    @DisplayName("쿠폰이 존재하지 않으면 쿠폰 재시작 시 예외가 발생한다.")
     @Test
     void shouldThrowException_whenTryingToReactivateNonExistentCoupon() {
         //given
@@ -109,6 +109,43 @@ class CouponManagementServiceTest {
                 .hasMessage("쿠폰이 존재하지 않습니다.");
 
         verify(couponCachePort, never()).enableCoupon(eq(couponId), anyLong(), any(LocalDateTime.class));
+    }
+
+    @DisplayName("쿠폰이 존재하면 쿠폰을 종료할 수 있다.")
+    @Test
+    void shouldExpireCoupon_whenCouponExists() {
+        //given
+        UUID couponId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Coupon coupon = mock(Coupon.class);
+
+        given(couponRepository.findById(couponId)).willReturn(Optional.of(coupon));
+
+        //when
+        couponManagementService.terminate(couponId, userId);
+
+        //then
+        verify(coupon, times(1)).terminate();
+        verify(couponCachePort, times(1)).setExpireIssuedUserKey(couponId);
+    }
+
+    @DisplayName("쿠폰이 존재하지 않으면 쿠폰 종료시 예외가 발생한다.")
+    @Test
+    void shouldThrowException_whenExpiringNonExistentCoupon() {
+        //given
+        UUID couponId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        given(couponRepository.findById(couponId)).willReturn(Optional.empty());
+
+        //when, then
+        assertThatThrownBy(() -> couponManagementService.terminate(couponId, userId))
+                .isInstanceOf(CouponNotFoundException.class)
+                .hasMessage("쿠폰이 존재하지 않습니다.");
+
+        verify(couponCachePort, never()).deleteCouponStock(couponId);
+        verify(couponCachePort, never()).setExpireIssuedUserKey(couponId);
     }
 
 }

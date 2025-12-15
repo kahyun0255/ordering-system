@@ -86,4 +86,10 @@ public class RedisCouponRepository implements CouponCachePort {
         redisTemplate.opsForValue().set(key, value);
     }
 
+    @Override
+    public void setExpireIssuedUserKey(UUID couponId) {
+        String key = issuedKey(couponId);
+        redisTemplate.expire(key, 7, TimeUnit.DAYS);
+    }
+
 }

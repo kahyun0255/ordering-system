@@ -23,6 +23,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 
 class CouponManagementControllerTest extends ControllerTestSupport {
@@ -32,6 +34,12 @@ class CouponManagementControllerTest extends ControllerTestSupport {
 
     @Autowired
     private RedisCouponRepository redisCouponRepository;
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Value("${coupon.redis.issued-prefix}")
+    private String couponIssueKey;
 
     @AfterEach
     void tearDown() {
@@ -239,6 +247,15 @@ class CouponManagementControllerTest extends ControllerTestSupport {
         assertThat(redisCouponRepository.exists(coupon.getCouponId())).isFalse();
     }
 
+    private static Stream<Arguments> provideNonPauseStatuses() {
+        return Stream.of(
+                Arguments.of("활성화된 쿠폰", CouponStatus.ACTIVE),
+                Arguments.of("활성화 대기중", CouponStatus.SCHEDULED),
+                Arguments.of("만료된 쿠폰", CouponStatus.EXPIRED),
+                Arguments.of("보관된 쿠폰", CouponStatus.ARCHIVED)
+        );
+    }
+
     @DisplayName("재시작할 쿠폰이 존재하지 않으면 404를 반환한다.")
     @Test
     void shouldReturn404_whenCouponToReactivateDoesNotExist() throws Exception {
@@ -254,19 +271,116 @@ class CouponManagementControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("쿠폰이 존재하지 않습니다."));
     }
 
+    @DisplayName("관리자는 정지된 쿠폰을 종료할 수 있다.")
+    @Test
+    void shouldExpireCoupon_whenUserIsAdminAndCouponIsPaused() throws Exception {
+        //given
+        UUID userId = UUID.randomUUID();
+
+        Coupon coupon = Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .name("쿠폰")
+                .status(CouponStatus.PAUSED)
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .amountOff(BigDecimal.valueOf(1000))
+                .validFrom(LocalDateTime.of(2025, 12, 14, 0, 0))
+                .issueLimit(100L)
+                .issuedCount(10L)
+                .build();
+
+        couponRepository.save(coupon);
+
+        redisCouponRepository.enableCoupon(coupon.getCouponId(), coupon.getIssueLimit(), null);
+        redisCouponRepository.addIssuedUser(coupon.getCouponId(), userId);
+        assertThat(redisCouponRepository.exists(coupon.getCouponId())).isTrue();
+
+        String token = buildToken(UUID.randomUUID(), UserType.ADMIN);
+
+        //when
+        mockMvc.perform(
+                        post("/api/coupons/" + coupon.getCouponId() + "/terminate")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk());
+
+        //then
+        Optional<Coupon> after = couponRepository.findById(coupon.getCouponId());
+        assertThat(after).isPresent();
+        assertThat(after.get().getStatus()).isEqualTo(CouponStatus.ARCHIVED);
+
+        assertThat(redisCouponRepository.exists(coupon.getCouponId())).isFalse();
+
+        String issuedKey = couponIssueKey + coupon.getCouponId();
+        Long ttl = redisTemplate.getExpire(issuedKey);
+        assertThat(ttl).isGreaterThan(0L);
+        assertThat(ttl).isLessThanOrEqualTo(604800L);
+    }
+
+    @DisplayName("관리자가 아니라면 쿠폰을 종료할 수 없고 403을 반환한다.")
+    @ParameterizedTest(name = "[{index}] 유저 권한 : {0}")
+    @MethodSource("provideNonAdminRoles")
+    void shouldReturn403_whenNonAdminUserTriesToExpireSuspendedCoupon(String role, UserType userType)
+            throws Exception {
+        //given
+        UUID userId = UUID.randomUUID();
+
+        Coupon coupon = Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .name("쿠폰")
+                .status(CouponStatus.ACTIVE)
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .amountOff(BigDecimal.valueOf(1000))
+                .validFrom(LocalDateTime.of(2025, 12, 14, 0, 0))
+                .issueLimit(100L)
+                .issuedCount(10L)
+                .build();
+
+        couponRepository.save(coupon);
+
+        redisCouponRepository.enableCoupon(coupon.getCouponId(), coupon.getIssueLimit(), null);
+        redisCouponRepository.addIssuedUser(coupon.getCouponId(), userId);
+        assertThat(redisCouponRepository.exists(coupon.getCouponId())).isTrue();
+
+        String token = buildToken(UUID.randomUUID(), userType);
+
+        //when
+        mockMvc.perform(
+                        post("/api/coupons/" + coupon.getCouponId() + "/terminate")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("Forbidden"))
+                .andExpect(jsonPath("$.message").value("쿠폰 종료가 불가능합니다."));
+
+        //then
+        Optional<Coupon> after = couponRepository.findById(coupon.getCouponId());
+        assertThat(after).isPresent();
+        assertThat(after.get().getStatus()).isEqualTo(CouponStatus.ACTIVE);
+
+        assertThat(redisCouponRepository.exists(coupon.getCouponId())).isTrue();
+
+        String issuedKey = couponIssueKey + coupon.getCouponId();
+        Long ttl = redisTemplate.getExpire(issuedKey);
+        assertThat(ttl).isEqualTo(-1L);
+    }
+
+    @DisplayName("종료할 쿠폰이 존재하지 않으면 404를 반환한다.")
+    @Test
+    void shouldReturn404_whenCouponToExpireDoesNotExist() throws Exception {
+        //given
+        String token = buildToken(UUID.randomUUID(), UserType.ADMIN);
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/coupons/" + UUID.randomUUID() + "/terminate")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("쿠폰이 존재하지 않습니다."));
+    }
+
     private static Stream<Arguments> provideNonAdminRoles() {
         return Stream.of(
                 Arguments.of("구매자", UserType.CUSTOMER),
                 Arguments.of("레스토랑 소유자", UserType.RESTAURANT_OWNER)
-        );
-    }
-
-    private static Stream<Arguments> provideNonPauseStatuses() {
-        return Stream.of(
-                Arguments.of("활성화된 쿠폰", CouponStatus.ACTIVE),
-                Arguments.of("활성화 대기중", CouponStatus.SCHEDULED),
-                Arguments.of("만료된 쿠폰", CouponStatus.EXPIRED),
-                Arguments.of("보관된 쿠폰", CouponStatus.ARCHIVED)
         );
     }
 

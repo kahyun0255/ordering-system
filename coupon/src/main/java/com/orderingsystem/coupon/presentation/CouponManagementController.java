@@ -31,10 +31,19 @@ public class CouponManagementController {
 
     @PostMapping("/{couponId}/resume")
     public ResponseEntity<Void> resumeCoupon(@RequestHeader("Authorization") String authorizationHeader,
-                                            @PathVariable UUID couponId) {
+                                             @PathVariable UUID couponId) {
         UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
         UserType userType = commonJwtUtil.getUserRoleFromToken(authorizationHeader);
         couponFacade.resumeCoupon(couponId, userId, userType);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{couponId}/terminate")
+    public ResponseEntity<Void> terminateCoupon(@RequestHeader("Authorization") String authorizationHeader,
+                                                @PathVariable UUID couponId) {
+        UUID userId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+        UserType userType = commonJwtUtil.getUserRoleFromToken(authorizationHeader);
+        couponFacade.terminateCoupon(couponId, userId, userType);
         return ResponseEntity.ok().build();
     }
 

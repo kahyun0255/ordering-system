@@ -114,6 +114,31 @@ class CouponFacadeTest {
 
     }
 
+    @DisplayName("관리자가 쿠폰을 종료하려하면 쿠폰 종료를 시도한다.")
+    @Test
+    void shouldAttemptToExpireCoupon_whenUserHasAdminRole() {
+        //given
+        UUID couponId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        //when
+        couponFacade.terminateCoupon(couponId, userId, UserType.ADMIN);
+
+        //then
+        verify(couponManagementService).terminate(couponId, userId);
+    }
+
+    @DisplayName("관리자가 아닌 유저가 쿠폰을 종료하려하면 예외가 발생한다.")
+    @ParameterizedTest(name = "[{index}] 권한 : {0}")
+    @MethodSource("provideNonAdminRoles")
+    void shouldThrowException_whenNonAdminUserTriesToExpireCoupon(String type, UserType userType) {
+        //when, then
+        assertThatThrownBy(() -> couponFacade.terminateCoupon(UUID.randomUUID(), UUID.randomUUID(), userType))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("쿠폰 종료가 불가능합니다.");
+
+    }
+
     private static Stream<Arguments> provideNonAdminRoles() {
         return Stream.of(
                 Arguments.of("레스토랑 소유자", UserType.RESTAURANT_OWNER),

@@ -44,4 +44,13 @@ public class CouponFacade {
 
         couponManagementService.resume(couponId, userId);
     }
+
+    public void terminateCoupon(UUID couponId, UUID userId, UserType userType) {
+        if (!UserType.ADMIN.equals(userType)) {
+            log.info("관리자가 아닌 유저가 쿠폰 종료 시도. UserId : [{}], UserType : [{}]", userId, userType);
+            throw new AccessDeniedException("쿠폰 종료가 불가능합니다.");
+        }
+
+        couponManagementService.terminate(couponId, userId);
+    }
 }

@@ -40,14 +40,24 @@ public class CouponManagementService {
                 coupon.getValidUntil());
     }
 
+    @Transactional
+    public void terminate(UUID couponId, UUID userId) {
+        log.info("[{}] 유저가 [{}] 쿠폰 종료.", userId, couponId);
+
+        Coupon coupon = getCoupon(couponId, userId);
+        coupon.terminate();
+
+        couponCachePort.deleteCouponStock(couponId);
+        couponCachePort.setExpireIssuedUserKey(couponId);
+    }
+
     private Coupon getCoupon(UUID couponId, UUID userId) {
         Optional<Coupon> coupon = couponRepository.findById(couponId);
-        if (coupon.isEmpty()){
+        if (coupon.isEmpty()) {
             log.info("[{}] 쿠폰이 존재하지 않습니다. 조회한 유저 : [{}]", coupon, userId);
             throw new CouponNotFoundException("쿠폰이 존재하지 않습니다.");
         }
 
         return coupon.get();
     }
-
 }
