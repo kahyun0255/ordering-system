@@ -26,4 +26,9 @@ public interface CouponRepository extends JpaRepository<Coupon, UUID> {
     List<Coupon> findAllByStatusAndValidUntilAfter(CouponStatus status, LocalDateTime validUntilAfter);
 
     List<Coupon> findAllByStatusIn(Collection<CouponStatus> statuses);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Coupon c SET c.status = 'EXPIRED' WHERE c.validUntil < :now AND c.status != 'EXPIRED'")
+    int bulkExpireCoupons(LocalDateTime now);
+
 }
