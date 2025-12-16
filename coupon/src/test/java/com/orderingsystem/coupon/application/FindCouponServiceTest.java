@@ -3,6 +3,7 @@ package com.orderingsystem.coupon.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -153,7 +154,7 @@ class FindCouponServiceTest {
                 .issueLimit(1000L)
                 .build();
 
-        given(couponRepository.findAllByStatusIn(couponStatus)).willReturn(List.of(coupon1, coupon2));
+        given(couponRepository.findAllByStatusIn(anyCollection())).willReturn(List.of(coupon1, coupon2));
 
         //when
         List<CouponResponse> responses = findCouponService.getCoupons(userId, couponStatus);

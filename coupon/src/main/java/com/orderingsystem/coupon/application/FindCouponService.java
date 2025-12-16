@@ -10,9 +10,11 @@ import com.orderingsystem.coupon.domain.model.IssuedCoupon;
 import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -53,9 +55,17 @@ public class FindCouponService {
     public List<CouponResponse> getCoupons(UUID userId, List<CouponStatus> couponStatuses) {
         log.info("[{}] 유저가 쿠폰 조회.", userId);
 
-        List<Coupon> coupons = couponRepository.findAllByStatusIn(couponStatuses);
+        Set<CouponStatus> searchStatuses = new HashSet<>(couponStatuses);
+        if (couponStatuses.contains(CouponStatus.EXPIRED)) {
+            searchStatuses.add(CouponStatus.ACTIVE);
+        }
 
-        return coupons.stream().map(this::buildCouponResponse).toList();
+        List<Coupon> coupons = couponRepository.findAllByStatusIn(searchStatuses);
+
+        return coupons.stream()
+                .map(this::buildCouponResponse)
+                .filter(res -> couponStatuses.contains(res.getCouponStatus()))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -106,7 +116,7 @@ public class FindCouponService {
                 .couponId(coupon.getCouponId())
                 .couponName(coupon.getName())
                 .discountType(coupon.getDiscountType())
-                .couponStatus(coupon.getStatus())
+                .couponStatus(coupon.getDisplayStatus())
                 .amountOff(coupon.getAmountOff())
                 .percentOff(coupon.getPercentOff())
                 .maxDiscountAmount(coupon.getMaxDiscountAmount())

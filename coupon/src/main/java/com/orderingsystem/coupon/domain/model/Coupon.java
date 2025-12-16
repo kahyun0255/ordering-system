@@ -108,6 +108,16 @@ public class Coupon extends AggregateRoot {
         this.status = CouponStatus.ARCHIVED;
     }
 
+    public CouponStatus getDisplayStatus() {
+        LocalDateTime now = LocalDateTime.now();
+        if (this.status == CouponStatus.ACTIVE
+                && this.validUntil != null
+                && this.validUntil.isBefore(now)) {
+            return CouponStatus.EXPIRED;
+        }
+        return this.status;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
