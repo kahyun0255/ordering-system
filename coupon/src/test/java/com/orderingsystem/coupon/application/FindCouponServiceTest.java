@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -52,12 +53,14 @@ class FindCouponServiceTest {
         UUID couponId1 = UUID.randomUUID();
         UUID couponId2 = UUID.randomUUID();
 
+        LocalDateTime dateTime = LocalDateTime.now().plusDays(10);
+
         IssuedCoupon issuedCoupon1 = IssuedCoupon.builder()
                 .id(1L)
                 .userId(userId)
                 .couponId(couponId1)
                 .status(IssuedCouponStatus.ISSUED)
-                .issuedAt(LocalDateTime.of(2025, 12, 10, 0, 0))
+                .issuedAt(dateTime)
                 .build();
 
         IssuedCoupon issuedCoupon2 = IssuedCoupon.builder()
@@ -65,11 +68,11 @@ class FindCouponServiceTest {
                 .userId(userId)
                 .couponId(couponId2)
                 .status(IssuedCouponStatus.ISSUED)
-                .issuedAt(LocalDateTime.of(2025, 12, 10, 0, 0))
+                .issuedAt(dateTime)
                 .build();
 
         List<IssuedCoupon> issuedCoupons = List.of(issuedCoupon1, issuedCoupon2);
-        given(issuedCouponRepository.findByUserIdAndStatusIn(userId, couponStatus)).willReturn(issuedCoupons);
+        given(issuedCouponRepository.findByUserIdAndStatusIn(eq(userId), anyCollection())).willReturn(issuedCoupons);
 
         Coupon coupon1 = Coupon.builder()
                 .couponId(couponId1)

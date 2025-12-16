@@ -31,27 +31,6 @@ public class FindCouponService {
     private final IssuedCouponRepository issuedCouponRepository;
 
     @Transactional(readOnly = true)
-    public List<IssuedCouponResponse> getIssuedCoupons(UUID userId, List<IssuedCouponStatus> couponStatus) {
-        List<IssuedCoupon> issuedCoupons = issuedCouponRepository.findByUserIdAndStatusIn(userId, couponStatus);
-
-        List<UUID> couponIds = issuedCoupons.stream()
-                .map(IssuedCoupon::getCouponId)
-                .toList();
-
-        List<Coupon> coupons = couponRepository.findAllByCouponIdIn(couponIds);
-
-        Map<UUID, Coupon> couponMap = coupons.stream()
-                .collect(Collectors.toMap(Coupon::getCouponId, coupon -> coupon));
-
-        return issuedCoupons.stream()
-                .map(issuedCoupon -> {
-                    Coupon coupon = couponMap.get(issuedCoupon.getCouponId());
-
-                    return buildIssueCouponResponse(issuedCoupon, coupon);
-                }).toList();
-    }
-
-    @Transactional(readOnly = true)
     public List<CouponResponse> getCoupons(UUID userId, List<CouponStatus> couponStatuses) {
         log.info("[{}] 유저가 쿠폰 조회.", userId);
 
@@ -72,6 +51,39 @@ public class FindCouponService {
     public CouponResponse getCoupon(UUID userId, UUID couponId) {
         Coupon coupon = findCoupon(userId, couponId);
         return buildCouponResponse(coupon);
+    }
+
+    @Transactional(readOnly = true)
+    public List<IssuedCouponResponse> getIssuedCoupons(UUID userId, List<IssuedCouponStatus> couponStatuses) {
+        log.info("[{}] 유저가 발급된 쿠폰 조회.", userId);
+
+        Set<IssuedCouponStatus> searchStatuses = new HashSet<>(couponStatuses);
+        if (couponStatuses.contains(IssuedCouponStatus.EXPIRED)) {
+            searchStatuses.add(IssuedCouponStatus.ISSUED);
+        }
+
+        List<IssuedCoupon> issuedCoupons = issuedCouponRepository.findByUserIdAndStatusIn(userId, searchStatuses);
+
+        if (issuedCoupons.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> couponIds = issuedCoupons.stream()
+                .map(IssuedCoupon::getCouponId)
+                .toList();
+
+        List<Coupon> coupons = couponRepository.findAllByCouponIdIn(couponIds);
+
+        Map<UUID, Coupon> couponMap = coupons.stream()
+                .collect(Collectors.toMap(Coupon::getCouponId, coupon -> coupon));
+
+        return issuedCoupons.stream()
+                .map(issuedCoupon -> {
+                    Coupon coupon = couponMap.get(issuedCoupon.getCouponId());
+                    return buildIssueCouponResponse(issuedCoupon, coupon);
+                })
+                .filter(res -> couponStatuses.contains(res.getIssuedCouponStatus()))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -134,7 +146,7 @@ public class FindCouponService {
                 .couponId(issuedCoupon.getCouponId())
                 .couponName(coupon.getName())
                 .issuedCouponId(issuedCoupon.getId())
-                .issuedCouponStatus(issuedCoupon.getStatus())
+                .issuedCouponStatus(issuedCoupon.getDisplayStatus())
                 .issuedAt(issuedCoupon.getIssuedAt())
                 .usedAt(issuedCoupon.getUsedAt())
                 .expiredAt(issuedCoupon.getExpiredAt())

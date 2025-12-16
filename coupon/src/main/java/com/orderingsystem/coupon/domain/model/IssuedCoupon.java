@@ -58,4 +58,13 @@ public class IssuedCoupon extends BaseEntity {
                 .build();
     }
 
+    public IssuedCouponStatus getDisplayStatus() {
+        if (this.status == IssuedCouponStatus.ISSUED
+                && this.expiredAt != null
+                && this.expiredAt.isBefore(LocalDateTime.now())) {
+            return IssuedCouponStatus.EXPIRED;
+        }
+        return this.status;
+    }
+
 }

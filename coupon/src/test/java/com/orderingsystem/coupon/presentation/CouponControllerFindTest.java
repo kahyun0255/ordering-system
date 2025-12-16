@@ -748,4 +748,206 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .build();
     }
 
+    @DisplayName("발급된 쿠폰 id로 발급한 쿠폰 정보를 조회시, DB에서 ISSUED 상태라도 만료일이 지났다면 EXPIRED 상태로 반환한다.")
+    @Test
+    void shouldReturnExpiredStatus_whenRetrievingHiddenExpiredIssuedCoupon() throws Exception {
+        //given
+        String token = buildToken(userId);
+        LocalDateTime past = LocalDateTime.now().minusDays(1);
+
+        Coupon coupon = Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .name("테스트 쿠폰")
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .status(CouponStatus.ACTIVE)
+                .amountOff(BigDecimal.valueOf(1000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(past.minusDays(10))
+                .validUntil(past.plusDays(10))
+                .issueLimit(100L)
+                .build();
+        couponRepository.save(coupon);
+
+        IssuedCoupon hiddenExpiredIssuedCoupon = IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(coupon.getCouponId())
+                .status(IssuedCouponStatus.ISSUED)
+                .issuedAt(past.minusDays(5))
+                .expiredAt(past)
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(hiddenExpiredIssuedCoupon);
+
+        //when, then
+        mockMvc.perform(
+                        get("/api/coupons/issued/" + savedIssuedCoupon.getId())
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.issuedCouponId").value(savedIssuedCoupon.getId()))
+                .andExpect(jsonPath("$.couponName").value(coupon.getName()))
+                .andExpect(jsonPath("$.issuedCouponStatus").value(IssuedCouponStatus.EXPIRED.toString()))
+                .andExpect(jsonPath("$.expiredAt").exists());
+    }
+
+    @DisplayName("발급된 쿠폰 목록 조회(ISSUED) 시, DB상 ISSUED 상태라도 만료일이 지났다면 목록에서 제외된다.")
+    @Test
+    void shouldExcludeHiddenExpired_whenIssuedStatusIsRequested() throws Exception {
+        //given
+        couponRepository.deleteAllInBatch();
+        issuedCouponRepository.deleteAllInBatch();
+        String token = buildToken(userId);
+        LocalDateTime now = LocalDateTime.now();
+
+        Coupon coupon1 = createCoupon(now.plusDays(10));
+        couponRepository.save(coupon1);
+        IssuedCoupon realIssued = createIssuedCoupon(coupon1.getCouponId(), IssuedCouponStatus.ISSUED, now.plusDays(5));
+
+        Coupon coupon2 = createCoupon(now.minusDays(1));
+        couponRepository.save(coupon2);
+        IssuedCoupon hiddenExpired = createIssuedCoupon(coupon2.getCouponId(), IssuedCouponStatus.ISSUED, now.minusDays(1));
+
+        issuedCouponRepository.saveAll(List.of(realIssued, hiddenExpired));
+
+        //when
+        MvcResult mvcResult = mockMvc.perform(
+                        get("/api/coupons/issued")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .param("status", "ISSUED"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        //then
+        String json = mvcResult.getResponse().getContentAsString();
+        List<IssuedCouponResponse> responses = objectMapper.readValue(json, new TypeReference<>() {});
+
+        assertThat(responses).hasSize(1)
+                .extracting("issuedCouponId", "issuedCouponStatus")
+                .containsExactly(
+                        tuple(realIssued.getId(), IssuedCouponStatus.ISSUED)
+                );
+
+        assertThat(responses).extracting("issuedCouponId")
+                .doesNotContain(hiddenExpired.getId());
+    }
+
+    @DisplayName("발급된 쿠폰 목록 조회(EXPIRED) 시, DB상 ISSUED 상태라도 만료일이 지났다면 EXPIRED로 변환되어 조회된다.")
+    @Test
+    void shouldIncludeHiddenExpired_whenExpiredStatusIsRequested() throws Exception {
+        //given
+        couponRepository.deleteAllInBatch();
+        issuedCouponRepository.deleteAllInBatch();
+        String token = buildToken(userId);
+        LocalDateTime now = LocalDateTime.now();
+
+        Coupon coupon1 = createCoupon(now.minusDays(10));
+        couponRepository.save(coupon1);
+        IssuedCoupon realExpired = createIssuedCoupon(coupon1.getCouponId(), IssuedCouponStatus.EXPIRED, now.minusDays(5));
+
+        Coupon coupon2 = createCoupon(now.minusDays(1));
+        couponRepository.save(coupon2);
+        IssuedCoupon hiddenExpired = createIssuedCoupon(coupon2.getCouponId(), IssuedCouponStatus.ISSUED, now.minusDays(1));
+
+        Coupon coupon3 = createCoupon(now.plusDays(10));
+        couponRepository.save(coupon3);
+        IssuedCoupon realIssued = createIssuedCoupon(coupon3.getCouponId(), IssuedCouponStatus.ISSUED, now.plusDays(5));
+
+        issuedCouponRepository.saveAll(List.of(realExpired, hiddenExpired, realIssued));
+
+        //when
+        MvcResult mvcResult = mockMvc.perform(
+                        get("/api/coupons/issued")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .param("status", "EXPIRED")) // EXPIRED만 요청
+                .andExpect(status().isOk())
+                .andReturn();
+
+        //then
+        String json = mvcResult.getResponse().getContentAsString();
+        List<IssuedCouponResponse> responses = objectMapper.readValue(json, new TypeReference<>() {});
+
+        assertThat(responses).hasSize(2)
+                .extracting("issuedCouponId", "issuedCouponStatus")
+                .containsExactlyInAnyOrder(
+                        tuple(realExpired.getId(), IssuedCouponStatus.EXPIRED),
+                        tuple(hiddenExpired.getId(), IssuedCouponStatus.EXPIRED)
+                );
+    }
+
+    @DisplayName("발급된 쿠폰 목록 조회(ISSUED + EXPIRED) 시, 정상 ISSUED와 숨겨진 만료 쿠폰이 모두 조회된다.")
+    @Test
+    void shouldRetrieveBoth_whenIssuedAndExpiredRequested() throws Exception {
+        //given
+        issuedCouponRepository.deleteAllInBatch();
+        couponRepository.deleteAllInBatch();
+
+        String token = buildToken(userId);
+        LocalDateTime now = LocalDateTime.now();
+
+        Coupon coupon1 = createCoupon(now.plusDays(10));
+        couponRepository.save(coupon1);
+        IssuedCoupon realIssued = createIssuedCoupon(coupon1.getCouponId(), IssuedCouponStatus.ISSUED, now.plusDays(5));
+
+        Coupon coupon2 = createCoupon(now.minusDays(1));
+        couponRepository.save(coupon2);
+        IssuedCoupon hiddenExpired = createIssuedCoupon(coupon2.getCouponId(), IssuedCouponStatus.ISSUED, now.minusDays(1));
+
+        Coupon coupon3 = createCoupon(now.minusDays(10));
+        couponRepository.save(coupon3);
+        IssuedCoupon realExpired = createIssuedCoupon(coupon3.getCouponId(), IssuedCouponStatus.EXPIRED, now.minusDays(5));
+
+        Coupon coupon4 = createCoupon(now.plusDays(10));
+        couponRepository.save(coupon4);
+        IssuedCoupon usedCoupon = createIssuedCoupon(coupon4.getCouponId(), IssuedCouponStatus.USED, now.plusDays(5));
+
+        issuedCouponRepository.saveAll(List.of(realIssued, hiddenExpired, realExpired, usedCoupon));
+
+        //when
+        MvcResult mvcResult = mockMvc.perform(
+                        get("/api/coupons/issued")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .param("status", "ISSUED")
+                                .param("status", "EXPIRED"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        //then
+        String json = mvcResult.getResponse().getContentAsString();
+        List<IssuedCouponResponse> responses = objectMapper.readValue(json, new TypeReference<>() {});
+
+        assertThat(responses).hasSize(3)
+                .extracting("issuedCouponId", "issuedCouponStatus")
+                .containsExactlyInAnyOrder(
+                        tuple(realIssued.getId(), IssuedCouponStatus.ISSUED),
+                        tuple(hiddenExpired.getId(), IssuedCouponStatus.EXPIRED),
+                        tuple(realExpired.getId(), IssuedCouponStatus.EXPIRED)
+                );
+
+        assertThat(responses).extracting("issuedCouponId")
+                .doesNotContain(usedCoupon.getId());
+    }
+
+    private Coupon createCoupon(LocalDateTime validUntil) {
+        return Coupon.builder()
+                .couponId(UUID.randomUUID())
+                .name("테스트 쿠폰")
+                .discountType(DiscountType.FIXED_AMOUNT)
+                .status(CouponStatus.ACTIVE)
+                .amountOff(BigDecimal.valueOf(1000))
+                .minDiscountAmount(BigDecimal.valueOf(10000))
+                .validFrom(LocalDateTime.now().minusDays(10))
+                .validUntil(validUntil)
+                .issueLimit(100L)
+                .build();
+    }
+
+    private IssuedCoupon createIssuedCoupon(UUID couponId, IssuedCouponStatus status, LocalDateTime expiredAt) {
+        return IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(couponId)
+                .status(status)
+                .issuedAt(LocalDateTime.now().minusDays(2))
+                .expiredAt(expiredAt)
+                .build();
+    }
+
 }
