@@ -5,4 +5,6 @@ include 'order'
 include 'payment'
 include 'restaurant'
 include 'user'
+include 'coupon'
+
 

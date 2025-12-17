@@ -13,6 +13,7 @@ services:
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --delete --topic restaurant-request --if-exists
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --delete --topic restaurant-response --if-exists
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --delete --topic customer --if-exists
+      /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --delete --topic ordering.coupon.issue.request --if-exists
 
       echo 'Creating topics...' 
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic payment-request --replication-factor 3 --partitions 3 
@@ -20,6 +21,7 @@ services:
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic restaurant-request --replication-factor 3 --partitions 3
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic restaurant-response --replication-factor 3 --partitions 3
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic customer --replication-factor 3 --partitions 3
+      /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic ordering.coupon.issue.request --replication-factor 3 --partitions 3
 
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --list
       "

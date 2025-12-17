@@ -13,7 +13,7 @@ import com.orderingsystem.application.outbox.UserOutboxHelper;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.model.User;
-import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.domain.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

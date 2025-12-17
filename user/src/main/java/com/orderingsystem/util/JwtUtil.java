@@ -43,6 +43,7 @@ public class JwtUtil {
                 .expiration(new Date(now + accessTtl.toMillis()))
                 .claim("userId", user.getUserId().toString())
                 .claim("typ", "access")
+                .claim("role", user.getType().name())
                 .signWith(secretKey, SIG.HS256)
                 .compact();
     }

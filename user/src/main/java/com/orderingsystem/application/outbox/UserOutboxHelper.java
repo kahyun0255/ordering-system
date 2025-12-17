@@ -9,7 +9,7 @@ import com.orderingsystem.application.outbox.model.UserCreatedEventPayload;
 import com.orderingsystem.application.outbox.model.UserDeletedEventPayload;
 import com.orderingsystem.application.outbox.model.UserEventPayload;
 import com.orderingsystem.domain.exception.UserDomainException;
-import com.orderingsystem.domain.model.UserType;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.domain.model.outbox.UserOutbox;
 import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
 import java.time.ZonedDateTime;

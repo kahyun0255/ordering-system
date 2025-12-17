@@ -14,9 +14,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 
-@Service
+@Repository
 @RequiredArgsConstructor
 @Slf4j
 public class RedisStockRepository implements StockCachePort {
@@ -131,7 +131,6 @@ public class RedisStockRepository implements StockCachePort {
             throw new IllegalStateException("재고 데이터가 존재하지 않습니다. " + history.keySet());
         }
 
-        System.out.println("<<<<  " + confirmedKey(orderId) + " " + history.toString());
         redisTemplate.opsForHash().putAll(confirmedKey(orderId), history);
 
         log.info("{} 주문 예약 확정 완료. Redis 실제 재고 차감 및 예약 해제", sagaId);

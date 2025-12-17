@@ -49,6 +49,17 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorDTO> handleIllegalStateException(IllegalStateException e) {
+        log.error(e.getMessage());
+
+        return ResponseEntity.badRequest()
+                .body(ErrorDTO.builder()
+                        .code(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                        .message(e.getMessage())
+                        .build());
+    }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorDTO> handleNotFoundException(NotFoundException e) {
         log.error(e.getMessage());
