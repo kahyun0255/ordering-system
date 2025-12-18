@@ -2,7 +2,7 @@ package com.orderingsystem.order.infra.api;
 
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 
-import com.orderingsystem.order.application.RestaurantApi;
+import com.orderingsystem.order.application.port.out.RestaurantApi;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.domain.exception.RestaurantServiceException;
 import com.orderingsystem.order.infra.api.dto.request.RestaurantValidationRequest;
@@ -24,7 +24,7 @@ public class RestaurantApiImpl implements RestaurantApi {
 
     private final WebClient webClient;
 
-    public RestaurantApiImpl(@Value("${restaurant.url}") String serviceUrl) {
+    public RestaurantApiImpl(@Value("${url.restaurant}") String serviceUrl) {
         this.webClient = WebClient.builder()
                 .baseUrl(serviceUrl)
                 .build();

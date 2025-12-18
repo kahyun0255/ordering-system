@@ -1,9 +1,12 @@
 package com.orderingsystem.coupon.application;
 
+import com.orderingsystem.coupon.application.dto.response.CouponValidateResponse;
 import com.orderingsystem.coupon.application.port.out.CouponCachePort;
 import com.orderingsystem.coupon.domain.exception.CouponNotFoundException;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
+import com.orderingsystem.coupon.presentation.request.ValidationCouponRequest;
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -60,4 +63,14 @@ public class CouponManagementService {
 
         return coupon.get();
     }
+
+    public CouponValidateResponse aa(ValidationCouponRequest request) {
+        return CouponValidateResponse.builder()
+                .valid(true)
+                .discountAmount(BigDecimal.valueOf(1000))
+                .finalAmount(BigDecimal.valueOf(9000))
+                .message("성공!")
+                .build();
+    }
+
 }

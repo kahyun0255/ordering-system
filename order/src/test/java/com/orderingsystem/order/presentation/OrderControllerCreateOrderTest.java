@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.Money;
-import com.orderingsystem.order.application.RestaurantApi;
+import com.orderingsystem.order.application.port.out.RestaurantApi;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.model.Order;

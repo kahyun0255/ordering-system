@@ -133,7 +133,8 @@ public class OrderDataMapper {
                 .build();
     }
 
-    public OrderPaymentEventPayload orderRejectedEventToOrderPaymentEventPayload(OrderRejectedEvent orderRejectedEvent, UUID sagaId) {
+    public OrderPaymentEventPayload orderRejectedEventToOrderPaymentEventPayload(OrderRejectedEvent orderRejectedEvent,
+                                                                                 UUID sagaId) {
         return OrderPaymentEventPayload.builder()
                 .orderId(orderRejectedEvent.getOrder().getId().toString())
                 .sagaId(sagaId.toString())

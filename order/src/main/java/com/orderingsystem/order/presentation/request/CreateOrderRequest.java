@@ -27,6 +27,8 @@ public class CreateOrderRequest {
     @NotNull
     private final OrderAddressRequest address;
 
+    private final List<Long> couponId;
+
     public CreateOrderApplicationRequest toApplicationRequest(UUID customerId){
         return CreateOrderApplicationRequest.builder()
                 .customerId(customerId)
@@ -36,6 +38,7 @@ public class CreateOrderRequest {
                         .map(OrderItemRequest::toApplicationRequest)
                         .collect(Collectors.toList()))
                 .address(this.address.toApplicationRequest())
+                .couponId(this.couponId)
                 .build();
     }
 }
