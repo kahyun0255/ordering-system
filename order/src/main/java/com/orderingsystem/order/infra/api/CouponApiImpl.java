@@ -3,9 +3,9 @@ package com.orderingsystem.order.infra.api;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 
 import com.orderingsystem.order.application.dto.request.ValidationCouponApplicationRequest;
-import com.orderingsystem.order.application.dto.response.CouponValidateResponse;
+import com.orderingsystem.order.application.dto.response.CouponValidationResponse;
 import com.orderingsystem.order.application.port.out.CouponApi;
-import com.orderingsystem.order.infra.api.dto.request.ValidationCouponRequest;
+import com.orderingsystem.order.infra.api.dto.request.CouponValidationRequest;
 import io.netty.handler.timeout.ReadTimeoutException;
 import java.time.Duration;
 import java.util.UUID;
@@ -32,13 +32,13 @@ public class CouponApiImpl implements CouponApi {
     }
 
     @Override
-    public CouponValidateResponse validateCoupons(ValidationCouponApplicationRequest request, UUID sagaId) {
+    public CouponValidationResponse validateCoupons(ValidationCouponApplicationRequest request, UUID sagaId) {
         try {
             return webClient.post()
                     .uri(couponEndpoint)
                     .bodyValue(toValidationCommand(request, sagaId))
                     .retrieve()
-                    .bodyToMono(CouponValidateResponse.class)
+                    .bodyToMono(CouponValidationResponse.class)
                     .block(Duration.ofSeconds(3));
         } catch (WebClientResponseException e) {
             log.warn("쿠폰 검증 실패. 상태코드: {}, Body: {}", e.getStatusCode(), e.getResponseBodyAsString());
@@ -54,8 +54,8 @@ public class CouponApiImpl implements CouponApi {
         }
     }
 
-    private ValidationCouponRequest toValidationCommand(ValidationCouponApplicationRequest request, UUID sagaId) {
-        return ValidationCouponRequest.builder()
+    private CouponValidationRequest toValidationCommand(ValidationCouponApplicationRequest request, UUID sagaId) {
+        return CouponValidationRequest.builder()
                 .customerId(request.getCustomerId())
                 .couponIds(request.getCouponIds())
                 .totalOrderAmount(request.getTotalOrderAmount())

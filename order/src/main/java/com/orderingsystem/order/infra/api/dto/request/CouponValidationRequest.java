@@ -1,4 +1,4 @@
-package com.orderingsystem.coupon.presentation.request;
+package com.orderingsystem.order.infra.api.dto.request;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -8,7 +8,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class ValidationCouponRequest {
+public class CouponValidationRequest {
 
     private UUID customerId;
     private List<Long> couponIds;

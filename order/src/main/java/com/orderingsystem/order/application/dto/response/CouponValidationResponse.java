@@ -8,7 +8,7 @@ import lombok.ToString;
 @Getter
 @Builder
 @ToString
-public class CouponValidateResponse {
+public class CouponValidationResponse {
 
     private boolean valid;
     private BigDecimal discountAmount;

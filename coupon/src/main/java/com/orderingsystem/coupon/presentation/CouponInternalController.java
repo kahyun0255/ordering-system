@@ -1,9 +1,8 @@
 package com.orderingsystem.coupon.presentation;
 
-import com.orderingsystem.coupon.application.CouponManagementService;
-import com.orderingsystem.coupon.application.dto.response.CouponValidateResponse;
-import com.orderingsystem.coupon.presentation.request.ValidationCouponRequest;
-import javax.print.DocFlavor.READER;
+import com.orderingsystem.coupon.application.CouponValidationService;
+import com.orderingsystem.coupon.application.dto.response.CouponValidationResponse;
+import com.orderingsystem.coupon.presentation.request.CouponValidationRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,11 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/internal/coupons")
 public class CouponInternalController {
 
-    private final CouponManagementService couponManagementService;
+    private final CouponValidationService couponValidationService;
 
     @PostMapping("/validation")
-    private ResponseEntity<CouponValidateResponse> validateCoupons(@RequestBody ValidationCouponRequest request){
-        return ResponseEntity.ok(couponManagementService.aa(request));
+    private ResponseEntity<CouponValidationResponse> validateCoupons(@RequestBody CouponValidationRequest request){
+        return ResponseEntity.ok(couponValidationService.validateAndCalculate(request));
     }
 
 }

@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class CouponValidateResponse {
+public class CouponValidationResponse {
 
     private boolean valid;
     private BigDecimal discountAmount;
