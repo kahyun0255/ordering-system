@@ -1,7 +1,8 @@
-package com.orderingsystem.coupon.application;
+package com.orderingsystem.coupon.presentation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.orderingsystem.coupon.application.CouponValidationService;
 import com.orderingsystem.coupon.application.dto.response.CouponValidationResponse;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
@@ -617,4 +618,5 @@ class CouponInternalControllerTest {
                 .build();
         return issuedCouponRepository.save(issuedCoupon);
     }
+
 }
