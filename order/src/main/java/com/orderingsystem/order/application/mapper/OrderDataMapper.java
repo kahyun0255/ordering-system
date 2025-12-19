@@ -8,6 +8,7 @@ import com.orderingsystem.order.application.dto.request.OrderAddressApplicationR
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
 import com.orderingsystem.order.application.dto.request.ValidationCouponApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
+import com.orderingsystem.order.application.outbox.coupon.model.OrderCouponEventPayload;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.application.outbox.product.model.OrderProductEventPayload;
 import com.orderingsystem.order.application.outbox.product.model.OrderProductEventProduct;
@@ -70,10 +71,6 @@ public class OrderDataMapper {
                 .orderStatus(order.getOrderStatus())
                 .message(massage)
                 .build();
-    }
-
-    public List<UUID> itemsToItemIdList(List<OrderItemApplicationRequest> items) {
-        return items.stream().map(OrderItemApplicationRequest::getProductId).toList();
     }
 
     public OrderPaymentEventPayload orderCreatedToOrderPaymentEventPayload(OrderCreateEvent orderCreateEvent,
@@ -153,6 +150,20 @@ public class OrderDataMapper {
                 .customerId(createOrderRequest.getCustomerId())
                 .couponIds(createOrderRequest.getCouponId())
                 .totalOrderAmount(createOrderRequest.getPrice())
+                .build();
+    }
+
+    public OrderCouponEventPayload orderCreatedToOrderCouponEventPayload(OrderCreateEvent orderCreateEvent,
+                                                                         UUID sagaId, List<Long> couponId) {
+        List<String> couponIdString = couponId.stream().map(Object::toString).toList();
+
+        return OrderCouponEventPayload.builder()
+                .orderId(orderCreateEvent.getOrder().getId().toString())
+                .customerId(orderCreateEvent.getOrder().getCustomerId().toString())
+                .sagaId(sagaId.toString())
+                .issuedCouponId(couponIdString)
+                .createdAt(orderCreateEvent.getCreatedAt())
+                .failureMessage(orderCreateEvent.getOrder().getFailureMessageList())
                 .build();
     }
 

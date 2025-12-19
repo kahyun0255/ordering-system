@@ -40,7 +40,8 @@ public class OrderFacade {
 
         orderService.checkCustomer(createOrderRequest.getCustomerId());
 
-        OrderCreateEvent orderCreateEvent = orderCreateService.createOrder(createOrderRequest, failureMessages, sagaId);
+        OrderCreateEvent orderCreateEvent = orderCreateService.createOrder(createOrderRequest, failureMessages, sagaId,
+                createOrderRequest.getCouponId());
 
         log.info("주문이 생성되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
 

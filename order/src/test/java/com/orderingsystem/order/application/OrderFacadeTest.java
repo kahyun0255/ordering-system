@@ -18,6 +18,7 @@ import com.orderingsystem.order.application.port.out.RestaurantApi;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.repository.CustomerRepository;
+import com.orderingsystem.order.domain.repository.outbox.CouponOutboxRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
 import java.math.BigDecimal;
 import java.util.List;
@@ -45,6 +46,9 @@ class OrderFacadeTest {
 
     @Autowired
     private PaymentOutboxRepository paymentOutboxRepository;
+
+    @Autowired
+    private CouponOutboxRepository couponOutboxRepository;
 
     @MockitoBean
     private RestaurantApi restaurantApi;
@@ -89,6 +93,9 @@ class OrderFacadeTest {
         //then
         assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
         assertThat(response.getMessage()).isEqualTo("주문이 성공적으로 생성되었습니다.");
+
+        assertThat(paymentOutboxRepository.count()).isEqualTo(1L);
+        assertThat(couponOutboxRepository.count()).isEqualTo(1L);
     }
 
     @DisplayName("주문 물품이 2개이고 쿠폰 검증 및 레스토랑 검증에 성공하면, 주문 생성에 성공한다.")
@@ -107,6 +114,9 @@ class OrderFacadeTest {
         //then
         assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
         assertThat(response.getMessage()).isEqualTo("주문이 성공적으로 생성되었습니다.");
+
+        assertThat(paymentOutboxRepository.count()).isEqualTo(1L);
+        assertThat(couponOutboxRepository.count()).isEqualTo(1L);
     }
 
     @DisplayName("주문자가 존재하지 않을 경우, 주문 생성에 실패한다.")
@@ -138,7 +148,6 @@ class OrderFacadeTest {
                                 .build()))
                 .build();
 
-
         CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
         given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
         given(couponValidationResponse.isValid()).willReturn(true);
@@ -147,6 +156,9 @@ class OrderFacadeTest {
         assertThatThrownBy(() -> orderFacade.createOrder(request))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessage("주문자를 찾을 수 없습니다.");
+
+        assertThat(paymentOutboxRepository.count()).isEqualTo(0L);
+        assertThat(couponOutboxRepository.count()).isEqualTo(0L);
     }
 
     @DisplayName("쿠폰 검증에 실패하면, 주문은 생성하지만 별도 결제 요청이 이뤄지지 않고 주문은 취소처리된다.")
@@ -167,6 +179,7 @@ class OrderFacadeTest {
         assertThat(response.getMessage()).isEqualTo("주문이 취소되었습니다.");
 
         assertThat(paymentOutboxRepository.count()).isEqualTo(0L);
+        assertThat(couponOutboxRepository.count()).isEqualTo(0L);
     }
 
 
@@ -186,6 +199,7 @@ class OrderFacadeTest {
                         .price(product1Price.getAmount())
                         .subTotal(product1Price.getAmount())
                         .build()))
+                .couponId(List.of(1L, 2L))
                 .build();
     }
 
@@ -211,6 +225,7 @@ class OrderFacadeTest {
                                 .price(product2Price.getAmount())
                                 .subTotal(product2Price.multiply(2).getAmount())
                                 .build()))
+                .couponId(List.of(1L, 2L))
                 .build();
     }
 

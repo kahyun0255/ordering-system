@@ -2,6 +2,7 @@ package com.orderingsystem.order.application;
 
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
+import com.orderingsystem.order.application.outbox.coupon.CouponOutboxHelper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
@@ -27,10 +28,11 @@ public class OrderCreateService {
     private final OrderValidateAndInitiateService orderValidateAndInitiateService;
     private final OrderAddressRepository orderAddressRepository;
     private final PaymentOutboxHelper paymentOutboxHelper;
+    private final CouponOutboxHelper couponOutboxHelper;
 
     @Transactional
     public OrderCreateEvent createOrder(CreateOrderApplicationRequest createOrderRequest, List<String> failureMessages,
-                                        UUID sagaId) {
+                                        UUID sagaId, List<Long> couponId) {
         OrderAddress orderAddress = orderDataMapper.orderAddressToStreetAddress(createOrderRequest.getAddress());
         Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest, orderAddress.getId());
 
@@ -46,8 +48,17 @@ public class OrderCreateService {
                     OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
                     sagaId
             );
+
+            if (couponId != null && !couponId.isEmpty()) {
+                couponOutboxHelper.saveCouponOutboxMessage(
+                        orderDataMapper.orderCreatedToOrderCouponEventPayload(orderCreateEvent, sagaId, couponId),
+                        orderCreateEvent.getOrder().getOrderStatus(),
+                        OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
+                        sagaId
+                );
+            }
             log.info("주문이 생성되었습니다. Order Id : {}", savedOrder.getId());
-        }else {
+        } else {
             log.warn("주문이 취소되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
             order.cancel(failureMessages);
         }
