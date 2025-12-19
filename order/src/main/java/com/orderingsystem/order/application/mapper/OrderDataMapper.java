@@ -6,6 +6,7 @@ import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
+import com.orderingsystem.order.application.dto.request.ValidationCouponApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.application.outbox.product.model.OrderProductEventPayload;
@@ -145,4 +146,14 @@ public class OrderDataMapper {
                 .failureMessage(orderRejectedEvent.getOrder().getFailureMessageList())
                 .build();
     }
+
+    public ValidationCouponApplicationRequest createOrderRequestToValidationCouponApplicationRequest(
+            CreateOrderApplicationRequest createOrderRequest) {
+        return ValidationCouponApplicationRequest.builder()
+                .customerId(createOrderRequest.getCustomerId())
+                .couponIds(createOrderRequest.getCouponId())
+                .totalOrderAmount(createOrderRequest.getPrice())
+                .build();
+    }
+
 }

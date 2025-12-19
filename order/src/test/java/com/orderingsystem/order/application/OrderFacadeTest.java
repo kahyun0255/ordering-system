@@ -2,18 +2,23 @@ package com.orderingsystem.order.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
+import com.orderingsystem.order.application.dto.response.CouponValidationResponse;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
+import com.orderingsystem.order.application.port.out.CouponApi;
 import com.orderingsystem.order.application.port.out.RestaurantApi;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.repository.CustomerRepository;
-import com.orderingsystem.order.domain.repository.OrderRepository;
+import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -39,14 +44,18 @@ class OrderFacadeTest {
     private CustomerRepository customerRepository;
 
     @Autowired
-    private OrderRepository orderRepository;
+    private PaymentOutboxRepository paymentOutboxRepository;
 
     @MockitoBean
     private RestaurantApi restaurantApi;
 
+    @MockitoBean
+    private CouponApi couponApi;
+
     @AfterEach
     void tearDown() {
         customerRepository.deleteAllInBatch();
+        paymentOutboxRepository.deleteAllInBatch();
     }
 
     @BeforeEach
@@ -64,11 +73,15 @@ class OrderFacadeTest {
     private final Money product1Price = new Money(new BigDecimal("25.00"));
     private final Money product2Price = new Money(new BigDecimal("20.00"));
 
-    @DisplayName("주문 물품이 1개인 경우, 주문 생성에 성공한다.")
+    @DisplayName("주문 물품이 1개이고 쿠폰 검증 및 레스토랑 검증에 성공하면, 주문 생성에 성공한다.")
     @Test
     void createOrder_withOneProduct() {
         //given
         CreateOrderApplicationRequest request = getOneProductCreateOrderApplicationRequest();
+
+        CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
+        given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
+        given(couponValidationResponse.isValid()).willReturn(true);
 
         //when
         CreateOrderResponse response = orderFacade.createOrder(request);
@@ -78,11 +91,15 @@ class OrderFacadeTest {
         assertThat(response.getMessage()).isEqualTo("주문이 성공적으로 생성되었습니다.");
     }
 
-    @DisplayName("주문 물품이 2개인 경우, 주문 생성에 성공한다.")
+    @DisplayName("주문 물품이 2개이고 쿠폰 검증 및 레스토랑 검증에 성공하면, 주문 생성에 성공한다.")
     @Test
     void createOrder_withTwoProducts() {
         //given
         CreateOrderApplicationRequest request = getTwoProductCreateOrderApplicationRequest();
+
+        CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
+        given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
+        given(couponValidationResponse.isValid()).willReturn(true);
 
         //when
         CreateOrderResponse response = orderFacade.createOrder(request);
@@ -121,11 +138,37 @@ class OrderFacadeTest {
                                 .build()))
                 .build();
 
+
+        CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
+        given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
+        given(couponValidationResponse.isValid()).willReturn(true);
+
         //when, then
         assertThatThrownBy(() -> orderFacade.createOrder(request))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessage("주문자를 찾을 수 없습니다.");
     }
+
+    @DisplayName("쿠폰 검증에 실패하면, 주문은 생성하지만 별도 결제 요청이 이뤄지지 않고 주문은 취소처리된다.")
+    @Test
+    void shouldCancelOrder_whenCouponValidationFailsAfterOrderCreation() {
+        //given
+        CreateOrderApplicationRequest request = getOneProductCreateOrderApplicationRequest();
+
+        CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
+        given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
+        given(couponValidationResponse.isValid()).willReturn(false);
+
+        //when
+        CreateOrderResponse response = orderFacade.createOrder(request);
+
+        //then
+        assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(response.getMessage()).isEqualTo("주문이 취소되었습니다.");
+
+        assertThat(paymentOutboxRepository.count()).isEqualTo(0L);
+    }
+
 
     private CreateOrderApplicationRequest getOneProductCreateOrderApplicationRequest() {
         return CreateOrderApplicationRequest.builder()
@@ -170,4 +213,5 @@ class OrderFacadeTest {
                                 .build()))
                 .build();
     }
+
 }
