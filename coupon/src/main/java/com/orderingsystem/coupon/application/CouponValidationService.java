@@ -118,7 +118,7 @@ public class CouponValidationService {
     }
 
     private boolean isMinOrderAmountSatisfied(Coupon coupon, BigDecimal totalOrderAmount, UUID userId, UUID sagaId) {
-        if (totalOrderAmount.compareTo(coupon.getMinDiscountAmount()) < 0) {
+        if (coupon.getMinDiscountAmount() != null && totalOrderAmount.compareTo(coupon.getMinDiscountAmount()) < 0) {
             log.info("[{}] 유저의 주문이 최소 주문 금액을 만족하지 못했습니다. 최소 주문 금액 : [{}], 현재 주문 금액 : [{}], SagaId : [{}]",
                     userId, coupon.getMinDiscountAmount(), totalOrderAmount, sagaId);
             return false;
