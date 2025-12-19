@@ -42,21 +42,7 @@ public class OrderCreateService {
         saveOrderAddress(orderAddress, order);
 
         if (failureMessages.isEmpty()) {
-            paymentOutboxHelper.savePaymentOutboxMessage(
-                    orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent, sagaId),
-                    orderCreateEvent.getOrder().getOrderStatus(),
-                    OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
-                    sagaId
-            );
-
-            if (couponId != null && !couponId.isEmpty()) {
-                couponOutboxHelper.saveCouponOutboxMessage(
-                        orderDataMapper.orderCreatedToOrderCouponEventPayload(orderCreateEvent, sagaId, couponId),
-                        orderCreateEvent.getOrder().getOrderStatus(),
-                        OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
-                        sagaId
-                );
-            }
+            saveOutboxMessages(sagaId, couponId, orderCreateEvent);
             log.info("주문이 생성되었습니다. Order Id : {}", savedOrder.getId());
         } else {
             log.warn("주문이 취소되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
@@ -86,4 +72,23 @@ public class OrderCreateService {
             throw new OrderDomainException("주문 주소가 저장되지 않았습니다.");
         }
     }
+
+    private void saveOutboxMessages(UUID sagaId, List<Long> couponId, OrderCreateEvent orderCreateEvent) {
+        paymentOutboxHelper.savePaymentOutboxMessage(
+                orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent, sagaId),
+                orderCreateEvent.getOrder().getOrderStatus(),
+                OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
+                sagaId
+        );
+
+        if (couponId != null && !couponId.isEmpty()) {
+            couponOutboxHelper.saveCouponOutboxMessage(
+                    orderDataMapper.orderCreatedToOrderCouponEventPayload(orderCreateEvent, sagaId, couponId),
+                    orderCreateEvent.getOrder().getOrderStatus(),
+                    OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
+                    sagaId
+            );
+        }
+    }
+
 }

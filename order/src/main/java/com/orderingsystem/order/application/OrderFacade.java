@@ -33,10 +33,12 @@ public class OrderFacade {
 
         restaurantApi.validRestaurantAndProducts(createOrderRequest, sagaId);
 
-        CouponValidationResponse couponValidationResponse = couponApi.validateCoupons(
-                orderDataMapper.createOrderRequestToValidationCouponApplicationRequest(createOrderRequest), sagaId);
+        if (createOrderRequest.getCouponId() != null && !createOrderRequest.getCouponId().isEmpty()) {
+            CouponValidationResponse couponValidationResponse = couponApi.validateCoupons(
+                    orderDataMapper.createOrderRequestToValidationCouponApplicationRequest(createOrderRequest), sagaId);
 
-        checkCouponValidity(couponValidationResponse, failureMessages, createOrderRequest.getCustomerId(), sagaId);
+            checkCouponValidity(couponValidationResponse, failureMessages, createOrderRequest.getCustomerId(), sagaId);
+        }
 
         orderService.checkCustomer(createOrderRequest.getCustomerId());
 
