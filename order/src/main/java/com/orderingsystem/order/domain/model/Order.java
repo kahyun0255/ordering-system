@@ -28,6 +28,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "orders")
@@ -65,6 +67,10 @@ public class Order extends AggregateRoot {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<OrderItem> items;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private List<Long> couponIds;
 
     @Override
     public boolean equals(Object o) {
@@ -219,4 +225,9 @@ public class Order extends AggregateRoot {
     public void updateItems(List<OrderItem> items) {
         this.items = items;
     }
+
+    public boolean hasCoupon() {
+        return !(this.couponIds == null || this.couponIds.isEmpty());
+    }
+
 }

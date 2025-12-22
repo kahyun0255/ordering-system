@@ -1,6 +1,7 @@
 package com.orderingsystem.coupon.domain.model;
 
 import com.orderingsystem.common.domain.BaseEntity;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

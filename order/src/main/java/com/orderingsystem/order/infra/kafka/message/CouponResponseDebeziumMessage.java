@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class PaymentResponseDebeziumMessage {
+public class CouponResponseDebeziumMessage {
 
     private Payload before;
     private Payload after;
@@ -19,10 +19,10 @@ public class PaymentResponseDebeziumMessage {
         private Long createdAt;
         private String outboxStatus;
         private String payload;
-        private String paymentStatus;
         private Long processedAt;
         private String sagaId;
         private String type;
         private Long version;
     }
+
 }

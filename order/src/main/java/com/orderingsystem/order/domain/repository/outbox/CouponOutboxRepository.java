@@ -2,7 +2,6 @@ package com.orderingsystem.order.domain.repository.outbox;
 
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.domain.model.outbox.CouponOutbox;
-import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +14,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CouponOutboxRepository extends JpaRepository<CouponOutbox, UUID> {
 
-    Optional<PaymentOutbox> findByTypeAndSagaIdAndSagaStatusIn(String type, UUID sagaId,
+    Optional<CouponOutbox> findByTypeAndSagaIdAndSagaStatusIn(String type, UUID sagaId,
                                                                List<SagaStatus> sagaStatuses);
 
     boolean existsByTypeAndSagaIdAndSagaStatus(String type, UUID sagaId, SagaStatus sagaStatus);
@@ -23,5 +22,7 @@ public interface CouponOutboxRepository extends JpaRepository<CouponOutbox, UUID
     @Modifying
     @Query(value = "DELETE FROM coupon_outbox WHERE created_at < :threshold", nativeQuery = true)
     int deleteOlderThan(ZonedDateTime threshold);
+
+    Optional<CouponOutbox> findBySagaIdAndSagaStatus(UUID sagaId, SagaStatus sagaStatus);
 
 }

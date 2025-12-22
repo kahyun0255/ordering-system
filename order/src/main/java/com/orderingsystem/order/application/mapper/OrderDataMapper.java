@@ -29,16 +29,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderDataMapper {
 
-    public Order createOrderRequestToOrder(CreateOrderApplicationRequest createOrderApplicationRequest,
+    public Order createOrderRequestToOrder(CreateOrderApplicationRequest request,
                                            UUID orderAddress) {
         Order order = Order.builder()
-                .customerId(createOrderApplicationRequest.getCustomerId())
-                .restaurantId(createOrderApplicationRequest.getRestaurantId())
+                .customerId(request.getCustomerId())
+                .restaurantId(request.getRestaurantId())
                 .address(orderAddress)
-                .price(new Money(createOrderApplicationRequest.getPrice()))
+                .price(new Money(request.getPrice()))
+                .couponIds(request.getCouponId())
                 .build();
 
-        List<OrderItem> items = orderItemsToOrderItemEntity(order, createOrderApplicationRequest.getItems());
+        List<OrderItem> items = orderItemsToOrderItemEntity(order, request.getItems());
         order.updateItems(items);
 
         return order;
@@ -99,6 +100,23 @@ public class OrderDataMapper {
                                 .build()).toList())
                 .price(orderPaidEvent.getOrder().getPrice().getAmount())
                 .createdAt(orderPaidEvent.getCreatedAt())
+                .build();
+    }
+
+    public RestaurantAcceptEventPayload orderToRestaurantAcceptEventPayload(
+            Order order, UUID sagaId) {
+        return RestaurantAcceptEventPayload.builder()
+                .orderId(order.getId().toString())
+                .restaurantId(order.getRestaurantId().toString())
+                .sagaId(sagaId.toString())
+                .restaurantOrderStatus(RestaurantOrderStatus.PAID.name())
+                .products(order.getItems().stream().map(orderItem ->
+                        RestaurantApprovalEventProduct.builder()
+                                .id(orderItem.getProductId().toString())
+                                .quantity(orderItem.getQuantity())
+                                .build()).toList())
+                .price(order.getPrice().getAmount())
+                .createdAt(ZonedDateTime.now())
                 .build();
     }
 

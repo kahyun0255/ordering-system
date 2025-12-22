@@ -1,7 +1,7 @@
 package com.orderingsystem.coupon.domain.repository;
 
 import com.orderingsystem.coupon.domain.model.IssuedCoupon;
-import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;

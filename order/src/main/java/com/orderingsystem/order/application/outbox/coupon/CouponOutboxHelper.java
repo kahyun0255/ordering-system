@@ -9,7 +9,6 @@ import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.outbox.coupon.model.OrderCouponEventPayload;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.outbox.CouponOutbox;
-import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
 import com.orderingsystem.order.domain.repository.outbox.CouponOutboxRepository;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -64,8 +63,9 @@ public class CouponOutboxHelper {
         }
     }
 
+
     @Transactional
-    public Optional<PaymentOutbox> getCouponOutboxBySagaIdAndSagaStatus(UUID sagaId, SagaStatus... sagaStatus) {
+    public Optional<CouponOutbox> getCouponOutboxBySagaIdAndSagaStatus(UUID sagaId, SagaStatus... sagaStatus) {
         return couponOutboxRepository.findByTypeAndSagaIdAndSagaStatusIn(ORDER_SAGA_NAME, sagaId,
                 Arrays.asList(sagaStatus));
     }
@@ -73,6 +73,12 @@ public class CouponOutboxHelper {
     @Transactional
     public int deleteOlderThan(ZonedDateTime threshold) {
         return couponOutboxRepository.deleteOlderThan(threshold);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isCouponProcessed(UUID sagaId) {
+        Optional<CouponOutbox> message = couponOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.SUCCEEDED);
+        return message.isPresent();
     }
 
 }

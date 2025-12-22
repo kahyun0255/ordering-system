@@ -3,7 +3,7 @@ package com.orderingsystem.coupon.application;
 import com.orderingsystem.coupon.application.dto.response.CouponValidationResponse;
 import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.IssuedCoupon;
-import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
 import com.orderingsystem.coupon.presentation.request.CouponValidationRequest;

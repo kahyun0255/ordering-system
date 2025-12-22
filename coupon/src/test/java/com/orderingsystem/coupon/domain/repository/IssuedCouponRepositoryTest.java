@@ -3,7 +3,7 @@ package com.orderingsystem.coupon.domain.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.orderingsystem.coupon.domain.model.IssuedCoupon;
-import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
