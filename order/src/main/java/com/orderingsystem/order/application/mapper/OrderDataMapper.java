@@ -197,4 +197,13 @@ public class OrderDataMapper {
                 .build();
     }
 
+    public OrderCouponEventPayload orderToCouponRollbackEventPayload(Order order, UUID sagaId) {
+        return OrderCouponEventPayload.builder()
+                .orderId(order.getId().toString())
+                .customerId(order.getCustomerId().toString())
+                .sagaId(sagaId.toString())
+                .createdAt(ZonedDateTime.now())
+                .failureMessage(order.getFailureMessageList())
+                .build();
+    }
 }

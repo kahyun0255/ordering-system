@@ -113,28 +113,39 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
 
         Order order = findOrder(paymentResponse.getOrderId());
 
-        if (order.getOrderStatus() == OrderStatus.APPROVED
-                || order.getOrderStatus() == OrderStatus.CANCELLED) {
-            log.info("주문이 이미 승인/취소 처리된 상태입니다. 결제 취소를 생략합니다. Order Id : {}", paymentResponse.getOrderId());
-            return;
-        }
-
         if (checkAndMarkProcessed(paymentResponse, MessageType.PAYMENT_ROLLBACK)) {
             return;
         }
 
-        rollbackPaymentForOrder(order, paymentResponse);
-
         SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
-        updatePaymentOutboxMessage(paymentOutbox, order.getOrderStatus(), sagaStatus);
 
-        productOutboxHelper.saveProductOutboxMessage(
-                orderDataMapper.orderToStockReservationCancelEventPayload(order, paymentResponse.getSagaId(),
-                        SagaConstants.INVENTORY_COMPENSATE),
-                SagaConstants.INVENTORY_COMPENSATE,
-                sagaStatus,
-                paymentResponse.getSagaId()
-        );
+        if (order.getOrderStatus() != OrderStatus.CANCELLED) {
+            rollbackPaymentForOrder(order, paymentResponse);
+
+            log.info("결제 실패/취소로 인한 주문 취소 처리. Order Id : [{}]", order.getId());
+
+            sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
+
+            if (order.hasCoupon()) {
+                couponOutboxHelper.saveCouponOutboxMessage(
+                        orderDataMapper.orderToCouponRollbackEventPayload(order, paymentResponse.getSagaId()),
+                        order.getOrderStatus(),
+                        sagaStatus,
+                        paymentResponse.getSagaId()
+                );
+            }
+
+            productOutboxHelper.saveProductOutboxMessage(
+                    orderDataMapper.orderToStockReservationCancelEventPayload(order, paymentResponse.getSagaId(),
+                            SagaConstants.INVENTORY_COMPENSATE),
+                    SagaConstants.INVENTORY_COMPENSATE,
+                    sagaStatus,
+                    paymentResponse.getSagaId()
+            );
+        } else {
+            log.info("주문이 이미 취소 상태이므로 추가적인 보상 트랜잭션 발행하지 않음. Order Id : [{}]", order.getId());
+        }
+        updatePaymentOutboxMessage(paymentOutbox, order.getOrderStatus(), sagaStatus);
 
         log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", paymentResponse.getOrderId());
     }
@@ -157,7 +168,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
     private SagaStatus[] getCurrentSagaStatus(PaymentStatus paymentStatus) {
         return switch (paymentStatus) {
             case COMPLETED -> new SagaStatus[]{SagaStatus.STARTED};
-            case CANCELLED, REFUNDED -> new SagaStatus[]{SagaStatus.PROCESSING, SagaStatus.COMPENSATING};
+            case CANCELLED, REFUNDED -> new SagaStatus[]{SagaStatus.SUCCEEDED};
             case FAILED -> new SagaStatus[]{SagaStatus.STARTED, SagaStatus.PROCESSING};
         };
     }
