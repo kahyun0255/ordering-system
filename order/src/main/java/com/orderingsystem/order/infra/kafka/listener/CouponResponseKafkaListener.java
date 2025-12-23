@@ -56,8 +56,13 @@ public class CouponResponseKafkaListener implements KafkaConsumer<String> {
                             couponResponseMessage.getIssuedCouponStatus());
 
                     if (IssuedCouponStatus.USED.name().equals(couponResponseMessage.getIssuedCouponStatus())) {
-                        log.info("쿠폰 사용 완료. order Id : {}", couponResponseMessage.getOrderId());
+                        log.info("쿠폰 사용 완료. Order Id : [{}]", couponResponseMessage.getOrderId());
                         orderCouponService.process(couponResponseMessage.toCouponResponse(
+                                UUID.fromString(debeziumMessage.getAfter().getId())));
+                    } else {
+                        log.info("쿠폰 사용 실패. Order Id : [{}], IssuedCouponStatus : {}.",
+                                couponResponseMessage.getOrderId(), couponResponseMessage.getIssuedCouponStatus());
+                        orderCouponService.rollback(couponResponseMessage.toCouponResponse(
                                 UUID.fromString(debeziumMessage.getAfter().getId())));
                     }
                 }

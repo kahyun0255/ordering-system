@@ -185,4 +185,16 @@ public class OrderDataMapper {
                 .build();
     }
 
+    public OrderPaymentEventPayload orderToPaymentRollbackEventPayload(Order order, UUID sagaId) {
+        return OrderPaymentEventPayload.builder()
+                .orderId(order.getId().toString())
+                .sagaId(sagaId.toString())
+                .customerId(order.getCustomerId().toString())
+                .price(order.getPrice().getAmount())
+                .createdAt(ZonedDateTime.now())
+                .paymentOrderStatus(PaymentOrderStatus.CANCELLED.name())
+                .failureMessage(order.getFailureMessageList())
+                .build();
+    }
+
 }

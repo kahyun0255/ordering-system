@@ -2,12 +2,16 @@ package com.orderingsystem.order.application;
 
 import static com.orderingsystem.common.domain.status.OrderStatus.CANCELLING;
 
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
+import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
 import com.orderingsystem.order.application.dto.response.CouponResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.coupon.CouponOutboxHelper;
+import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
+import com.orderingsystem.order.application.outbox.product.ProductOutboxHelper;
 import com.orderingsystem.order.application.outbox.restaurant.RestaurantAcceptOutboxHelper;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
@@ -33,6 +37,8 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
     private final ProcessedMessageRepository processedMessageRepository;
     private final RestaurantAcceptOutboxHelper restaurantAcceptOutboxHelper;
     private final OrderDataMapper orderDataMapper;
+    private final PaymentOutboxHelper paymentOutboxHelper;
+    private final ProductOutboxHelper productOutboxHelper;
 
     @Override
     @Transactional
@@ -87,8 +93,60 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
     }
 
     @Override
+    @Transactional
     public void rollback(CouponResponse couponResponse) {
-        //TODO : 쿠폰 롤백 처리
+        UUID orderId = couponResponse.getOrderId();
+        UUID sagaId = couponResponse.getSagaId();
+
+        log.info("해당 주문의 주문 취소를 시작합니다. Order Id : [{}], Saga Id : [{}]", orderId, sagaId);
+
+        Optional<CouponOutbox> couponOutboxMessageResponse = couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
+                sagaId,
+                getCurrentSagaStatus(IssuedCouponStatus.valueOf(couponResponse.getIssuedCouponStatus())));
+
+        if (couponOutboxMessageResponse.isEmpty()) {
+            log.info("해당 Saga Id : [{}]에 대한 Outbox 메시지가 이미 롤백되어 메시지를 다시 처리하지 않습니다.", sagaId);
+            return;
+        }
+        CouponOutbox couponOutbox = couponOutboxMessageResponse.get();
+
+        Order order = findOrder(orderId);
+
+        if (checkAndMarkProcessed(couponResponse, MessageType.COUPON_ROLLBACK)) {
+            return;
+        }
+
+        SagaStatus nextSagaStatus =
+                (IssuedCouponStatus.valueOf(couponResponse.getIssuedCouponStatus()) == IssuedCouponStatus.ISSUED)
+                        ? SagaStatus.COMPENSATED
+                        : SagaStatus.FAILED;
+
+        if (order.getOrderStatus() != OrderStatus.CANCELLED && order.getOrderStatus() != CANCELLING) {
+            order.cancel(couponResponse.getFailureMessages());
+            log.info("쿠폰 실패로 인해 주문 취소. Order Id : [{}]", orderId);
+
+            paymentOutboxHelper.savePaymentOutboxMessage(
+                    orderDataMapper.orderToPaymentRollbackEventPayload(order, sagaId),
+                    order.getOrderStatus(),
+                    nextSagaStatus,
+                    sagaId
+            );
+
+            productOutboxHelper.saveProductOutboxMessage(
+                    orderDataMapper.orderToStockReservationCancelEventPayload(order, sagaId,
+                            SagaConstants.INVENTORY_COMPENSATE),
+                    SagaConstants.INVENTORY_COMPENSATE,
+                    nextSagaStatus,
+                    sagaId
+            );
+
+            log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", couponResponse.getOrderId());
+        } else {
+            log.info("주문이 이미 취소 상태이므로 추가적인 보상 트랜잭션 발행하지 않음. Order Id : [{}], Order Status : {}", orderId,
+                    order.getOrderStatus());
+        }
+
+        updateCouponOutboxMessage(couponOutbox, nextSagaStatus, order.getOrderStatus());
     }
 
     private Order findOrder(UUID orderId) {
@@ -116,10 +174,19 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
         return false;
     }
 
-    private void updateCouponOutboxMessage(CouponOutbox couponOutboxMessage, SagaStatus sagaStatus, OrderStatus orderStatus) {
+    private void updateCouponOutboxMessage(CouponOutbox couponOutboxMessage, SagaStatus sagaStatus,
+                                           OrderStatus orderStatus) {
         couponOutboxMessage.updateSagaStatus(sagaStatus);
         couponOutboxMessage.updateProcessedAt(ZonedDateTime.now());
         couponOutboxMessage.updateOrderStatus(orderStatus);
+    }
+
+
+    private SagaStatus[] getCurrentSagaStatus(IssuedCouponStatus issuedCouponStatus) {
+        return switch (issuedCouponStatus) {
+            case EXPIRED, REVOKED, USED -> new SagaStatus[]{SagaStatus.STARTED, SagaStatus.PROCESSING};
+            case ISSUED -> new SagaStatus[]{SagaStatus.SUCCEEDED};
+        };
     }
 
 }

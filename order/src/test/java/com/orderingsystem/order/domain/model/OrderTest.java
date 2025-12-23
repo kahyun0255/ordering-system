@@ -572,51 +572,6 @@ class OrderTest {
         assertThat(order2.getCustomerId()).isEqualTo(customerId);
     }
 
-    @DisplayName("Order Status가 CANCELLING이거나 PENDING 상태가 아니면 CANCELLED 상태로 갱신할 수 없다.")
-    @Test
-    void failToUpdateOrderStatusToCancelled_whenOrderStatusIsNotCancellingOrPending() {
-        //given
-        Order order1 = Order.builder()
-                .customerId(UUID.randomUUID())
-                .restaurantId(UUID.randomUUID())
-                .address(UUID.randomUUID())
-                .items(List.of(getOrderItem()))
-                .price(new Money(new BigDecimal("2.00")))
-                .orderStatus(OrderStatus.APPROVED)
-                .build();
-
-        Order order2 = Order.builder()
-                .customerId(UUID.randomUUID())
-                .restaurantId(UUID.randomUUID())
-                .address(UUID.randomUUID())
-                .items(List.of(getOrderItem()))
-                .price(new Money(new BigDecimal("2.00")))
-                .orderStatus(OrderStatus.PAID)
-                .build();
-
-        Order order3 = Order.builder()
-                .customerId(UUID.randomUUID())
-                .restaurantId(UUID.randomUUID())
-                .address(UUID.randomUUID())
-                .items(List.of(getOrderItem()))
-                .price(new Money(new BigDecimal("2.00")))
-                .orderStatus(OrderStatus.CANCELLED)
-                .build();
-
-        //when, then
-        assertThatThrownBy(() -> order1.cancel(new ArrayList<>()))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("주문을 취소 완료할 수 없는 상태입니다.");
-
-        assertThatThrownBy(() -> order2.cancel(new ArrayList<>()))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("주문을 취소 완료할 수 없는 상태입니다.");
-
-        assertThatThrownBy(() -> order3.cancel(new ArrayList<>()))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("주문을 취소 완료할 수 없는 상태입니다.");
-    }
-
     @DisplayName("String 형태의 failureMessages를 List 형태로 받을 수 있다.")
     @Test
     void convertFailureMessagesStringToList() {

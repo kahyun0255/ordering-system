@@ -196,7 +196,13 @@ public class Order extends AggregateRoot {
     }
 
     public void cancel(List<String> failureMessages) {
-        if (!(orderStatus == OrderStatus.CANCELLING || orderStatus == OrderStatus.PENDING)) {
+        if (orderStatus == OrderStatus.CANCELLED) {
+            log.warn("이미 취소된 주문입니다. 중복 취소 요청을 무시합니다. Order Id : {}", this.id);
+            return;
+        }
+
+        if (!(orderStatus == OrderStatus.CANCELLING || orderStatus == OrderStatus.PENDING
+                || orderStatus == OrderStatus.PAID)) {
             throw new OrderDomainException("주문을 취소 완료할 수 없는 상태입니다.");
         }
         orderStatus = OrderStatus.CANCELLED;

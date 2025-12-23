@@ -115,7 +115,7 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
 
         if (order.getOrderStatus() == OrderStatus.APPROVED
                 || order.getOrderStatus() == OrderStatus.CANCELLED) {
-            log.info("주문이 이미 승인/취소 처리된 상태입니다. 결제 처리를 생략합니다. Order Id : {}", paymentResponse.getOrderId());
+            log.info("주문이 이미 승인/취소 처리된 상태입니다. 결제 취소를 생략합니다. Order Id : {}", paymentResponse.getOrderId());
             return;
         }
 

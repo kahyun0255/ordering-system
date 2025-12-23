@@ -1,5 +1,6 @@
 package com.orderingsystem.order.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -8,11 +9,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
+import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.dto.response.CouponResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.coupon.CouponOutboxHelper;
+import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
+import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
+import com.orderingsystem.order.application.outbox.product.ProductOutboxHelper;
+import com.orderingsystem.order.application.outbox.product.model.OrderProductEventPayload;
 import com.orderingsystem.order.application.outbox.restaurant.RestaurantAcceptOutboxHelper;
 import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantAcceptEventPayload;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
@@ -49,6 +56,12 @@ class OrderCouponServiceTest {
 
     @Mock
     private OrderDataMapper orderDataMapper;
+
+    @Mock
+    private PaymentOutboxHelper paymentOutboxHelper;
+
+    @Mock
+    private ProductOutboxHelper productOutboxHelper;
 
     @Test
     @DisplayName("결제가 이미 완료(PAID)된 상태라면, 쿠폰 처리를 완료하고 레스토랑 승인 요청을 보낸다.")
@@ -195,12 +208,171 @@ class OrderCouponServiceTest {
                 .isInstanceOf(OrderNotFoundException.class);
     }
 
-    private CouponResponse createCouponResponse(UUID orderId, UUID sagaId) {
+    @DisplayName("쿠폰 사용 실패(EXPIRED)시 outbox FAILED로 업데이트하고 결제, 재고 취소 요청을 보낸다.")
+    @Test
+    void shouldRollbackAndTriggerCompensation_whenCouponExpired() {
+        //given
+        UUID orderId = UUID.randomUUID();
+        UUID sagaId = UUID.randomUUID();
+
+        CouponResponse couponResponse = createCouponResponse(orderId, sagaId, IssuedCouponStatus.EXPIRED);
+
+        CouponOutbox couponOutbox = createCouponOutbox(sagaId, SagaStatus.STARTED);
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
+                eq(sagaId),
+                eq(SagaStatus.STARTED),
+                eq(SagaStatus.PROCESSING)
+        )).willReturn(Optional.of(couponOutbox));
+
+        Order order = createOrder(orderId, OrderStatus.PENDING);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        given(processedMessageRepository.insertIgnore(any(), any(), any())).willReturn(1);
+
+        given(orderDataMapper.orderToPaymentRollbackEventPayload(any(), any())).willReturn(
+                mock(OrderPaymentEventPayload.class));
+        given(orderDataMapper.orderToStockReservationCancelEventPayload(any(), any(), any())).willReturn(
+                mock(OrderProductEventPayload.class));
+
+        //when
+        orderCouponService.rollback(couponResponse);
+
+        //then
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        verify(couponOutbox).updateSagaStatus(SagaStatus.FAILED);
+
+        verify(paymentOutboxHelper).savePaymentOutboxMessage(any(OrderPaymentEventPayload.class),
+                eq(OrderStatus.CANCELLED), eq(SagaStatus.FAILED), eq(sagaId));
+        verify(productOutboxHelper).saveProductOutboxMessage(any(OrderProductEventPayload.class),
+                eq(SagaConstants.INVENTORY_COMPENSATE), eq(SagaStatus.FAILED), eq(sagaId));
+    }
+
+    @DisplayName("쿠폰 롤백 성공(ISSUED)시 outbox COMPENSATED로 업데이트 및 결제, 재고 취소 요청을 보낸다.")
+    @Test
+    void shouldRollbackAndTriggerCompensation_whenCouponCompensated() {
+        //given
+        UUID orderId = UUID.randomUUID();
+        UUID sagaId = UUID.randomUUID();
+
+        CouponResponse couponResponse = createCouponResponse(orderId, sagaId, IssuedCouponStatus.ISSUED);
+
+        CouponOutbox couponOutbox = createCouponOutbox(sagaId, SagaStatus.SUCCEEDED);
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
+                eq(sagaId),
+                eq(SagaStatus.SUCCEEDED)
+        )).willReturn(Optional.of(couponOutbox));
+
+        Order order = createOrder(orderId, OrderStatus.PAID);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        given(processedMessageRepository.insertIgnore(any(), any(), any())).willReturn(1);
+
+        //when
+        orderCouponService.rollback(couponResponse);
+
+        //then
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        verify(couponOutbox).updateSagaStatus(SagaStatus.COMPENSATED);
+
+        verify(paymentOutboxHelper).savePaymentOutboxMessage(any(), any(), eq(SagaStatus.COMPENSATED), any());
+        verify(productOutboxHelper).saveProductOutboxMessage(any(), any(), eq(SagaStatus.COMPENSATED), any());
+    }
+
+    @DisplayName("쿠폰이 이미 취소된(CANCELLED) 경우, outbox만 업데이트하고 추가 보상 트랜잭션은 생략한다.")
+    @Test
+    void shouldUpdateOutboxButSkipCompensation_whenOrderAlreadyCancelled() {
+        //given
+        UUID orderId = UUID.randomUUID();
+        UUID sagaId = UUID.randomUUID();
+
+        CouponResponse couponResponse = createCouponResponse(orderId, sagaId, IssuedCouponStatus.EXPIRED);
+
+        CouponOutbox couponOutbox = createCouponOutbox(sagaId, SagaStatus.STARTED);
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
+                eq(sagaId),
+                eq(SagaStatus.STARTED),
+                eq(SagaStatus.PROCESSING)
+        )).willReturn(Optional.of(couponOutbox));
+
+        Order order = createOrder(orderId, OrderStatus.CANCELLED);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        given(processedMessageRepository.insertIgnore(any(), any(), any())).willReturn(1);
+
+        //when
+        orderCouponService.rollback(couponResponse);
+
+        //then
+        verify(couponOutbox).updateSagaStatus(SagaStatus.FAILED);
+
+        verify(paymentOutboxHelper, never()).savePaymentOutboxMessage(any(), any(), eq(SagaStatus.COMPENSATED), any());
+        verify(productOutboxHelper, never()).saveProductOutboxMessage(any(), any(), eq(SagaStatus.COMPENSATED), any());
+    }
+
+    @DisplayName("롤백시 처리 할 outbox 메시지가 없으면 아무것도 하지 않는다.")
+    @Test
+    void shouldDoNothingOnRollback_whenNoOutboxFound() {
+        //given
+        UUID orderId = UUID.randomUUID();
+        UUID sagaId = UUID.randomUUID();
+
+        CouponResponse couponResponse = createCouponResponse(orderId, sagaId, IssuedCouponStatus.EXPIRED);
+
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
+                eq(sagaId),
+                eq(SagaStatus.STARTED),
+                eq(SagaStatus.PROCESSING)
+        )).willReturn(Optional.empty());
+
+        //when
+        orderCouponService.rollback(couponResponse);
+
+        //then
+        verify(orderRepository, never()).findById(any());
+        verify(couponOutboxHelper, never()).save(any());
+    }
+
+    @DisplayName("롤백시 이미 처리된 메시지라면 중복해서 처리하지 않는다.")
+    @Test
+    void shouldIgnoreRollback_whenMessageAlreadyHandled() {
+        //given
+        UUID orderId = UUID.randomUUID();
+        UUID sagaId = UUID.randomUUID();
+
+        CouponResponse couponResponse = createCouponResponse(orderId, sagaId, IssuedCouponStatus.EXPIRED);
+
+        CouponOutbox couponOutbox = createCouponOutbox(sagaId, SagaStatus.STARTED);
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
+                eq(sagaId),
+                eq(SagaStatus.STARTED),
+                eq(SagaStatus.PROCESSING)
+        )).willReturn(Optional.of(couponOutbox));
+
+        Order order = createOrder(orderId, OrderStatus.PAID);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        given(processedMessageRepository.insertIgnore(any(), any(), any())).willReturn(0);
+
+        //when
+        orderCouponService.rollback(couponResponse);
+
+        //then
+        verify(couponOutbox, never()).updateSagaStatus(any());
+        verify(productOutboxHelper, never()).saveProductOutboxMessage(any(), any(), any(), any());
+        verify(paymentOutboxHelper, never()).savePaymentOutboxMessage(any(), any(), any(), any());
+    }
+
+    private CouponResponse createCouponResponse(UUID orderId, UUID sagaId, IssuedCouponStatus issuedCouponStatus) {
         return CouponResponse.builder()
                 .orderId(orderId)
                 .sagaId(sagaId)
                 .id(UUID.randomUUID())
+                .issuedCouponStatus(issuedCouponStatus.name())
                 .build();
+    }
+
+    private CouponResponse createCouponResponse(UUID orderId, UUID sagaId) {
+        return createCouponResponse(orderId, sagaId, IssuedCouponStatus.USED);
     }
 
     private Order createOrder(UUID orderId, OrderStatus status) {
