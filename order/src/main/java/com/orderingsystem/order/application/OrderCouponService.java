@@ -121,7 +121,7 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
                         ? SagaStatus.COMPENSATED
                         : SagaStatus.FAILED;
 
-        if (order.getOrderStatus() != OrderStatus.CANCELLED && order.getOrderStatus() != CANCELLING) {
+        if (order.getOrderStatus() != OrderStatus.CANCELLED) {
             order.cancel(couponResponse.getFailureMessages());
             log.info("쿠폰 실패로 인해 주문 취소. Order Id : [{}]", orderId);
 
