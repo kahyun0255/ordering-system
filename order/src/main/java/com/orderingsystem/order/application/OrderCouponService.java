@@ -4,7 +4,6 @@ import static com.orderingsystem.common.domain.status.OrderStatus.CANCELLING;
 
 import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
-import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
 import com.orderingsystem.order.application.dto.response.CouponResponse;
@@ -122,8 +121,8 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
                         : SagaStatus.FAILED;
 
         if (order.getOrderStatus() != OrderStatus.CANCELLED) {
-            order.cancel(couponResponse.getFailureMessages());
-            log.info("쿠폰 실패로 인해 주문 취소. Order Id : [{}]", orderId);
+            order.initCancel(couponResponse.getFailureMessages());
+            log.info("쿠폰 실패로 인해 결제 취소 요청 전송. Order Id : [{}]", orderId);
 
             paymentOutboxHelper.savePaymentOutboxMessage(
                     orderDataMapper.orderToPaymentRollbackEventPayload(order, sagaId),
@@ -131,16 +130,6 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
                     nextSagaStatus,
                     sagaId
             );
-
-            productOutboxHelper.saveProductOutboxMessage(
-                    orderDataMapper.orderToStockReservationCancelEventPayload(order, sagaId,
-                            SagaConstants.INVENTORY_COMPENSATE),
-                    SagaConstants.INVENTORY_COMPENSATE,
-                    nextSagaStatus,
-                    sagaId
-            );
-
-            log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", couponResponse.getOrderId());
         } else {
             log.info("주문이 이미 취소 상태이므로 추가적인 보상 트랜잭션 발행하지 않음. Order Id : [{}], Order Status : {}", orderId,
                     order.getOrderStatus());
