@@ -11,7 +11,6 @@ import static org.mockito.Mockito.verify;
 
 import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
-import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.dto.response.CouponResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
@@ -19,7 +18,6 @@ import com.orderingsystem.order.application.outbox.coupon.CouponOutboxHelper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.application.outbox.product.ProductOutboxHelper;
-import com.orderingsystem.order.application.outbox.product.model.OrderProductEventPayload;
 import com.orderingsystem.order.application.outbox.restaurant.RestaurantAcceptOutboxHelper;
 import com.orderingsystem.order.application.outbox.restaurant.model.RestaurantAcceptEventPayload;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
@@ -208,7 +206,7 @@ class OrderCouponServiceTest {
                 .isInstanceOf(OrderNotFoundException.class);
     }
 
-    @DisplayName("쿠폰 사용 실패(EXPIRED)시 outbox FAILED로 업데이트하고 결제, 재고 취소 요청을 보낸다.")
+    @DisplayName("쿠폰 사용 실패(EXPIRED)시 outbox FAILED로 업데이트하고, 주문을 CANCELLING 상태로 바꾸며 결제 취소 요청을 보낸다.")
     @Test
     void shouldRollbackAndTriggerCompensation_whenCouponExpired() {
         //given
@@ -231,23 +229,19 @@ class OrderCouponServiceTest {
 
         given(orderDataMapper.orderToPaymentRollbackEventPayload(any(), any())).willReturn(
                 mock(OrderPaymentEventPayload.class));
-        given(orderDataMapper.orderToStockReservationCancelEventPayload(any(), any(), any())).willReturn(
-                mock(OrderProductEventPayload.class));
 
         //when
         orderCouponService.rollback(couponResponse);
 
         //then
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLING);
         verify(couponOutbox).updateSagaStatus(SagaStatus.FAILED);
 
         verify(paymentOutboxHelper).savePaymentOutboxMessage(any(OrderPaymentEventPayload.class),
-                eq(OrderStatus.CANCELLED), eq(SagaStatus.FAILED), eq(sagaId));
-        verify(productOutboxHelper).saveProductOutboxMessage(any(OrderProductEventPayload.class),
-                eq(SagaConstants.INVENTORY_COMPENSATE), eq(SagaStatus.FAILED), eq(sagaId));
+                eq(OrderStatus.CANCELLING), eq(SagaStatus.FAILED), eq(sagaId));
     }
 
-    @DisplayName("쿠폰 롤백 성공(ISSUED)시 outbox COMPENSATED로 업데이트 및 결제, 재고 취소 요청을 보낸다.")
+    @DisplayName("쿠폰 롤백 성공(ISSUED)시 outbox COMPENSATED로 업데이트 및 결제 취소 요청을 보낸다.")
     @Test
     void shouldRollbackAndTriggerCompensation_whenCouponCompensated() {
         //given
@@ -271,11 +265,10 @@ class OrderCouponServiceTest {
         orderCouponService.rollback(couponResponse);
 
         //then
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLING);
         verify(couponOutbox).updateSagaStatus(SagaStatus.COMPENSATED);
 
         verify(paymentOutboxHelper).savePaymentOutboxMessage(any(), any(), eq(SagaStatus.COMPENSATED), any());
-        verify(productOutboxHelper).saveProductOutboxMessage(any(), any(), eq(SagaStatus.COMPENSATED), any());
     }
 
     @DisplayName("쿠폰이 이미 취소된(CANCELLED) 경우, outbox만 업데이트하고 추가 보상 트랜잭션은 생략한다.")

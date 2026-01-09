@@ -175,7 +175,7 @@ public class Order extends AggregateRoot {
     }
 
     public OrderCancelledEvent initCancel(List<String> failureMessages) {
-        if (orderStatus != OrderStatus.PAID) {
+        if (!(orderStatus == OrderStatus.PAID || orderStatus == OrderStatus.PENDING)) {
             throw new OrderDomainException("주문을 취소할 수 없는 상태입니다.");
         }
         orderStatus = OrderStatus.CANCELLING;
