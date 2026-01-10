@@ -1,4 +1,4 @@
-package com.orderingsystem.order.application.outbox.coupon.model;
+package com.orderingsystem.coupon.application.outbox.order.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.ZonedDateTime;
@@ -10,7 +10,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @AllArgsConstructor
-public class OrderCouponEventPayload {
+public class CouponOrderEventPayload {
 
     @JsonProperty
     private String orderId;
@@ -25,6 +25,6 @@ public class OrderCouponEventPayload {
     @JsonProperty
     private List<String> failureMessage;
     @JsonProperty
-    private String action;
+    private int updatedCount;
 
 }

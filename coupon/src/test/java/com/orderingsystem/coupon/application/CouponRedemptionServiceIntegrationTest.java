@@ -1,0 +1,284 @@
+package com.orderingsystem.coupon.application;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+
+import com.orderingsystem.common.domain.status.CouponActions;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
+import com.orderingsystem.coupon.application.dto.request.CouponRequest;
+import com.orderingsystem.coupon.application.mapper.CouponDataMapper;
+import com.orderingsystem.coupon.domain.model.IssuedCoupon;
+import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
+import com.orderingsystem.coupon.domain.repository.outbox.OrderOutboxRepository;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+
+@SpringBootTest
+@ActiveProfiles("test")
+class CouponRedemptionServiceIntegrationTest {
+
+    @Autowired
+    private CouponRedemptionService couponRedemptionService;
+
+    @Autowired
+    private IssuedCouponRepository issuedCouponRepository;
+
+    @Autowired
+    private OrderOutboxRepository orderOutboxRepository;
+
+    @MockitoSpyBean
+    private CouponDataMapper couponDataMapper;
+
+    @AfterEach
+    void tearDown() {
+        issuedCouponRepository.deleteAllInBatch();
+        orderOutboxRepository.deleteAllInBatch();
+    }
+
+    @DisplayName("본인이 발급받은 쿠폰이고, ISSUED 상태의 쿠폰이면 쿠폰 사용에 성공한다.")
+    @Test
+    void shouldSucceedUsingCoupon_whenCouponIsOwnedByUserAndStatusIsIssued() {
+        //given
+        UUID userId = UUID.randomUUID();
+
+        IssuedCoupon issuedCoupon = IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(UUID.randomUUID())
+                .status(IssuedCouponStatus.ISSUED)
+                .expiredAt(LocalDateTime.now().plusDays(1))
+                .issuedAt(LocalDateTime.now().minusDays(3))
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(issuedCoupon);
+
+        CouponRequest couponRequest = CouponRequest.builder()
+                .id(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .userId(userId)
+                .sagaId(UUID.randomUUID())
+                .issuedCouponIds(List.of(savedIssuedCoupon.getId()))
+                .createdAt(Instant.now())
+                .failureMessages(null)
+                .action(CouponActions.USE)
+                .build();
+
+        //when
+        couponRedemptionService.redeem(couponRequest);
+
+        //then
+        Optional<IssuedCoupon> after = issuedCouponRepository.findById(savedIssuedCoupon.getId());
+
+        assertThat(after.get().getStatus()).isEqualTo(IssuedCouponStatus.USED);
+        assertThat(after.get().getUsedAt()).isNotNull();
+        assertThat(after.get().getOrderId()).isEqualTo(couponRequest.getOrderId());
+
+        assertThat(orderOutboxRepository.count()).isEqualTo(1L);
+    }
+
+    @DisplayName("쿠폰이 한 개일 때, 본인이 발급받은 쿠폰이 아닐경우 쿠폰 사용에 실패한다.")
+    @Test
+    void shouldFailToUseCoupon_whenCouponIsNotOwnedByUser() {
+        //given
+        UUID userId = UUID.randomUUID();
+        UUID nonUserId = UUID.randomUUID();
+
+        IssuedCoupon issuedCoupon = IssuedCoupon.builder()
+                .userId(nonUserId)
+                .couponId(UUID.randomUUID())
+                .status(IssuedCouponStatus.ISSUED)
+                .expiredAt(LocalDateTime.now().plusDays(1))
+                .issuedAt(LocalDateTime.now().minusDays(3))
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(issuedCoupon);
+
+        CouponRequest couponRequest = CouponRequest.builder()
+                .id(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .userId(userId)
+                .sagaId(UUID.randomUUID())
+                .issuedCouponIds(List.of(savedIssuedCoupon.getId()))
+                .createdAt(Instant.now())
+                .failureMessages(null)
+                .action(CouponActions.USE)
+                .build();
+
+        //when
+        couponRedemptionService.redeem(couponRequest);
+
+        //then
+        Optional<IssuedCoupon> after = issuedCouponRepository.findById(savedIssuedCoupon.getId());
+
+        assertThat(after.get().getStatus()).isEqualTo(IssuedCouponStatus.ISSUED);
+        assertThat(after.get().getUsedAt()).isNull();
+        assertThat(after.get().getOrderId()).isNull();
+
+        assertThat(orderOutboxRepository.count()).isEqualTo(1L);
+
+        verify(couponDataMapper).redeemCouponToCouponOrderEventPayload(any(), eq(0), any());
+    }
+
+    @DisplayName("쿠폰이 여러 개일 때, 하나라도 본인이 발급받은 쿠폰이 아닐경우 쿠폰 사용에 실패한다.")
+    @Test
+    void shouldFailToUseCoupon_whenMultipleCouponsRequestedAndContainsNonOwnedCoupon() {
+        //given
+        UUID userId = UUID.randomUUID();
+        UUID nonUserId = UUID.randomUUID();
+
+        IssuedCoupon issuedCoupon = IssuedCoupon.builder()
+                .userId(nonUserId)
+                .couponId(UUID.randomUUID())
+                .status(IssuedCouponStatus.ISSUED)
+                .expiredAt(LocalDateTime.now().plusDays(1))
+                .issuedAt(LocalDateTime.now().minusDays(3))
+                .build();
+
+        IssuedCoupon issuedCoupon2 = IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(UUID.randomUUID())
+                .status(IssuedCouponStatus.ISSUED)
+                .expiredAt(LocalDateTime.now().plusDays(1))
+                .issuedAt(LocalDateTime.now().minusDays(3))
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(issuedCoupon);
+        IssuedCoupon savedIssuedCoupon2 = issuedCouponRepository.save(issuedCoupon2);
+
+        CouponRequest couponRequest = CouponRequest.builder()
+                .id(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .userId(userId)
+                .sagaId(UUID.randomUUID())
+                .issuedCouponIds(List.of(savedIssuedCoupon.getId(), savedIssuedCoupon2.getId()))
+                .createdAt(Instant.now())
+                .failureMessages(null)
+                .action(CouponActions.USE)
+                .build();
+
+        //when
+        couponRedemptionService.redeem(couponRequest);
+
+        //then
+        Optional<IssuedCoupon> after = issuedCouponRepository.findById(savedIssuedCoupon.getId());
+
+        assertThat(after.get().getStatus()).isEqualTo(IssuedCouponStatus.ISSUED);
+        assertThat(after.get().getUsedAt()).isNull();
+        assertThat(after.get().getOrderId()).isNull();
+
+        assertThat(orderOutboxRepository.count()).isEqualTo(1L);
+
+        verify(couponDataMapper).redeemCouponToCouponOrderEventPayload(any(), eq(0), any());
+    }
+
+    @DisplayName("본인이 발급받은 쿠폰이지만 ISSUED 상태의 쿠폰이 아니라면 쿠폰 사용에 실패한다.")
+    @ParameterizedTest(name = "[{index}] 쿠폰 상태 : {0}")
+    @MethodSource("provideInvalidCouponStatuses")
+    void shouldFailToUseCoupon_whenCouponIsOwnedByUserButStatusIsNotIssued(String status,
+                                                                           IssuedCouponStatus issuedCouponStatus)
+            throws Exception {
+        //given
+        UUID userId = UUID.randomUUID();
+
+        IssuedCoupon issuedCoupon = IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(UUID.randomUUID())
+                .status(issuedCouponStatus)
+                .expiredAt(LocalDateTime.now().plusDays(1))
+                .issuedAt(LocalDateTime.now().minusDays(3))
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(issuedCoupon);
+
+        CouponRequest couponRequest = CouponRequest.builder()
+                .id(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .userId(userId)
+                .sagaId(UUID.randomUUID())
+                .issuedCouponIds(List.of(savedIssuedCoupon.getId()))
+                .createdAt(Instant.now())
+                .failureMessages(null)
+                .action(CouponActions.USE)
+                .build();
+
+        //when
+        couponRedemptionService.redeem(couponRequest);
+
+        //then
+        Optional<IssuedCoupon> after = issuedCouponRepository.findById(savedIssuedCoupon.getId());
+
+        assertThat(after.get().getStatus()).isEqualTo(issuedCouponStatus);
+        assertThat(after.get().getUsedAt()).isNull();
+        assertThat(after.get().getOrderId()).isNull();
+
+        assertThat(orderOutboxRepository.count()).isEqualTo(1L);
+
+        verify(couponDataMapper).redeemCouponToCouponOrderEventPayload(any(), eq(0), any());
+    }
+
+    private static Stream<Arguments> provideInvalidCouponStatuses(){
+        return Stream.of(
+                Arguments.of("만료된 쿠폰", IssuedCouponStatus.EXPIRED),
+                Arguments.of("회수된 쿠폰", IssuedCouponStatus.REVOKED),
+                Arguments.of("사용된 쿠폰", IssuedCouponStatus.USED)
+        );
+    }
+
+    @DisplayName("존재하지 않는 쿠폰을 포함해 쿠폰 사용을 요청한 경우, 쿠폰 사용에 실패한다.")
+    @Test
+    void shouldFailToUseCoupon_whenRequestContainsNonExistentCoupon() {
+        //given
+        UUID userId = UUID.randomUUID();
+
+        IssuedCoupon issuedCoupon = IssuedCoupon.builder()
+                .userId(userId)
+                .couponId(UUID.randomUUID())
+                .status(IssuedCouponStatus.ISSUED)
+                .expiredAt(LocalDateTime.now().plusDays(1))
+                .issuedAt(LocalDateTime.now().minusDays(3))
+                .build();
+
+        IssuedCoupon savedIssuedCoupon = issuedCouponRepository.save(issuedCoupon);
+
+        CouponRequest couponRequest = CouponRequest.builder()
+                .id(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .userId(userId)
+                .sagaId(UUID.randomUUID())
+                .issuedCouponIds(List.of(savedIssuedCoupon.getId(), 1000L))
+                .createdAt(Instant.now())
+                .failureMessages(null)
+                .action(CouponActions.USE)
+                .build();
+
+        //when
+        couponRedemptionService.redeem(couponRequest);
+
+        //then
+        Optional<IssuedCoupon> after = issuedCouponRepository.findById(savedIssuedCoupon.getId());
+
+        assertThat(after.get().getStatus()).isEqualTo(IssuedCouponStatus.ISSUED);
+        assertThat(after.get().getUsedAt()).isNull();
+        assertThat(after.get().getOrderId()).isNull();
+
+        assertThat(orderOutboxRepository.count()).isEqualTo(1L);
+
+        verify(couponDataMapper).redeemCouponToCouponOrderEventPayload(any(), eq(0), any());
+    }
+
+}

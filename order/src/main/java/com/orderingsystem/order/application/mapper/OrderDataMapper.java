@@ -1,6 +1,7 @@
 package com.orderingsystem.order.application.mapper;
 
 import com.orderingsystem.common.domain.Money;
+import com.orderingsystem.common.domain.status.CouponActions;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
@@ -182,6 +183,7 @@ public class OrderDataMapper {
                 .issuedCouponId(couponIdString)
                 .createdAt(orderCreateEvent.getCreatedAt())
                 .failureMessage(orderCreateEvent.getOrder().getFailureMessageList())
+                .action(CouponActions.USE.name())
                 .build();
     }
 
@@ -204,6 +206,7 @@ public class OrderDataMapper {
                 .sagaId(sagaId.toString())
                 .createdAt(ZonedDateTime.now())
                 .failureMessage(order.getFailureMessageList())
+                .action(CouponActions.ROLLBACK.name())
                 .build();
     }
 }
