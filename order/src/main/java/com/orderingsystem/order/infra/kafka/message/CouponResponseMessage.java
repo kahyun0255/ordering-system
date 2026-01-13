@@ -30,7 +30,6 @@ public class CouponResponseMessage {
                 .issuedCouponId(this.issuedCouponId)
                 .updatedCount(this.updatedCount)
                 .failureMessages(this.failureMessages)
-                .issuedCouponStatus(null) //TODO : 롤백 처리 변경 후 제거
                 .build();
     }
 }

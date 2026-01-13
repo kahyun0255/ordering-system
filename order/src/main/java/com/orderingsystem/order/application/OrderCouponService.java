@@ -2,7 +2,6 @@ package com.orderingsystem.order.application;
 
 import static com.orderingsystem.common.domain.status.OrderStatus.CANCELLING;
 
-import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
@@ -100,8 +99,7 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
         log.info("해당 주문의 주문 취소를 시작합니다. Order Id : [{}], Saga Id : [{}]", orderId, sagaId);
 
         Optional<CouponOutbox> couponOutboxMessageResponse = couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
-                sagaId,
-                getCurrentSagaStatus(couponResponse.getIssuedCouponStatus()));
+                sagaId, SagaStatus.PROCESSING);
 
         if (couponOutboxMessageResponse.isEmpty()) {
             log.info("해당 Saga Id : [{}]에 대한 Outbox 메시지가 이미 롤백되어 메시지를 다시 처리하지 않습니다.", sagaId);
@@ -115,8 +113,9 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
             return;
         }
 
-        SagaStatus nextSagaStatus = (couponResponse.getIssuedCouponStatus() == IssuedCouponStatus.ISSUED)
-                ? SagaStatus.COMPENSATED : SagaStatus.FAILED;
+        SagaStatus nextSagaStatus =
+                (couponResponse.getFailureMessages() == null || couponResponse.getFailureMessages().isEmpty())
+                        ? SagaStatus.COMPENSATED : SagaStatus.FAILED;
 
         if (order.getOrderStatus() != OrderStatus.CANCELLED) {
             order.initCancel(couponResponse.getFailureMessages());
@@ -166,14 +165,6 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
         couponOutboxMessage.updateSagaStatus(sagaStatus);
         couponOutboxMessage.updateProcessedAt(ZonedDateTime.now());
         couponOutboxMessage.updateOrderStatus(orderStatus);
-    }
-
-
-    private SagaStatus[] getCurrentSagaStatus(IssuedCouponStatus issuedCouponStatus) {
-        return switch (issuedCouponStatus) {
-            case EXPIRED, REVOKED, USED -> new SagaStatus[]{SagaStatus.STARTED, SagaStatus.PROCESSING};
-            case ISSUED -> new SagaStatus[]{SagaStatus.SUCCEEDED};
-        };
     }
 
 }

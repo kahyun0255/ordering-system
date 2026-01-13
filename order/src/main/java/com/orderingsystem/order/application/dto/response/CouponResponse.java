@@ -1,6 +1,5 @@
 package com.orderingsystem.order.application.dto.response;
 
-import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +18,5 @@ public class CouponResponse {
     private List<Long> issuedCouponId;
     private int updatedCount;
     private List<String> failureMessages;
-    private IssuedCouponStatus issuedCouponStatus;
 
 }
