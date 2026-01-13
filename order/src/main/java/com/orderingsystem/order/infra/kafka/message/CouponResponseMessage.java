@@ -11,22 +11,26 @@ import lombok.Getter;
 @Getter
 public class CouponResponseMessage {
 
-    private UUID sagaId;
     private UUID orderId;
     private UUID customerId;
+    private UUID sagaId;
     private OffsetDateTime createdAt;
-    private String issuedCouponStatus;
+    private List<Long> issuedCouponId;
+    private int updatedCount;
     private List<String> failureMessages;
+    private String issuedCouponStatus;
 
     public CouponResponse toCouponResponse(UUID id) {
         return CouponResponse.builder()
                 .id(id)
-                .sagaId(this.sagaId)
                 .orderId(this.orderId)
                 .customerId(this.customerId)
-                .issuedCouponStatus(this.issuedCouponStatus)
+                .sagaId(this.sagaId)
                 .createdAt(this.createdAt.toInstant())
+                .issuedCouponId(this.issuedCouponId)
+                .updatedCount(this.updatedCount)
                 .failureMessages(this.failureMessages)
+                .issuedCouponStatus(null) //TODO : 롤백 처리 변경 후 제거
                 .build();
     }
 }

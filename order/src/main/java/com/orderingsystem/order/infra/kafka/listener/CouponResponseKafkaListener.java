@@ -3,7 +3,6 @@ package com.orderingsystem.order.infra.kafka.listener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
-import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
 import com.orderingsystem.order.application.OrderCouponService;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
@@ -49,20 +48,22 @@ public class CouponResponseKafkaListener implements KafkaConsumer<String> {
                 if (debeziumMessage.getBefore() == null &&
                         debeziumMessage.getOp().equals(DebeziumOp.CREATE.getValue())) {
 
-                    CouponResponseMessage couponResponseMessage = objectMapper.readValue(
+                    CouponResponseMessage responseMessage = objectMapper.readValue(
                             debeziumMessage.getAfter().getPayload(), CouponResponseMessage.class);
 
-                    log.info("쿠폰 응답 수신. Order Id : {}, IssuedCouponStatus: {}", couponResponseMessage.getOrderId(),
-                            couponResponseMessage.getIssuedCouponStatus());
+                    log.info("쿠폰 응답 수신. Order Id : {}, updatedCount : {}",
+                            responseMessage.getOrderId(), responseMessage.getUpdatedCount());
 
-                    if (IssuedCouponStatus.USED.name().equals(couponResponseMessage.getIssuedCouponStatus())) {
-                        log.info("쿠폰 사용 완료. Order Id : [{}]", couponResponseMessage.getOrderId());
-                        orderCouponService.process(couponResponseMessage.toCouponResponse(
+                    if ((responseMessage.getFailureMessages() == null || responseMessage.getFailureMessages().isEmpty())
+                            && responseMessage.getUpdatedCount() > 0) {
+                        log.info("쿠폰 사용 성공. Order Id : [{}]", responseMessage.getOrderId());
+                        orderCouponService.process(responseMessage.toCouponResponse(
                                 UUID.fromString(debeziumMessage.getAfter().getId())));
                     } else {
-                        log.info("쿠폰 사용 실패. Order Id : [{}], IssuedCouponStatus : {}.",
-                                couponResponseMessage.getOrderId(), couponResponseMessage.getIssuedCouponStatus());
-                        orderCouponService.rollback(couponResponseMessage.toCouponResponse(
+                        log.info("쿠폰 사용 실패. Order Id : {}, failureMessage: [{}], updatedCount : {}",
+                                responseMessage.getOrderId(), responseMessage.getFailureMessages(),
+                                responseMessage.getUpdatedCount());
+                        orderCouponService.rollback(responseMessage.toCouponResponse(
                                 UUID.fromString(debeziumMessage.getAfter().getId())));
                     }
                 }

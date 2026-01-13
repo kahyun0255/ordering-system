@@ -101,7 +101,7 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
 
         Optional<CouponOutbox> couponOutboxMessageResponse = couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
                 sagaId,
-                getCurrentSagaStatus(IssuedCouponStatus.valueOf(couponResponse.getIssuedCouponStatus())));
+                getCurrentSagaStatus(couponResponse.getIssuedCouponStatus()));
 
         if (couponOutboxMessageResponse.isEmpty()) {
             log.info("해당 Saga Id : [{}]에 대한 Outbox 메시지가 이미 롤백되어 메시지를 다시 처리하지 않습니다.", sagaId);
@@ -115,10 +115,8 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
             return;
         }
 
-        SagaStatus nextSagaStatus =
-                (IssuedCouponStatus.valueOf(couponResponse.getIssuedCouponStatus()) == IssuedCouponStatus.ISSUED)
-                        ? SagaStatus.COMPENSATED
-                        : SagaStatus.FAILED;
+        SagaStatus nextSagaStatus = (couponResponse.getIssuedCouponStatus() == IssuedCouponStatus.ISSUED)
+                ? SagaStatus.COMPENSATED : SagaStatus.FAILED;
 
         if (order.getOrderStatus() != OrderStatus.CANCELLED) {
             order.initCancel(couponResponse.getFailureMessages());

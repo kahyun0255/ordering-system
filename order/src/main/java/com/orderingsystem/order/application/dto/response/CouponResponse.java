@@ -1,5 +1,6 @@
 package com.orderingsystem.order.application.dto.response;
 
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -11,11 +12,13 @@ import lombok.Getter;
 public class CouponResponse {
 
     private UUID id;
-    private UUID sagaId;
     private UUID orderId;
     private UUID customerId;
+    private UUID sagaId;
     private Instant createdAt;
-    private String issuedCouponStatus;
+    private List<Long> issuedCouponId;
+    private int updatedCount;
     private List<String> failureMessages;
+    private IssuedCouponStatus issuedCouponStatus;
 
 }
