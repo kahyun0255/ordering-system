@@ -3,8 +3,11 @@ package com.orderingsystem.order.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderStatus;
@@ -13,6 +16,7 @@ import com.orderingsystem.order.application.dto.request.OrderAddressApplicationR
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CouponValidationResponse;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
+import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.port.out.CouponApi;
 import com.orderingsystem.order.application.port.out.RestaurantApi;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
@@ -31,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -55,6 +60,9 @@ class OrderFacadeTest {
 
     @MockitoBean
     private CouponApi couponApi;
+
+    @MockitoSpyBean
+    private OrderDataMapper orderDataMapper;
 
     @AfterEach
     void tearDown() {
@@ -182,6 +190,30 @@ class OrderFacadeTest {
         assertThat(couponOutboxRepository.count()).isEqualTo(0L);
     }
 
+    @DisplayName("주문 시 쿠폰을 사용하면 쿠폰 서비스에서 리턴받은 값으로 결제를 요청하고, 쿠폰 사용을 요청한다.")
+    @Test
+    void shouldRequestPaymentWithReturnedValueFromCouponService_whenUsingCouponDuringOrder() {
+        //given
+        CreateOrderApplicationRequest request = getOneProductCreateOrderApplicationRequest();
+
+        CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
+        given(couponValidationResponse.getFinalAmount()).willReturn(BigDecimal.valueOf(12));
+        given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
+        given(couponValidationResponse.isValid()).willReturn(true);
+
+        //when
+        CreateOrderResponse response = orderFacade.createOrder(request);
+
+        //then
+        assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(response.getMessage()).isEqualTo("주문이 성공적으로 생성되었습니다.");
+
+        assertThat(paymentOutboxRepository.count()).isEqualTo(1L);
+        assertThat(couponOutboxRepository.count()).isEqualTo(1L);
+
+        verify(orderDataMapper, times(1)).orderCreatedToOrderPaymentEventPayload(any(), any(),
+                eq(BigDecimal.valueOf(12)));
+    }
 
     private CreateOrderApplicationRequest getOneProductCreateOrderApplicationRequest() {
         return CreateOrderApplicationRequest.builder()

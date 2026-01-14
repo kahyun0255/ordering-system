@@ -1,9 +1,13 @@
 package com.orderingsystem.order.application;
 
+import com.orderingsystem.common.domain.status.OrderStatus;
+import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
+import com.orderingsystem.order.application.dto.response.CouponValidationResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.coupon.CouponOutboxHelper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
+import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.domain.event.OrderCreateEvent;
 import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Order;
@@ -32,7 +36,8 @@ public class OrderCreateService {
 
     @Transactional
     public OrderCreateEvent createOrder(CreateOrderApplicationRequest createOrderRequest, List<String> failureMessages,
-                                        UUID sagaId, List<Long> couponId) {
+                                        UUID sagaId, List<Long> couponId,
+                                        CouponValidationResponse couponValidationResponse) {
         OrderAddress orderAddress = orderDataMapper.orderAddressToStreetAddress(createOrderRequest.getAddress());
         Order order = orderDataMapper.createOrderRequestToOrder(createOrderRequest, orderAddress.getId());
 
@@ -42,7 +47,7 @@ public class OrderCreateService {
         saveOrderAddress(orderAddress, order);
 
         if (failureMessages.isEmpty()) {
-            saveOutboxMessages(sagaId, couponId, orderCreateEvent);
+            saveOutboxMessages(sagaId, couponId, orderCreateEvent, couponValidationResponse);
             log.info("주문이 생성되었습니다. Order Id : {}", savedOrder.getId());
         } else {
             log.warn("주문이 취소되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
@@ -73,22 +78,30 @@ public class OrderCreateService {
         }
     }
 
-    private void saveOutboxMessages(UUID sagaId, List<Long> couponId, OrderCreateEvent orderCreateEvent) {
-        paymentOutboxHelper.savePaymentOutboxMessage(
-                orderDataMapper.orderCreatedToOrderPaymentEventPayload(orderCreateEvent, sagaId),
-                orderCreateEvent.getOrder().getOrderStatus(),
-                OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
-                sagaId
-        );
+    private void saveOutboxMessages(UUID sagaId, List<Long> couponIds, OrderCreateEvent orderCreateEvent,
+                                    CouponValidationResponse couponValidationResponse) {
+        OrderStatus orderStatus = orderCreateEvent.getOrder().getOrderStatus();
+        SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(orderStatus);
+        boolean hasCoupon = couponIds != null && !couponIds.isEmpty();
 
-        if (couponId != null && !couponId.isEmpty()) {
+        OrderPaymentEventPayload paymentPayload =
+                createPaymentPayload(orderCreateEvent, sagaId, couponValidationResponse, hasCoupon);
+
+        paymentOutboxHelper.savePaymentOutboxMessage(paymentPayload, orderStatus, sagaStatus, sagaId);
+
+        if (hasCoupon) {
             couponOutboxHelper.saveCouponOutboxMessage(
-                    orderDataMapper.orderCreatedToOrderCouponEventPayload(orderCreateEvent, sagaId, couponId),
-                    orderCreateEvent.getOrder().getOrderStatus(),
-                    OrderStatusToSagaStatus.orderStatusToSagaStatus(orderCreateEvent.getOrder().getOrderStatus()),
-                    sagaId
-            );
+                    orderDataMapper.orderCreatedToOrderCouponEventPayload(orderCreateEvent, sagaId, couponIds),
+                    orderStatus, sagaStatus, sagaId);
         }
+    }
+
+    private OrderPaymentEventPayload createPaymentPayload(OrderCreateEvent event, UUID sagaId,
+                                                          CouponValidationResponse response, boolean hasCoupon) {
+        if (hasCoupon) {
+            return orderDataMapper.orderCreatedToOrderPaymentEventPayload(event, sagaId, response.getFinalAmount());
+        }
+        return orderDataMapper.orderCreatedToOrderPaymentEventPayload(event, sagaId);
     }
 
 }

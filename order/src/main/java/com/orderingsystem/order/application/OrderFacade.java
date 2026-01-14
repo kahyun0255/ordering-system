@@ -33,8 +33,9 @@ public class OrderFacade {
 
         restaurantApi.validRestaurantAndProducts(createOrderRequest, sagaId);
 
+        CouponValidationResponse couponValidationResponse = null;
         if (createOrderRequest.getCouponId() != null && !createOrderRequest.getCouponId().isEmpty()) {
-            CouponValidationResponse couponValidationResponse = couponApi.validateCoupons(
+            couponValidationResponse = couponApi.validateCoupons(
                     orderDataMapper.createOrderRequestToValidationCouponApplicationRequest(createOrderRequest), sagaId);
 
             checkCouponValidity(couponValidationResponse, failureMessages, createOrderRequest.getCustomerId(), sagaId);
@@ -43,7 +44,7 @@ public class OrderFacade {
         orderService.checkCustomer(createOrderRequest.getCustomerId());
 
         OrderCreateEvent orderCreateEvent = orderCreateService.createOrder(createOrderRequest, failureMessages, sagaId,
-                createOrderRequest.getCouponId());
+                createOrderRequest.getCouponId(), couponValidationResponse);
 
         log.info("주문이 생성되었습니다. Order Id : {}", orderCreateEvent.getOrder().getId());
 

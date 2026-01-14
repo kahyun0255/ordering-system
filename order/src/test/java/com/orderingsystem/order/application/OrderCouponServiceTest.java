@@ -360,7 +360,6 @@ class OrderCouponServiceTest {
                 .orderId(orderId)
                 .sagaId(sagaId)
                 .id(UUID.randomUUID())
-                .issuedCouponStatus(issuedCouponStatus.name())
                 .build();
     }
 

@@ -22,6 +22,7 @@ import com.orderingsystem.order.domain.event.OrderRejectedEvent;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderAddress;
 import com.orderingsystem.order.domain.model.OrderItem;
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -82,6 +83,18 @@ public class OrderDataMapper {
                 .orderId(orderCreateEvent.getOrder().getId().toString())
                 .sagaId(sagaId.toString())
                 .price(orderCreateEvent.getOrder().getPrice().getAmount())
+                .createdAt(orderCreateEvent.getCreatedAt())
+                .paymentOrderStatus(PaymentOrderStatus.PENDING.name())
+                .build();
+    }
+
+    public OrderPaymentEventPayload orderCreatedToOrderPaymentEventPayload(OrderCreateEvent orderCreateEvent,
+                                                                           UUID sagaId, BigDecimal price) {
+        return OrderPaymentEventPayload.builder()
+                .customerId(orderCreateEvent.getOrder().getCustomerId().toString())
+                .orderId(orderCreateEvent.getOrder().getId().toString())
+                .sagaId(sagaId.toString())
+                .price(price)
                 .createdAt(orderCreateEvent.getCreatedAt())
                 .paymentOrderStatus(PaymentOrderStatus.PENDING.name())
                 .build();
