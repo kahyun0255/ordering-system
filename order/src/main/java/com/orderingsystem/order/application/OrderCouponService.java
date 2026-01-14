@@ -9,7 +9,6 @@ import com.orderingsystem.order.application.dto.response.CouponResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
 import com.orderingsystem.order.application.outbox.coupon.CouponOutboxHelper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
-import com.orderingsystem.order.application.outbox.product.ProductOutboxHelper;
 import com.orderingsystem.order.application.outbox.restaurant.RestaurantAcceptOutboxHelper;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
 import com.orderingsystem.order.domain.model.Order;
@@ -36,7 +35,6 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
     private final RestaurantAcceptOutboxHelper restaurantAcceptOutboxHelper;
     private final OrderDataMapper orderDataMapper;
     private final PaymentOutboxHelper paymentOutboxHelper;
-    private final ProductOutboxHelper productOutboxHelper;
 
     @Override
     @Transactional
