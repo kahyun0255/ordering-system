@@ -125,7 +125,7 @@ public class PaymentService {
 
     private boolean checkAndMarkProcessed(PaymentRequest paymentRequest, MessageType messageType) {
         int inserted = processedMessageRepository.insertIgnore(
-                paymentRequest.getId(),
+                paymentRequest.getSagaId(),
                 messageType.name(),
                 ZonedDateTime.now()
         );
