@@ -58,7 +58,12 @@ public class CouponRequestKafkaListener implements KafkaSingleConsumer<String> {
                     couponRedemptionService.redeem(
                             requestMessage.toCouponRequest(UUID.fromString(debeziumMessage.getAfter().getId())));
                 } else if (requestMessage.getAction().equals(CouponActions.ROLLBACK.name())) {
-                    //TODO : 쿠폰 롤백 서비스 구현
+                    log.info("쿠폰 사용 롤백 요청 수신. Order Id : [{}], Issued Coupon Id : [{}], User Id : [{}]",
+                            requestMessage.getOrderId(), requestMessage.getIssuedCouponId().toString(),
+                            requestMessage.getCustomerId());
+
+                    couponRedemptionService.cancelRedemption(
+                            requestMessage.toCouponRequest(UUID.fromString(debeziumMessage.getAfter().getId())));
                 }
             }
         } catch (JsonProcessingException e) {

@@ -23,4 +23,7 @@ public interface IssuedCouponRepository extends JpaRepository<IssuedCoupon, Long
     int redeemCoupons(IssuedCouponStatus status, UUID orderId, LocalDateTime now, List<Long> issuedCouponIds,
                       IssuedCouponStatus expectedStatus);
 
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE IssuedCoupon ic SET ic.status = :status, ic.usedAt = NULL, ic.orderId = NULL WHERE ic.id IN :issuedCouponIds AND ic.status = :used")
+    int redeemCancelCoupons(IssuedCouponStatus status, List<Long> issuedCouponIds, IssuedCouponStatus used);
 }
