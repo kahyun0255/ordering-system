@@ -68,7 +68,7 @@ public class CouponResponseKafkaListener implements KafkaConsumer<String> {
                     }
                 }
             } catch (JsonProcessingException e) {
-                log.error("CouponResponseMessage Json 파싱에 실패했습니다.");
+                log.error("CouponResponseMessage Json 파싱에 실패했습니다. error : {}", e.toString());
             } catch (OptimisticLockingFailureException e) {
                 //NO-OP
                 log.error("Caught optimistic locking exception in CouponResponseKafkaListener");

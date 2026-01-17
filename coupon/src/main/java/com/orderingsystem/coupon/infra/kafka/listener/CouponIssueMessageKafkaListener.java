@@ -28,7 +28,8 @@ public class CouponIssueMessageKafkaListener implements KafkaConsumer<String> {
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.coupon-group-id}",
-            topics = "${coupon-service.coupon-issue-topic-name}")
+            topics = "${coupon-service.coupon-issue-topic-name}",
+            containerFactory = "batchFactory")
     public void receive(@Payload List<String> messages,
                         @Header(KafkaHeaders.RECEIVED_KEY) List<String> keys,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) List<Integer> partitions,

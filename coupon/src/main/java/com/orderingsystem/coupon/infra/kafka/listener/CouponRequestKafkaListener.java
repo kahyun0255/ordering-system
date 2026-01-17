@@ -32,7 +32,8 @@ public class CouponRequestKafkaListener implements KafkaSingleConsumer<String> {
     @Override
     @KafkaListener(id = "${kafka-consumer-config.coupon-redemption-group-id}",
             topics = "${coupon-service.coupon-request-topic-name}",
-            concurrency = "${coupon-service.concurrency}")
+            concurrency = "${coupon-service.concurrency}",
+            containerFactory = "singleFactory")
     public void receive(@Payload String message,
                         @Header(KafkaHeaders.RECEIVED_KEY) String key,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) Integer partition,
@@ -52,7 +53,7 @@ public class CouponRequestKafkaListener implements KafkaSingleConsumer<String> {
 
                 if (requestMessage.getAction().equals(CouponActions.USE.name())) {
                     log.info("쿠폰 사용 요청 수신. Order Id : [{}], Issued Coupon Id : [{}], User Id : [{}]",
-                            requestMessage.getOrderId(), requestMessage.getIssuedCouponId().toString(),
+                            requestMessage.getOrderId(), requestMessage.getIssuedCouponId(),
                             requestMessage.getCustomerId());
 
                     couponRedemptionService.redeem(

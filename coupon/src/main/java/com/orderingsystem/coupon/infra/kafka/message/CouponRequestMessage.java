@@ -23,12 +23,16 @@ public class CouponRequestMessage {
     private String action;
 
     public CouponRequest toCouponRequest(UUID id) {
+        List<Long> couponIds = (this.issuedCouponId == null)
+                ? List.of()
+                : this.issuedCouponId.stream().map(Long::parseLong).toList();
+
         return CouponRequest.builder()
                 .id(id)
                 .orderId(this.getOrderId())
                 .userId(this.getCustomerId())
                 .sagaId(this.getSagaId())
-                .issuedCouponIds(this.issuedCouponId.stream().map(Long::parseLong).toList())
+                .issuedCouponIds(couponIds)
                 .createdAt(this.getCreatedAt().toInstant())
                 .failureMessages(failureMessage)
                 .action(CouponActions.valueOf(action))
