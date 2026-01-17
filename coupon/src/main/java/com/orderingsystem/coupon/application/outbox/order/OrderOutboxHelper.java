@@ -31,7 +31,7 @@ public class OrderOutboxHelper {
         if (!orderOutboxRepository.existsByTypeAndSagaIdAndSagaStatus(ORDER_SAGA_NAME, orderOutbox.getSagaId(),
                 orderOutbox.getSagaStatus())) {
             orderOutboxRepository.save(orderOutbox);
-            log.info("Order OrderOutbox 저장했습니다. Outbox Id : {}", orderOutbox.getId());
+            log.info("Coupon OrderOutbox 저장했습니다. Outbox Id : {}", orderOutbox.getId());
         } else {
             log.warn("이미 저장된 Coupon OrderOutbox가 존재합니다. Saga Id : {}, Type : {}", orderOutbox.getSagaId(),
                     orderOutbox.getType());
