@@ -12,6 +12,7 @@ import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.dto.response.RestaurantOrderDecisionResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
+import com.orderingsystem.order.application.outbox.coupon.CouponOutboxHelper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.domain.event.OrderRejectedEvent;
@@ -43,6 +44,9 @@ class OrderRestaurantApprovalServiceRejectTest {
 
     @Mock
     private OrderDataMapper orderDataMapper;
+
+    @Mock
+    private CouponOutboxHelper couponOutboxHelper;
 
     @InjectMocks
     private OrderRestaurantApprovalService orderRestaurantApprovalService;
@@ -121,6 +125,7 @@ class OrderRestaurantApprovalServiceRejectTest {
 
         Order order =mock(Order.class);
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(order.getOrderStatus()).willReturn(OrderStatus.REJECTED);
 
         //when
         orderRestaurantApprovalService.reject(paymentResponse);
