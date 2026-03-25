@@ -73,4 +73,10 @@ public class PaymentOutboxHelper {
     public int deleteOlderThan(ZonedDateTime threshold) {
         return paymentOutboxRepository.deleteOlderThan(threshold);
     }
+
+    @Transactional
+    public Optional<PaymentOutbox> getPaymentOutboxBySagaId(UUID sagaId) {
+        return paymentOutboxRepository.findBySagaId(sagaId);
+    }
+
 }

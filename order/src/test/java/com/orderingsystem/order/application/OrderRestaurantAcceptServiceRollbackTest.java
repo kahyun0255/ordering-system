@@ -2,14 +2,12 @@ package com.orderingsystem.order.application;
 
 import static com.orderingsystem.common.saga.SagaConstants.ORDER_SAGA_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.orderingsystem.common.domain.Money;
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.common.domain.status.OrderStatus;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.dto.response.RestaurantOrderDecisionResponse;
-import com.orderingsystem.order.domain.exception.OrderDomainException;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
@@ -82,20 +80,6 @@ class OrderRestaurantAcceptServiceRollbackTest {
         assertThat(restaurantAcceptOutbox.get().getSagaStatus()).isEqualTo(SagaStatus.COMPENSATING);
         assertThat(restaurantAcceptOutbox.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLING);
         assertThat(beforePaymentOutboxCount+1).isEqualTo(afterPaymentOutboxCount);
-    }
-
-    @DisplayName("주문이 PENDING 상태라면 예외가 발생하며 주문 취소에 실패한다.")
-    @Test
-    void failToRollbackOrder_whenOrderStatusIsPending() {
-        //given
-        saveOrder(OrderStatus.PENDING);
-        saveOutbox();
-        RestaurantOrderDecisionResponse request = getRestaurantApprovalResponse();
-
-        //when, then
-        assertThatThrownBy(() -> orderRestaurantAcceptService.rollback(request))
-                .isInstanceOf(OrderDomainException.class)
-                .hasMessage("주문을 취소할 수 없는 상태입니다.");
     }
 
     @DisplayName("주문이 이미 APPROVED 상태라면 취소 처리 로직을 추가적으로 진행하지 않는다.")

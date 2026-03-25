@@ -28,6 +28,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "orders")
@@ -65,6 +67,10 @@ public class Order extends AggregateRoot {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<OrderItem> items;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private List<Long> couponIds;
 
     @Override
     public boolean equals(Object o) {
@@ -169,7 +175,7 @@ public class Order extends AggregateRoot {
     }
 
     public OrderCancelledEvent initCancel(List<String> failureMessages) {
-        if (orderStatus != OrderStatus.PAID) {
+        if (!(orderStatus == OrderStatus.PAID || orderStatus == OrderStatus.PENDING)) {
             throw new OrderDomainException("주문을 취소할 수 없는 상태입니다.");
         }
         orderStatus = OrderStatus.CANCELLING;
@@ -190,7 +196,13 @@ public class Order extends AggregateRoot {
     }
 
     public void cancel(List<String> failureMessages) {
-        if (!(orderStatus == OrderStatus.CANCELLING || orderStatus == OrderStatus.PENDING)) {
+        if (orderStatus == OrderStatus.CANCELLED) {
+            log.warn("이미 취소된 주문입니다. 중복 취소 요청을 무시합니다. Order Id : {}", this.id);
+            return;
+        }
+
+        if (!(orderStatus == OrderStatus.CANCELLING || orderStatus == OrderStatus.PENDING
+                || orderStatus == OrderStatus.PAID)) {
             throw new OrderDomainException("주문을 취소 완료할 수 없는 상태입니다.");
         }
         orderStatus = OrderStatus.CANCELLED;
@@ -219,4 +231,9 @@ public class Order extends AggregateRoot {
     public void updateItems(List<OrderItem> items) {
         this.items = items;
     }
+
+    public boolean hasCoupon() {
+        return !(this.couponIds == null || this.couponIds.isEmpty());
+    }
+
 }

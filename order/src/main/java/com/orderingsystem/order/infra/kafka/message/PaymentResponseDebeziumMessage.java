@@ -14,7 +14,7 @@ public class PaymentResponseDebeziumMessage {
 
     @Getter
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-    public static class Payload{
+    public static class Payload {
         private String id;
         private Long createdAt;
         private String outboxStatus;

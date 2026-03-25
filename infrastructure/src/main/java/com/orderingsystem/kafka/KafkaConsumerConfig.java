@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
@@ -44,8 +45,9 @@ public class KafkaConsumerConfig<K, V> {
     }
 
     @Bean
-    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<K, V >> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<K, V> factory=new ConcurrentKafkaListenerContainerFactory<>();
+    @Primary
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<K, V>> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<K, V> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.setBatchListener(kafkaConsumerConfigData.getBatchListener());
         factory.setConcurrency(kafkaConsumerConfigData.getConcurrencyLevel());
@@ -53,4 +55,21 @@ public class KafkaConsumerConfig<K, V> {
         factory.getContainerProperties().setPollTimeout(kafkaConsumerConfigData.getPollTimeoutMs());
         return factory;
     }
+
+    @Bean("singleFactory")
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<K, V>> singleFactory() {
+        ConcurrentKafkaListenerContainerFactory<K, V> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        factory.setBatchListener(false);
+        return factory;
+    }
+
+    @Bean("batchFactory")
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<K, V>> batchFactory() {
+        ConcurrentKafkaListenerContainerFactory<K, V> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        factory.setBatchListener(true);
+        return factory;
+    }
+
 }

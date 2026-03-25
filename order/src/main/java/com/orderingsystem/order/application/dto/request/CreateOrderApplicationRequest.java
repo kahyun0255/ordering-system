@@ -17,5 +17,6 @@ public class CreateOrderApplicationRequest {
     private final BigDecimal price;
     private final List<OrderItemApplicationRequest> items;
     private final OrderAddressApplicationRequest address;
+    private final List<Long> couponId;
 
 }

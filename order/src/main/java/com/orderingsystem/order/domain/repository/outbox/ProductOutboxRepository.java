@@ -22,4 +22,6 @@ public interface ProductOutboxRepository extends JpaRepository<ProductOutbox, UU
 
     Optional<ProductOutbox> findByTypeAndSagaIdAndSagaStatusIn(String type, UUID sagaId, List<SagaStatus> list);
 
+    Optional<ProductOutbox> findBySagaIdAndSagaStatus(UUID sagaId, SagaStatus sagaStatus);
+
 }

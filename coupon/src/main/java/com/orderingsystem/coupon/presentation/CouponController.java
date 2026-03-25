@@ -8,7 +8,7 @@ import com.orderingsystem.coupon.application.IssueCouponService;
 import com.orderingsystem.coupon.application.dto.response.CouponResponse;
 import com.orderingsystem.coupon.application.dto.response.IssuedCouponResponse;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
-import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.coupon.presentation.request.CreateCouponRequest;
 import jakarta.validation.Valid;
 import java.net.URI;

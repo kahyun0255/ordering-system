@@ -10,10 +10,15 @@ import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderItem;
+import com.orderingsystem.order.domain.model.outbox.CouponOutbox;
 import com.orderingsystem.order.domain.model.outbox.PaymentOutbox;
+import com.orderingsystem.order.domain.model.outbox.ProductOutbox;
 import com.orderingsystem.order.domain.model.outbox.RestaurantAcceptOutbox;
 import com.orderingsystem.order.domain.repository.OrderRepository;
+import com.orderingsystem.order.domain.repository.outbox.CouponOutboxRepository;
 import com.orderingsystem.order.domain.repository.outbox.PaymentOutboxRepository;
+import com.orderingsystem.order.domain.repository.outbox.ProcessedMessageRepository;
+import com.orderingsystem.order.domain.repository.outbox.ProductOutboxRepository;
 import com.orderingsystem.order.domain.repository.outbox.RestaurantAcceptOutboxRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -22,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +52,15 @@ class OrderPaymentServiceRollbackTest {
     @Autowired
     private RestaurantAcceptOutboxRepository restaurantAcceptOutboxRepository;
 
+    @Autowired
+    private CouponOutboxRepository couponOutboxRepository;
+
+    @Autowired
+    private ProductOutboxRepository productOutboxRepository;
+
+    @Autowired
+    private ProcessedMessageRepository processedMessageRepository;
+
     private final UUID sagaId = UUID.randomUUID();
     private final UUID paymentId = UUID.randomUUID();
     private final UUID orderId = UUID.randomUUID();
@@ -58,16 +72,12 @@ class OrderPaymentServiceRollbackTest {
             .productId(productId)
             .build();
 
-    @BeforeEach
-    void before() {
-        paymentOutboxRepository.save(PaymentOutbox.builder()
-                .id(UUID.randomUUID())
-                .sagaId(sagaId)
-                .sagaStatus(SagaStatus.PROCESSING)
-                .orderStatus(OrderStatus.PENDING)
-                .type(ORDER_SAGA_NAME)
-                .payload("")
-                .build());
+    @AfterEach
+    void tearDown() {
+        paymentOutboxRepository.deleteAllInBatch();
+        processedMessageRepository.deleteAllInBatch();
+        couponOutboxRepository.deleteAllInBatch();
+        productOutboxRepository.deleteAllInBatch();
     }
 
     @DisplayName("주문 상태가 PENDING이면 주문 취소에 성공한다.")
@@ -81,7 +91,7 @@ class OrderPaymentServiceRollbackTest {
         paymentOutboxRepository.save(PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
-                .sagaStatus(SagaStatus.PROCESSING)
+                .sagaStatus(SagaStatus.SUCCEEDED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -118,7 +128,7 @@ class OrderPaymentServiceRollbackTest {
         paymentOutboxRepository.save(PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
-                .sagaStatus(SagaStatus.PROCESSING)
+                .sagaStatus(SagaStatus.SUCCEEDED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -178,13 +188,23 @@ class OrderPaymentServiceRollbackTest {
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 
-    @DisplayName("주문 상태가 PAID이면 주문 취소에 실패한다.")
+    @DisplayName("주문 상태가 PAID이면 주문 취소에 성공하고 쿠폰 보상 Outbox가 저장된다.")
     @Test
-    void cancelOrder_whenOrderStatusIsPAID() {
+    void cancelOrder_whenOrderStatusIsPAID_withCoupon() {
         //given
         UUID sagaId = UUID.randomUUID();
         PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
-        saveOrder(OrderStatus.PAID);
+
+        saveOrder(OrderStatus.PAID, List.of(1L, 2L));
+
+        paymentOutboxRepository.save(PaymentOutbox.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .sagaStatus(SagaStatus.SUCCEEDED)
+                .orderStatus(OrderStatus.PENDING)
+                .type(ORDER_SAGA_NAME)
+                .payload("")
+                .build());
 
         //when
         orderPaymentService.rollback(paymentResponse);
@@ -192,7 +212,13 @@ class OrderPaymentServiceRollbackTest {
         // then
         Optional<Order> order = orderRepository.findById(orderId);
         assertThat(order).isPresent();
-        assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PAID);
+        assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+
+        Optional<CouponOutbox> couponOutbox = couponOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATED);
+        assertThat(couponOutbox).isPresent();
+
+        Optional<ProductOutbox> productOutbox = productOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATED);
+        assertThat(productOutbox).isPresent();
     }
 
     @DisplayName("결제 상태가 FAILED이면 SagaStatus는 STARTED 또는 PROCESSING인 PaymentOutbox를 찾아야 한다")
@@ -200,11 +226,10 @@ class OrderPaymentServiceRollbackTest {
     void rollback_whenPaymentStatusIsFAILED_shouldUseStartedOrProcessingSagaStatus() {
         //given
         UUID sagaId = UUID.randomUUID();
-        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId,PaymentStatus.FAILED);
+        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId, PaymentStatus.FAILED);
 
         saveOrder(OrderStatus.PENDING);
 
-        // sagaStatus = STARTED (하나만 넣어서 테스트)
         paymentOutboxRepository.save(PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
@@ -273,6 +298,10 @@ class OrderPaymentServiceRollbackTest {
     }
 
     private void saveOrder(OrderStatus orderStatus) {
+        saveOrder(orderStatus, null);
+    }
+
+    private void saveOrder(OrderStatus orderStatus, List<Long> couponIds) {
         orderRepository.save(Order.builder()
                 .id(orderId)
                 .customerId(customerId)
@@ -282,11 +311,12 @@ class OrderPaymentServiceRollbackTest {
                 .trackingId(UUID.randomUUID())
                 .price(new Money(new BigDecimal("25.00")))
                 .items(List.of(orderItem))
+                .couponIds(couponIds)
                 .build());
     }
 
     private PaymentResponse getPaymentResponse(UUID sagaId, UUID orderId) {
-        return getPaymentResponse(sagaId,orderId, PaymentStatus.CANCELLED);
+        return getPaymentResponse(sagaId, orderId, PaymentStatus.CANCELLED);
     }
 
     private PaymentResponse getPaymentResponse(UUID sagaId, UUID orderId, PaymentStatus paymentStatus) {
@@ -301,4 +331,5 @@ class OrderPaymentServiceRollbackTest {
                 .failureMessages(new ArrayList<>())
                 .build();
     }
+
 }

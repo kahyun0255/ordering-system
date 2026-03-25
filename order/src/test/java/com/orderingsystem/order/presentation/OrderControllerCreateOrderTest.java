@@ -1,6 +1,9 @@
 package com.orderingsystem.order.presentation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -8,7 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.Money;
-import com.orderingsystem.order.application.RestaurantApi;
+import com.orderingsystem.order.application.dto.response.CouponValidationResponse;
+import com.orderingsystem.order.application.port.out.CouponApi;
+import com.orderingsystem.order.application.port.out.RestaurantApi;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
 import com.orderingsystem.order.domain.model.Customer;
 import com.orderingsystem.order.domain.model.Order;
@@ -64,6 +69,9 @@ class OrderControllerCreateOrderTest {
     @Autowired
     private OrderRepository orderRepository;
 
+    @MockitoBean
+    private CouponApi couponApi;
+
     @Value("${jwt.issuer}")
     private String issuer;
 
@@ -95,6 +103,10 @@ class OrderControllerCreateOrderTest {
     @Test
     void crateOrder() throws Exception {
         //given
+        CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
+        given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
+        given(couponValidationResponse.isValid()).willReturn(true);
+
         CreateOrderRequest createOrderRequest =
                 getCreateOrderRequest(restaurantId, productId1, product1Price, productId2, product2Price);
         String token = buildToken(customerId, "access", issuer, Instant.now().plusSeconds(100000));
@@ -141,7 +153,6 @@ class OrderControllerCreateOrderTest {
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("Unauthorized"))
                 .andExpect(jsonPath("$.message").value("AccessToken 검증에 실패했습니다."))
@@ -169,7 +180,6 @@ class OrderControllerCreateOrderTest {
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("Unauthorized"))
                 .andExpect(jsonPath("$.message").value("AccessToken 검증에 실패했습니다."))
@@ -184,6 +194,10 @@ class OrderControllerCreateOrderTest {
     @Test
     void failToCreateOrder_whenUserDoesNotExist() throws Exception {
         //given
+        CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
+        given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
+        given(couponValidationResponse.isValid()).willReturn(true);
+
         CreateOrderRequest createOrderRequest =
                 getCreateOrderRequest(restaurantId, productId1, product1Price, productId2, product2Price);
         String token = buildToken(UUID.randomUUID(), "access", issuer, Instant.now().plusSeconds(100000));
@@ -197,7 +211,6 @@ class OrderControllerCreateOrderTest {
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
-                .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("Not Found"))
                 .andExpect(jsonPath("$.message").value("주문자를 찾을 수 없습니다."))
@@ -208,8 +221,82 @@ class OrderControllerCreateOrderTest {
         assertThat(before).isEqualTo(after);
     }
 
+    @DisplayName("쿠폰을 사용할 때, 쿠폰 검증에 실패하면 주문이 실패한다.")
+    @Test
+    void failToCreateOrder_whenCouponValidationFails() throws Exception {
+        //given
+        CouponValidationResponse couponValidationResponse = mock(CouponValidationResponse.class);
+        given(couponApi.validateCoupons(any(), any())).willReturn(couponValidationResponse);
+        given(couponValidationResponse.isValid()).willReturn(false);
+
+        CreateOrderRequest createOrderRequest =
+                getCreateOrderRequest(restaurantId, productId1, product1Price, productId2, product2Price, List.of(1L));
+        String token = buildToken(customerId, "access", issuer, Instant.now().plusSeconds(100000));
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/order")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .content(objectMapper.writeValueAsString(createOrderRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderStatus").value("CANCELLED"))
+                .andExpect(jsonPath("$.message").value("주문이 취소되었습니다."))
+                .andReturn();
+
+        assertThat(orderRepository.count()).isEqualTo(1L);
+    }
+
+    @DisplayName("쿠폰을 사용하지 않을 때, 쿠폰 서버가 다운되어도 주문이 실패하지 않고 주문이 처리된다.")
+    @Test
+    void failToCreateOrder_whenCouponServerIsDown() throws Exception {
+        //given
+        CreateOrderRequest createOrderRequest =
+                getCreateOrderRequest(restaurantId, productId1, product1Price, productId2, product2Price);
+        String token = buildToken(customerId, "access", issuer, Instant.now().plusSeconds(100000));
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/order")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .content(objectMapper.writeValueAsString(createOrderRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderTrackingId").isNotEmpty())
+                .andExpect(jsonPath("$.orderStatus").value("PENDING"))
+                .andExpect(jsonPath("$.message").value("주문이 성공적으로 생성되었습니다."))
+                .andReturn();
+
+        assertThat(orderRepository.count()).isEqualTo(1L);
+    }
+
+    @DisplayName("쿠폰을 사용할 때, 쿠폰 서버가 다운되면 주문이 실패하고, 500 예외가 발생한다.")
+    @Test
+    void shouldFailToCreateOrder_whenCouponServerIsUnavailable() throws Exception {
+        //given
+        CreateOrderRequest createOrderRequest =
+                getCreateOrderRequest(restaurantId, productId1, product1Price, productId2, product2Price, List.of(1L));
+        String token = buildToken(customerId, "access", issuer, Instant.now().plusSeconds(100000));
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/order")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .content(objectMapper.writeValueAsString(createOrderRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("Unexpected error"))
+                .andReturn();
+
+        assertThat(orderRepository.count()).isEqualTo(0L);
+    }
+
     private CreateOrderRequest getCreateOrderRequest(UUID restaurantId, UUID productId1, Money product1Price,
-                                                     UUID productId2, Money product2Price) {
+                                                     UUID productId2, Money product2Price, List<Long> couponIds) {
         return CreateOrderRequest.builder()
                 .restaurantId(restaurantId)
                 .address(OrderAddressRequest.builder()
@@ -218,7 +305,8 @@ class OrderControllerCreateOrderTest {
                         .city("city1")
                         .build())
                 .price(product2Price.multiply(2).getAmount().add(product1Price.getAmount()))
-                .items(List.of(OrderItemRequest.builder()
+                .items(List.of(
+                        OrderItemRequest.builder()
                                 .productId(productId1)
                                 .quantity(1)
                                 .price(product1Price.getAmount())
@@ -230,25 +318,13 @@ class OrderControllerCreateOrderTest {
                                 .price(product2Price.getAmount())
                                 .subTotal(product2Price.multiply(2).getAmount())
                                 .build()))
+                .couponId(couponIds)
                 .build();
     }
 
-    private CreateOrderRequest getCreateOrderRequest(UUID restaurantId, UUID productId1, Money product1Price) {
-        return CreateOrderRequest.builder()
-                .restaurantId(restaurantId)
-                .address(OrderAddressRequest.builder()
-                        .street("street1")
-                        .postalCode("123-78")
-                        .city("city1")
-                        .build())
-                .price(product1Price.getAmount())
-                .items(List.of(OrderItemRequest.builder()
-                        .productId(productId1)
-                        .quantity(1)
-                        .price(product1Price.getAmount())
-                        .subTotal(product1Price.getAmount())
-                        .build()))
-                .build();
+    private CreateOrderRequest getCreateOrderRequest(UUID restaurantId, UUID productId1, Money product1Price,
+                                                     UUID productId2, Money product2Price) {
+        return getCreateOrderRequest(restaurantId, productId1, product1Price, productId2, product2Price, null);
     }
 
     private String buildToken(UUID userId, String typ, String iss, Instant exp) {

@@ -1,7 +1,7 @@
 package com.orderingsystem.coupon.application.dto.response;
 
 import com.orderingsystem.coupon.domain.model.DiscountType;
-import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;

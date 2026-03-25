@@ -1,12 +1,15 @@
 package com.orderingsystem.order.application.mapper;
 
 import com.orderingsystem.common.domain.Money;
+import com.orderingsystem.common.domain.status.CouponActions;
 import com.orderingsystem.common.domain.status.PaymentOrderStatus;
 import com.orderingsystem.common.domain.status.RestaurantOrderStatus;
 import com.orderingsystem.order.application.dto.request.CreateOrderApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderAddressApplicationRequest;
 import com.orderingsystem.order.application.dto.request.OrderItemApplicationRequest;
+import com.orderingsystem.order.application.dto.request.ValidationCouponApplicationRequest;
 import com.orderingsystem.order.application.dto.response.CreateOrderResponse;
+import com.orderingsystem.order.application.outbox.coupon.model.OrderCouponEventPayload;
 import com.orderingsystem.order.application.outbox.payment.model.OrderPaymentEventPayload;
 import com.orderingsystem.order.application.outbox.product.model.OrderProductEventPayload;
 import com.orderingsystem.order.application.outbox.product.model.OrderProductEventProduct;
@@ -19,6 +22,7 @@ import com.orderingsystem.order.domain.event.OrderRejectedEvent;
 import com.orderingsystem.order.domain.model.Order;
 import com.orderingsystem.order.domain.model.OrderAddress;
 import com.orderingsystem.order.domain.model.OrderItem;
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -27,16 +31,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderDataMapper {
 
-    public Order createOrderRequestToOrder(CreateOrderApplicationRequest createOrderApplicationRequest,
+    public Order createOrderRequestToOrder(CreateOrderApplicationRequest request,
                                            UUID orderAddress) {
         Order order = Order.builder()
-                .customerId(createOrderApplicationRequest.getCustomerId())
-                .restaurantId(createOrderApplicationRequest.getRestaurantId())
+                .customerId(request.getCustomerId())
+                .restaurantId(request.getRestaurantId())
                 .address(orderAddress)
-                .price(new Money(createOrderApplicationRequest.getPrice()))
+                .price(new Money(request.getPrice()))
+                .couponIds(request.getCouponId())
                 .build();
 
-        List<OrderItem> items = orderItemsToOrderItemEntity(order, createOrderApplicationRequest.getItems());
+        List<OrderItem> items = orderItemsToOrderItemEntity(order, request.getItems());
         order.updateItems(items);
 
         return order;
@@ -71,10 +76,6 @@ public class OrderDataMapper {
                 .build();
     }
 
-    public List<UUID> itemsToItemIdList(List<OrderItemApplicationRequest> items) {
-        return items.stream().map(OrderItemApplicationRequest::getProductId).toList();
-    }
-
     public OrderPaymentEventPayload orderCreatedToOrderPaymentEventPayload(OrderCreateEvent orderCreateEvent,
                                                                            UUID sagaId) {
         return OrderPaymentEventPayload.builder()
@@ -82,6 +83,18 @@ public class OrderDataMapper {
                 .orderId(orderCreateEvent.getOrder().getId().toString())
                 .sagaId(sagaId.toString())
                 .price(orderCreateEvent.getOrder().getPrice().getAmount())
+                .createdAt(orderCreateEvent.getCreatedAt())
+                .paymentOrderStatus(PaymentOrderStatus.PENDING.name())
+                .build();
+    }
+
+    public OrderPaymentEventPayload orderCreatedToOrderPaymentEventPayload(OrderCreateEvent orderCreateEvent,
+                                                                           UUID sagaId, BigDecimal price) {
+        return OrderPaymentEventPayload.builder()
+                .customerId(orderCreateEvent.getOrder().getCustomerId().toString())
+                .orderId(orderCreateEvent.getOrder().getId().toString())
+                .sagaId(sagaId.toString())
+                .price(price)
                 .createdAt(orderCreateEvent.getCreatedAt())
                 .paymentOrderStatus(PaymentOrderStatus.PENDING.name())
                 .build();
@@ -101,6 +114,23 @@ public class OrderDataMapper {
                                 .build()).toList())
                 .price(orderPaidEvent.getOrder().getPrice().getAmount())
                 .createdAt(orderPaidEvent.getCreatedAt())
+                .build();
+    }
+
+    public RestaurantAcceptEventPayload orderToRestaurantAcceptEventPayload(
+            Order order, UUID sagaId) {
+        return RestaurantAcceptEventPayload.builder()
+                .orderId(order.getId().toString())
+                .restaurantId(order.getRestaurantId().toString())
+                .sagaId(sagaId.toString())
+                .restaurantOrderStatus(RestaurantOrderStatus.PAID.name())
+                .products(order.getItems().stream().map(orderItem ->
+                        RestaurantApprovalEventProduct.builder()
+                                .id(orderItem.getProductId().toString())
+                                .quantity(orderItem.getQuantity())
+                                .build()).toList())
+                .price(order.getPrice().getAmount())
+                .createdAt(ZonedDateTime.now())
                 .build();
     }
 
@@ -133,7 +163,8 @@ public class OrderDataMapper {
                 .build();
     }
 
-    public OrderPaymentEventPayload orderRejectedEventToOrderPaymentEventPayload(OrderRejectedEvent orderRejectedEvent, UUID sagaId) {
+    public OrderPaymentEventPayload orderRejectedEventToOrderPaymentEventPayload(OrderRejectedEvent orderRejectedEvent,
+                                                                                 UUID sagaId) {
         return OrderPaymentEventPayload.builder()
                 .orderId(orderRejectedEvent.getOrder().getId().toString())
                 .sagaId(sagaId.toString())
@@ -142,6 +173,53 @@ public class OrderDataMapper {
                 .createdAt(orderRejectedEvent.getCreatedAt())
                 .paymentOrderStatus(PaymentOrderStatus.CANCELLED.name())
                 .failureMessage(orderRejectedEvent.getOrder().getFailureMessageList())
+                .build();
+    }
+
+    public ValidationCouponApplicationRequest createOrderRequestToValidationCouponApplicationRequest(
+            CreateOrderApplicationRequest createOrderRequest) {
+        return ValidationCouponApplicationRequest.builder()
+                .customerId(createOrderRequest.getCustomerId())
+                .couponIds(createOrderRequest.getCouponId())
+                .totalOrderAmount(createOrderRequest.getPrice())
+                .build();
+    }
+
+    public OrderCouponEventPayload orderCreatedToOrderCouponEventPayload(OrderCreateEvent orderCreateEvent,
+                                                                         UUID sagaId, List<Long> couponId) {
+        List<String> couponIdString = couponId.stream().map(Object::toString).toList();
+
+        return OrderCouponEventPayload.builder()
+                .orderId(orderCreateEvent.getOrder().getId().toString())
+                .customerId(orderCreateEvent.getOrder().getCustomerId().toString())
+                .sagaId(sagaId.toString())
+                .issuedCouponId(couponIdString)
+                .createdAt(orderCreateEvent.getCreatedAt())
+                .failureMessage(orderCreateEvent.getOrder().getFailureMessageList())
+                .action(CouponActions.USE.name())
+                .build();
+    }
+
+    public OrderPaymentEventPayload orderToPaymentRollbackEventPayload(Order order, UUID sagaId) {
+        return OrderPaymentEventPayload.builder()
+                .orderId(order.getId().toString())
+                .sagaId(sagaId.toString())
+                .customerId(order.getCustomerId().toString())
+                .price(order.getPrice().getAmount())
+                .createdAt(ZonedDateTime.now())
+                .paymentOrderStatus(PaymentOrderStatus.CANCELLED.name())
+                .failureMessage(order.getFailureMessageList())
+                .build();
+    }
+
+    public OrderCouponEventPayload orderToCouponRollbackEventPayload(Order order, UUID sagaId) {
+        return OrderCouponEventPayload.builder()
+                .orderId(order.getId().toString())
+                .customerId(order.getCustomerId().toString())
+                .sagaId(sagaId.toString())
+                .createdAt(ZonedDateTime.now())
+                .failureMessage(order.getFailureMessageList())
+                .action(CouponActions.ROLLBACK.name())
                 .build();
     }
 }

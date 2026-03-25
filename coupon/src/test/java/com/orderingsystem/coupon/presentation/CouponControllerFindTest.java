@@ -13,7 +13,7 @@ import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
 import com.orderingsystem.coupon.domain.model.DiscountType;
 import com.orderingsystem.coupon.domain.model.IssuedCoupon;
-import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
 import java.math.BigDecimal;
@@ -45,6 +45,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
 
     @BeforeEach
     void setUp() {
+        LocalDateTime now = LocalDateTime.now();
+
         Coupon coupon1 = Coupon.builder()
                 .couponId(couponId1)
                 .name("쿠폰1")
@@ -52,8 +54,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .status(CouponStatus.ACTIVE)
                 .amountOff(BigDecimal.valueOf(1000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.now().minusDays(1))
-                .validUntil(LocalDateTime.now().plusDays(10))
+                .validFrom(now.minusDays(5))
+                .validUntil(now.plusDays(10))
                 .issueLimit(1000L)
                 .build();
 
@@ -65,8 +67,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .percentOff(10L)
                 .maxDiscountAmount(BigDecimal.valueOf(3000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.now().minusDays(10))
-                .validUntil(LocalDateTime.now().minusMinutes(1))
+                .validFrom(now.minusDays(20))
+                .validUntil(now.minusDays(1))
                 .issueLimit(1000L)
                 .build();
 
@@ -78,8 +80,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .percentOff(10L)
                 .maxDiscountAmount(BigDecimal.valueOf(3000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.now().plusDays(1))
-                .validUntil(LocalDateTime.now().plusDays(10))
+                .validFrom(now.minusDays(5))
+                .validUntil(now.plusDays(10))
                 .issueLimit(1000L)
                 .build();
 
@@ -91,8 +93,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .percentOff(10L)
                 .maxDiscountAmount(BigDecimal.valueOf(3000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
-                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .validFrom(now.minusDays(5))
+                .validUntil(now.plusDays(5))
                 .issueLimit(1000L)
                 .build();
 
@@ -102,36 +104,36 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .userId(userId)
                 .couponId(couponId1)
                 .status(IssuedCouponStatus.ISSUED)
-                .issuedAt(LocalDateTime.of(2025, 12, 10, 12, 12))
-                .expiredAt(LocalDateTime.of(2025, 12, 20, 12, 0))
+                .issuedAt(now.minusDays(1))
+                .expiredAt(now.plusDays(10))
                 .build();
 
         IssuedCoupon issuedCoupon2 = IssuedCoupon.builder()
                 .userId(userId)
                 .couponId(couponId2)
                 .status(IssuedCouponStatus.EXPIRED)
-                .issuedAt(LocalDateTime.of(2025, 12, 10, 12, 12))
-                .expiredAt(LocalDateTime.of(2025, 12, 20, 12, 0))
+                .issuedAt(now.minusDays(10))
+                .expiredAt(now.minusDays(1))
                 .build();
 
         IssuedCoupon issuedCoupon3 = IssuedCoupon.builder()
                 .userId(userId)
                 .couponId(couponId3)
                 .status(IssuedCouponStatus.USED)
-                .issuedAt(LocalDateTime.of(2025, 12, 10, 12, 12))
-                .expiredAt(LocalDateTime.of(2025, 12, 20, 12, 0))
+                .issuedAt(now.minusDays(2))
+                .expiredAt(now.plusDays(10))
                 .orderId(UUID.randomUUID())
-                .usedAt(LocalDateTime.of(2025, 12, 12, 12, 12))
+                .usedAt(now.minusDays(1))
                 .build();
 
         IssuedCoupon issuedCoupon4 = IssuedCoupon.builder()
                 .userId(UUID.randomUUID())
                 .couponId(couponId4)
                 .status(IssuedCouponStatus.ISSUED)
-                .issuedAt(LocalDateTime.of(2025, 12, 10, 12, 12))
-                .expiredAt(LocalDateTime.of(2025, 12, 20, 12, 0))
+                .issuedAt(now.minusDays(1))
+                .expiredAt(now.plusDays(10))
                 .orderId(UUID.randomUUID())
-                .usedAt(LocalDateTime.of(2025, 12, 12, 12, 12))
+                .usedAt(now.minusDays(1))
                 .build();
 
         issuedCouponRepository.saveAll(List.of(issuedCoupon1, issuedCoupon2, issuedCoupon3, issuedCoupon4));
@@ -314,6 +316,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
         //given
         String token = buildToken(userId);
 
+        LocalDateTime now = LocalDateTime.now().withNano(0);
+
         Coupon coupon = Coupon.builder()
                 .couponId(UUID.randomUUID())
                 .name("쿠폰")
@@ -321,8 +325,8 @@ class CouponControllerFindTest extends ControllerTestSupport {
                 .status(CouponStatus.ACTIVE)
                 .amountOff(BigDecimal.valueOf(1000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
-                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .validFrom(now.minusDays(5))
+                .validUntil(now.plusDays(10))
                 .issueLimit(1000L)
                 .build();
 

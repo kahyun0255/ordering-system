@@ -16,7 +16,7 @@ import com.orderingsystem.coupon.domain.model.Coupon;
 import com.orderingsystem.coupon.domain.model.CouponStatus;
 import com.orderingsystem.coupon.domain.model.DiscountType;
 import com.orderingsystem.coupon.domain.model.IssuedCoupon;
-import com.orderingsystem.coupon.domain.model.IssuedCouponStatus;
+import com.orderingsystem.common.domain.status.IssuedCouponStatus;
 import com.orderingsystem.coupon.domain.repository.CouponRepository;
 import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
 import java.math.BigDecimal;
@@ -132,6 +132,8 @@ class FindCouponServiceTest {
         UUID couponId1 = UUID.randomUUID();
         UUID couponId2 = UUID.randomUUID();
 
+        LocalDateTime now = LocalDateTime.now().withNano(0);
+
         Coupon coupon1 = Coupon.builder()
                 .couponId(couponId1)
                 .name("쿠폰1")
@@ -139,8 +141,8 @@ class FindCouponServiceTest {
                 .status(CouponStatus.ACTIVE)
                 .amountOff(BigDecimal.valueOf(1000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
-                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .validFrom(now.minusDays(5))
+                .validUntil(now.plusDays(10))
                 .issueLimit(1000L)
                 .build();
 
@@ -152,8 +154,8 @@ class FindCouponServiceTest {
                 .percentOff(10L)
                 .maxDiscountAmount(BigDecimal.valueOf(3000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
-                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .validFrom(now.minusDays(5))
+                .validUntil(now.plusDays(10))
                 .issueLimit(1000L)
                 .build();
 
@@ -207,6 +209,8 @@ class FindCouponServiceTest {
     @Test
     void shouldRetrieveCouponByCouponCode_whenValidCodeProvided() {
         //given
+        LocalDateTime now = LocalDateTime.now().withNano(0);
+
         Coupon coupon = Coupon.builder()
                 .couponId(UUID.randomUUID())
                 .name("쿠폰")
@@ -214,8 +218,8 @@ class FindCouponServiceTest {
                 .status(CouponStatus.ACTIVE)
                 .amountOff(BigDecimal.valueOf(1000))
                 .minDiscountAmount(BigDecimal.valueOf(10000))
-                .validFrom(LocalDateTime.of(2025, 12, 10, 12, 0))
-                .validUntil(LocalDateTime.of(2025, 12, 20, 0, 0))
+                .validFrom(now.minusDays(5))
+                .validUntil(now.plusDays(10))
                 .issueLimit(1000L)
                 .issuedCount(10L)
                 .build();

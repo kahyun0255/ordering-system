@@ -4,6 +4,7 @@ import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.order.application.dto.response.PaymentResponse;
 import com.orderingsystem.order.application.dto.response.RestaurantOrderDecisionResponse;
 import com.orderingsystem.order.application.mapper.OrderDataMapper;
+import com.orderingsystem.order.application.outbox.coupon.CouponOutboxHelper;
 import com.orderingsystem.order.application.outbox.payment.PaymentOutboxHelper;
 import com.orderingsystem.order.domain.event.OrderRejectedEvent;
 import com.orderingsystem.order.domain.exception.OrderNotFoundException;
@@ -28,6 +29,7 @@ public class OrderRestaurantApprovalService {
     private final ProcessedMessageRepository processedMessageRepository;
     private final PaymentOutboxHelper paymentOutboxHelper;
     private final OrderDataMapper orderDataMapper;
+    private final CouponOutboxHelper couponOutboxHelper;
 
     @Transactional
     public void approve(RestaurantOrderDecisionResponse response) {
@@ -67,6 +69,16 @@ public class OrderRestaurantApprovalService {
     @Transactional
     public void reject(PaymentResponse response) {
         Order order = findOrder(response.getOrderId());
+
+        SagaStatus sagaStatus = OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
+
+        couponOutboxHelper.saveCouponOutboxMessage(
+                orderDataMapper.orderToCouponRollbackEventPayload(order, response.getSagaId()),
+                order.getOrderStatus(),
+                sagaStatus,
+                response.getSagaId()
+        );
+
         order.reject();
         log.info("주문 reject 처리 완료. orderId : {}", response.getOrderId());
     }
