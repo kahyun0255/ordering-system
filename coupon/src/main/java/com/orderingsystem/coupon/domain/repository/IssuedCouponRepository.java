@@ -24,6 +24,8 @@ public interface IssuedCouponRepository extends JpaRepository<IssuedCoupon, Long
                       IssuedCouponStatus expectedStatus);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE IssuedCoupon ic SET ic.status = :status, ic.usedAt = NULL, ic.orderId = NULL WHERE ic.id IN :issuedCouponIds AND ic.status = :used")
-    int redeemCancelCoupons(IssuedCouponStatus status, List<Long> issuedCouponIds, IssuedCouponStatus used);
+    @Query("UPDATE IssuedCoupon ic SET ic.status = :updateStatus, ic.usedAt = NULL, ic.orderId = NULL WHERE ic.orderId IN :orderId AND ic.status = :used")
+    int redeemCancelCoupons(IssuedCouponStatus updateStatus, UUID orderId, IssuedCouponStatus used);
+
+    List<IssuedCoupon> findAllByOrderId(UUID orderId);
 }

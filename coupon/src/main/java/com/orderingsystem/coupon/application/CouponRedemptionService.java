@@ -11,6 +11,7 @@ import com.orderingsystem.coupon.domain.repository.IssuedCouponRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -98,24 +99,20 @@ public class CouponRedemptionService {
 
     @Transactional
     public void cancelRedemption(CouponRequest request) {
-        log.info("쿠폰 사용 취소 처리 시작. Order Id : [{}], Issued Coupon Id : [{}], User Id : [{}]",
-                request.getOrderId(), request.getIssuedCouponIds().toString(), request.getUserId());
+        UUID orderId = request.getOrderId();
 
-        List<IssuedCoupon> issuedCoupons = issuedCouponRepository.findAllById(request.getIssuedCouponIds());
+        log.info("쿠폰 사용 취소 처리 시작. Order Id : [{}], User Id : [{}]", orderId, request.getUserId());
+
+        List<IssuedCoupon> issuedCoupons = issuedCouponRepository.findAllByOrderId(orderId);
 
         validCancelRedemptionCoupons(request, issuedCoupons);
-        int updatedCount = executeCancelRedemption(request);
+        int updatedCount = executeCancelRedemption(request, issuedCoupons.size());
 
-        log.info("쿠폰 사용 취소 처리 완료. OrderId: [{}], Success: [{}]", request.getOrderId(), (updatedCount > 0));
+        log.info("쿠폰 사용 취소 처리 완료. UserId : [{}] ,CouponId : [{}], OrderId: [{}], Success: [{}]", request.getUserId(),
+                issuedCoupons.toString(), orderId, (updatedCount > 0));
     }
 
     private void validCancelRedemptionCoupons(CouponRequest request, List<IssuedCoupon> issuedCoupons) {
-        if (issuedCoupons.size() != request.getIssuedCouponIds().size()) {
-            log.info("존재하지 않는 쿠폰이 포함된 사용 취소 요청. User Id : [{}], Coupon Ids : [{}]",
-                    request.getUserId(), request.getIssuedCouponIds().toString());
-            throw new CouponApplicationException("취소를 요청한 쿠폰 중 존재하지 않는 쿠폰이 포함되어 있습니다.");
-        }
-
         List<Long> invalidCouponIds = issuedCoupons.stream()
                 .filter(ic -> !request.getOrderId().equals(ic.getOrderId())
                         || ic.getDisplayStatus() != IssuedCouponStatus.USED)
@@ -131,11 +128,11 @@ public class CouponRedemptionService {
         }
     }
 
-    private int executeCancelRedemption(CouponRequest request) {
+    private int executeCancelRedemption(CouponRequest request, int updateCouponCnt) {
         int updatedCount = issuedCouponRepository.redeemCancelCoupons(IssuedCouponStatus.ISSUED,
-                request.getIssuedCouponIds(), IssuedCouponStatus.USED);
+                request.getOrderId(), IssuedCouponStatus.USED);
 
-        if (updatedCount != request.getIssuedCouponIds().size()) {
+        if (updatedCount != updateCouponCnt) {
             log.error("쿠폰 취소 동시성 이슈 발생 또는 상태 불일치. Request Count : [{}], Updated Count : [{}], Order Id : [{}], "
                             + "User Id : [{}], Coupon Id : [{}]",
                     request.getIssuedCouponIds().size(), updatedCount, request.getOrderId(), request.getUserId(),
