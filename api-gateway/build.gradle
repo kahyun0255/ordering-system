@@ -24,12 +24,16 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // Gateway
-    implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+    implementation 'org.springframework.cloud:spring-cloud-starter-gateway:4.3.3'
 
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly  'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly  'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 
     implementation(project(':common')){
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'

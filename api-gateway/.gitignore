@@ -35,3 +35,17 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### ds_store ###
+.DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
+
+### env value ###
+.env
+
+application.yml
+src/main/resources/application.yml
+src/main/resources/application-test.yml
+src/main/resources/
