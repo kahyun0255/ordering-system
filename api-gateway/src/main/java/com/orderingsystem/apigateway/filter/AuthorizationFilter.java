@@ -5,6 +5,7 @@ import com.orderingsystem.common.util.CommonJwtUtil;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -21,10 +22,21 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
 
     private final CommonJwtUtil commonJwtUtil;
 
+    @Value("${path.sign-in}")
+    private String signInPath;
+
+    @Value("${path.sign-up}")
+    private String signUpPath;
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
+
+        if (path.contains(signInPath) || path.contains(signUpPath)){
+            log.info("로그인/회원가입 요청  Path : [{}]", path);
+            return chain.filter(exchange);
+        }
 
         String authHeader = request.getHeaders().getFirst("Authorization");
         UserType role = commonJwtUtil.getUserRoleFromToken(authHeader);
