@@ -39,6 +39,14 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
         }
 
         String authHeader = request.getHeaders().getFirst("Authorization");
+
+
+        if (authHeader == null || !authHeader.startsWith("Bearer")){
+            log.info("인증 토큰이 없습니다. Path : [{}]", path);
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+
         UserType role = commonJwtUtil.getUserRoleFromToken(authHeader);
         UUID userId = commonJwtUtil.getUserIdFromToken(authHeader);
 
