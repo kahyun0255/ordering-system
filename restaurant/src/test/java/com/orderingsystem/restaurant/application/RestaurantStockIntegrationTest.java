@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -167,7 +168,8 @@ public class RestaurantStockIntegrationTest {
 
         //when, then
         assertThatThrownBy(() -> inventoryFacade.reserve(productId, 5, sagaId))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(InvalidDataAccessApiUsageException.class)
+                .hasRootCauseInstanceOf(IllegalStateException.class)
                 .hasMessage("재고 부족");
     }
 

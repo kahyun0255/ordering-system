@@ -25,7 +25,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
+@Transactional
 class ProductFacadeCreateTest extends ApplicationTestSupport {
 
     @Autowired
@@ -67,6 +69,7 @@ class ProductFacadeCreateTest extends ApplicationTestSupport {
         restaurantRepository.deleteAllInBatch();
         ownerRepository.deleteAllInBatch();
         restaurantOwnershipRepository.deleteAllInBatch();
+        productRepository.deleteAllInBatch();
     }
 
     @DisplayName("레스토랑의 소유자일경우 관리자 승인 대기, 영업 전, 영업 중, 일시 휴업 상태의 레스토랑에 상품 추가가 가능하다.")

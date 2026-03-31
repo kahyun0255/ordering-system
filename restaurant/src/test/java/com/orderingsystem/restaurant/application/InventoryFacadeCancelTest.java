@@ -99,6 +99,8 @@ class InventoryFacadeCancelTest {
         redisTemplate.delete(reserveKey + productId);
         redisTemplate.delete(confirmedKey + orderId);
         redisTemplate.delete(historyKey + sagaId);
+        productRepository.deleteAllInBatch();
+        orderApprovalRepository.deleteAllInBatch();
     }
 
     @DisplayName("주문 취소시 주문이 완료된 경우, Redis 및 DB 재고가 복구된다.")

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -103,7 +104,8 @@ class RedisStockRepositoryTest {
 
         //when, then
         assertThatThrownBy(() -> redisStockRepository.reserve(productId, 5, sagaId))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(InvalidDataAccessApiUsageException.class)
+                .hasRootCauseInstanceOf(IllegalStateException.class)
                 .hasMessage("재고 부족");
     }
 
@@ -202,7 +204,8 @@ class RedisStockRepositoryTest {
 
         //when, then
         assertThatThrownBy(() -> redisStockRepository.confirm(history, sagaId, orderId))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(InvalidDataAccessApiUsageException.class)
+                .hasRootCauseInstanceOf(IllegalStateException.class)
                 .hasMessage("재고 데이터가 존재하지 않습니다. [" + missingProductId + "]");
     }
 
@@ -260,7 +263,8 @@ class RedisStockRepositoryTest {
     void testUpdateNegativeStock() {
         //when, then
         assertThatThrownBy(() -> redisStockRepository.update(productId, -1))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InvalidDataAccessApiUsageException.class)
+                .hasRootCauseInstanceOf(IllegalArgumentException.class)
                 .hasMessage("재고 수량은 음수가 될 수 없습니다.");
     }
 
@@ -269,7 +273,8 @@ class RedisStockRepositoryTest {
     void testUpdateNullProductId() {
         //when, then
         assertThatThrownBy(() -> redisStockRepository.update(null, 10))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InvalidDataAccessApiUsageException.class)
+                .hasRootCauseInstanceOf(IllegalArgumentException.class)
                 .hasMessage("상품 id는 null이 불가능합니다.");
     }
 
