@@ -1,6 +1,7 @@
 package com.orderingsystem.restaurant.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.restaurant.domain.repository.OwnerRepository;
 import com.orderingsystem.restaurant.domain.repository.ProductRepository;
 import com.orderingsystem.restaurant.domain.repository.RestaurantOwnershipRepository;
@@ -82,6 +83,21 @@ public abstract class ControllerTestSupport {
                 .subject(userId.toString())
                 .issuer(issuer)
                 .claim("userId", userId.toString())
+                .claim("typ", "access")
+                .expiration(Date.from(Instant.now().plusSeconds(10000)))
+                .issuedAt(new Date())
+                .signWith(key, SIG.HS256)
+                .compact();
+    }
+
+    protected String buildToken(UUID userId, UserType userType) {
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
+
+        return Jwts.builder()
+                .subject(userId.toString())
+                .issuer(issuer)
+                .claim("userId", userId.toString())
+                .claim("role", userType.name())
                 .claim("typ", "access")
                 .expiration(Date.from(Instant.now().plusSeconds(10000)))
                 .issuedAt(new Date())

@@ -64,4 +64,8 @@ public class Restaurant extends AggregateRoot {
 
         this.status = status;
     }
+
+    public void updateStatusByAdmin(RestaurantStatus status) {
+        this.status = status;
+    }
 }
