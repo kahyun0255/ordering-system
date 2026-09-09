@@ -69,7 +69,8 @@ class OrderCouponServiceTest {
         given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(sagaId, SagaStatus.STARTED))
                 .willReturn(Optional.of(couponOutbox));
 
-        Order order = createOrder(orderId, OrderStatus.PAID);
+        Order order = createOrder(orderId, OrderStatus.PENDING);
+        order.pay();
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
         given(processedMessageRepository.insertIgnore(any(), any(), any())).willReturn(1);

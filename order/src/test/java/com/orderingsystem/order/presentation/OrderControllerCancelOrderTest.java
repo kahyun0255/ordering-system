@@ -109,7 +109,7 @@ class OrderControllerCancelOrderTest {
 
         //when
         mockMvc.perform(
-                        post("/api/order/" + order.getTrackingId() + "/cancel")
+                        post("/api/orders/" + order.getTrackingId() + "/cancel")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNoContent());
@@ -157,7 +157,7 @@ class OrderControllerCancelOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order/" + order.getTrackingId() + "/cancel")
+                        post("/api/orders/" + order.getTrackingId() + "/cancel")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isBadRequest())
@@ -203,7 +203,7 @@ class OrderControllerCancelOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order/" + order.getTrackingId() + "/cancel")
+                        post("/api/orders/" + order.getTrackingId() + "/cancel")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound())
@@ -223,7 +223,7 @@ class OrderControllerCancelOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order/" + UUID.randomUUID() + "/cancel")
+                        post("/api/orders/" + UUID.randomUUID() + "/cancel")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound())
@@ -257,7 +257,7 @@ class OrderControllerCancelOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order/" + order.getTrackingId() + "/cancel")
+                        post("/api/orders/" + order.getTrackingId() + "/cancel")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isForbidden())
