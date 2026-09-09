@@ -18,6 +18,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -71,6 +72,9 @@ public class Order extends AggregateRoot {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "json")
     private List<Long> couponIds;
+
+    @Version
+    private Long version;
 
     @Override
     public boolean equals(Object o) {
