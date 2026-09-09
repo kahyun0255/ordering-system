@@ -19,6 +19,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -75,6 +76,9 @@ public class Order extends AggregateRoot {
 
     @Version
     private Long version;
+
+    private Instant paymentCompletedAt;
+    private Instant couponCompletedAt;
 
     @Override
     public boolean equals(Object o) {
@@ -155,6 +159,7 @@ public class Order extends AggregateRoot {
             throw new OrderDomainException("결제를 진행할 수 없는 주문 상태입니다.");
         }
         orderStatus = OrderStatus.PAID;
+        this.paymentCompletedAt = Instant.now();
 
         return new OrderPaidEvent(this, ZonedDateTime.now());
     }
@@ -238,6 +243,18 @@ public class Order extends AggregateRoot {
 
     public boolean hasCoupon() {
         return !(this.couponIds == null || this.couponIds.isEmpty());
+    }
+
+    public boolean isPaymentCompleted() {
+        return paymentCompletedAt != null;
+    }
+
+    public boolean isCouponCompleted() {
+        return couponCompletedAt != null;
+    }
+
+    public void couponCompleted() {
+        couponCompletedAt = Instant.now();
     }
 
 }

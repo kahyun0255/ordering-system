@@ -69,9 +69,10 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
         }
 
         updateCouponOutboxMessage(couponOutboxMessage, SagaStatus.SUCCEEDED, order.getOrderStatus());
+        order.couponCompleted();
 
-        if (order.getOrderStatus().equals(OrderStatus.PAID)) {
-            log.info("주문 결제 및 쿠폰 완료. OrderId : [{}], SagaId : [{}]", orderId, sagaId);
+        if (order.isPaymentCompleted()) {
+            log.info("주문 결제 및 쿠폰 처리 완료. OrderId : [{}], SagaId : [{}]", orderId, sagaId);
 
             SagaStatus sagaStatus =
                     OrderStatusToSagaStatus.orderStatusToSagaStatus(order.getOrderStatus());
