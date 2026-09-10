@@ -78,8 +78,8 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
                 OrderStatusToSagaStatus.orderStatusToSagaStatus(orderPaidEvent.getOrder().getOrderStatus());
 
         if (hasCoupon) {
-            if (couponOutboxHelper.isCouponProcessed(paymentResponse.getSagaId())) {
-                log.info("주문 결제 및 쿠폰 완료. OrderId : [{}], SagaId : [{}]",
+            if (order.isCouponCompleted()) {
+                log.info("주문 결제 및 쿠폰 처리 완료. OrderId : [{}], SagaId : [{}]",
                         paymentResponse.getOrderId(), paymentResponse.getSagaId());
                 sendToRestaurant(paymentResponse.getSagaId(), orderPaidEvent, sagaStatus, paymentOutboxMessage);
             } else {

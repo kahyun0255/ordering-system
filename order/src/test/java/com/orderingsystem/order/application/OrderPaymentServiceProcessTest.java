@@ -127,8 +127,9 @@ class OrderPaymentServiceProcessTest {
     @Test
     void process_proceed_when_coupon_processed() {
         //given
-        saveOrder(OrderStatus.PENDING, List.of(1L));
+        Order order = saveOrder(OrderStatus.PENDING, List.of(1L));
         saveCouponOutbox(SagaStatus.SUCCEEDED);
+        order.couponCompleted();
 
         PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
 
@@ -136,8 +137,8 @@ class OrderPaymentServiceProcessTest {
         orderPaymentService.process(paymentResponse);
 
         //then
-        Optional<Order> order = orderRepository.findById(orderId);
-        assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.PAID);
+        Optional<Order> afterOrder = orderRepository.findById(orderId);
+        assertThat(afterOrder.get().getOrderStatus()).isEqualTo(OrderStatus.PAID);
 
         assertThat(restaurantAcceptOutboxRepository.count()).isEqualTo(1);
     }
@@ -286,8 +287,8 @@ class OrderPaymentServiceProcessTest {
                 .build();
     }
 
-    private void saveOrder(OrderStatus orderStatus, List<Long> couponIds) {
-        orderRepository.save(Order.builder()
+    private Order saveOrder(OrderStatus orderStatus, List<Long> couponIds) {
+        return orderRepository.save(Order.builder()
                 .id(orderId)
                 .customerId(customerId)
                 .restaurantId(restaurantId)

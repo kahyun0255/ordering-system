@@ -113,7 +113,7 @@ class OrderControllerCreateOrderTest {
 
         //when
         MvcResult mvcResult = mockMvc.perform(
-                        post("/api/order")
+                        post("/api/orders")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -148,7 +148,7 @@ class OrderControllerCreateOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order")
+                        post("/api/orders")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -175,7 +175,7 @@ class OrderControllerCreateOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order")
+                        post("/api/orders")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -206,7 +206,7 @@ class OrderControllerCreateOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order")
+                        post("/api/orders")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -235,7 +235,7 @@ class OrderControllerCreateOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order")
+                        post("/api/orders")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -258,7 +258,7 @@ class OrderControllerCreateOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order")
+                        post("/api/orders")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -282,7 +282,7 @@ class OrderControllerCreateOrderTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/order")
+                        post("/api/orders")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .content(objectMapper.writeValueAsString(createOrderRequest))
                                 .contentType(MediaType.APPLICATION_JSON)

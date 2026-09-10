@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.common.domain.status.DebeziumOp;
 import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.kafka.KafkaConsumer;
-import com.orderingsystem.order.application.OrderPaymentService;
+import com.orderingsystem.order.application.OrderPaymentSagaCoordinator;
 import com.orderingsystem.order.application.OrderRestaurantApprovalService;
 import com.orderingsystem.order.application.exception.OrderApplicationException;
 import com.orderingsystem.order.infra.kafka.message.PaymentResponseDebeziumMessage;
@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
 
     private final ObjectMapper objectMapper;
-    private final OrderPaymentService orderPaymentService;
+    private final OrderPaymentSagaCoordinator orderPaymentSagaCoordinator;
     private final OrderRestaurantApprovalService orderRestaurantApprovalService;
 
     @Override
@@ -59,15 +59,15 @@ public class PaymentResponseKafkaListener implements KafkaConsumer<String> {
 
                     if (PaymentStatus.COMPLETED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                         log.info("결제 완료. order Id : {}", paymentResponseMessage.getOrderId());
-                        orderPaymentService.process(paymentResponseMessage.toPaymentResponse(
+                        orderPaymentSagaCoordinator.process(paymentResponseMessage.toPaymentResponse(
                                 UUID.fromString(debeziumMessage.getAfter().getId())));
                     } else if (PaymentStatus.CANCELLED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                         log.info("결제 취소. order Id : {}", paymentResponseMessage.getOrderId());
-                        orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse(
+                        orderPaymentSagaCoordinator.rollback(paymentResponseMessage.toPaymentResponse(
                                 UUID.fromString(debeziumMessage.getAfter().getId())));
                     } else if (PaymentStatus.FAILED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                         log.info("결제 실패. order Id : {}", paymentResponseMessage.getOrderId());
-                        orderPaymentService.rollback(paymentResponseMessage.toPaymentResponse(
+                        orderPaymentSagaCoordinator.rollback(paymentResponseMessage.toPaymentResponse(
                                 UUID.fromString(debeziumMessage.getAfter().getId())));
                     } else if (PaymentStatus.REFUNDED.name().equals(paymentResponseMessage.getPaymentStatus())) {
                         orderRestaurantApprovalService.reject(paymentResponseMessage.toPaymentResponse(
