@@ -66,7 +66,7 @@ class CreditControllerWithdrawTest extends ControllerTestSupport {
         CreditRequest request = CreditRequest.builder().amount(BigDecimal.valueOf(100)).build();
 
         //when, then
-        mockMvc.perform(post("/api/accounts/withdraw")
+        mockMvc.perform(post("/api/payments/accounts/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
@@ -90,7 +90,7 @@ class CreditControllerWithdrawTest extends ControllerTestSupport {
         CreditRequest request = CreditRequest.builder().amount(BigDecimal.valueOf(10000)).build();
 
         //when, then
-        mockMvc.perform(post("/api/accounts/withdraw")
+        mockMvc.perform(post("/api/payments/accounts/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
@@ -128,7 +128,7 @@ class CreditControllerWithdrawTest extends ControllerTestSupport {
         CreditRequest request = CreditRequest.builder().amount(BigDecimal.valueOf(1000)).build();
 
         //when, then
-        mockMvc.perform(post("/api/accounts/withdraw")
+        mockMvc.perform(post("/api/payments/accounts/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
@@ -171,7 +171,7 @@ class CreditControllerWithdrawTest extends ControllerTestSupport {
         CreditRequest request = CreditRequest.builder().amount(BigDecimal.valueOf(10000)).build();
 
         //when, then
-        mockMvc.perform(post("/api/accounts/withdraw")
+        mockMvc.perform(post("/api/payments/accounts/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
@@ -214,7 +214,7 @@ class CreditControllerWithdrawTest extends ControllerTestSupport {
         CreditRequest request = CreditRequest.builder().amount(null).build();
 
         //when, then
-        mockMvc.perform(post("/api/accounts/withdraw")
+        mockMvc.perform(post("/api/payments/accounts/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
@@ -257,7 +257,7 @@ class CreditControllerWithdrawTest extends ControllerTestSupport {
         CreditRequest request = CreditRequest.builder().amount(BigDecimal.valueOf(0)).build();
 
         //when, then
-        mockMvc.perform(post("/api/accounts/withdraw")
+        mockMvc.perform(post("/api/payments/accounts/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
@@ -300,7 +300,7 @@ class CreditControllerWithdrawTest extends ControllerTestSupport {
         CreditRequest request = CreditRequest.builder().amount(BigDecimal.valueOf(-1)).build();
 
         //when, then
-        mockMvc.perform(post("/api/accounts/withdraw")
+        mockMvc.perform(post("/api/payments/accounts/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
