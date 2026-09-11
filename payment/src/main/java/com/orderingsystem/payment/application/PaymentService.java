@@ -98,17 +98,17 @@ public class PaymentService {
         List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
         List<String> failureMessages = new ArrayList<>();
 
-        PaymentEvent paymentEvent = null;
-
-        if (orderStatus.equals(OrderStatus.CANCELLING)) {
-            paymentEvent = paymentValidateAndCancelService.validateAndCancel(payment, creditEntry,
-                    creditHistories, failureMessages);
-
-
-        } else if (orderStatus.equals(OrderStatus.REJECTING)) {
-            paymentEvent = paymentValidateAndCancelService.validateAndRefund(payment, creditEntry,
-                    creditHistories, failureMessages);
-        }
+        PaymentEvent paymentEvent = switch (orderStatus) {
+            case CANCELLING -> paymentValidateAndCancelService.validateAndCancel(payment, creditEntry, creditHistories,
+                    failureMessages);
+            case REJECTING -> paymentValidateAndCancelService.validateAndRefund(payment, creditEntry, creditHistories,
+                    failureMessages);
+            default -> {
+                log.info("결제 취소 처리를 할 수 없는 주문 상태입니다. Order Id : [{}], Order Status : [{}]", paymentRequest.getOrderId(),
+                        orderStatus);
+                throw new PaymentApplicationException("결제 취소 처리를 할 수 없는 주문 상태입니다.");
+            }
+        };
 
         if (failureMessages.isEmpty()) {
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
