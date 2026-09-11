@@ -110,11 +110,7 @@ public class PaymentService {
             }
         };
 
-        if (failureMessages.isEmpty()) {
-            creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
-        }
-
-        persistCancelDataBase(payment, creditHistories, failureMessages);
+        persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages);
 
         orderOutboxHelper.saveOrderOutboxMessage(
                 paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(),
@@ -176,22 +172,22 @@ public class PaymentService {
 
     private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry, CreditInfo creditInfo,
                                          List<CreditHistory> creditHistories,
-                                         List<String> failureMassages, Money price) {
+                                         List<String> failureMessages, Money price) {
         paymentRepository.save(payment);
-        if (failureMassages.isEmpty()) {
-            if (creditInfo.getTotalCreditAmount().equals(creditEntry.getTotalCreditAmount().subtract(price))) {
-                creditEntry.subtractCreditAmount(price);
-                creditEntryRepository.save(creditEntry);
-            }
+        if (failureMessages.isEmpty()) {
+            creditEntry.subtractCreditAmount(price);
+            creditEntryRepository.save(creditEntry);
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
         }
     }
 
-    private void persistCancelDataBase(Payment payment, List<CreditHistory> creditHistories,
-                                       List<String> failureMassages) {
+    private void persistCancelDataBase(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
+                                       List<String> failureMessages) {
         paymentRepository.save(payment);
-        if (failureMassages.isEmpty()) {
+        if (failureMessages.isEmpty()) {
+            creditEntryRepository.save(creditEntry);
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
         }
     }
+
 }
