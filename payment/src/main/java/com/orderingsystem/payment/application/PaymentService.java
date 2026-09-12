@@ -73,7 +73,7 @@ public class PaymentService {
         PaymentEvent paymentEvent = paymentValidateAndInitiateService.validateAndInitiate(payment, creditInfo,
                 creditHistories, failureMessages, paymentRequest);
 
-        persistCompleteDataBase(payment, creditEntry, creditInfo, creditHistories, failureMessages, payment.getPrice());
+        persistCompleteDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
                 paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(),
@@ -170,7 +170,7 @@ public class PaymentService {
         return creditHistories;
     }
 
-    private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry, CreditInfo creditInfo,
+    private void persistCompleteDataBase(Payment payment, CreditEntry creditEntry,
                                          List<CreditHistory> creditHistories,
                                          List<String> failureMessages, Money price) {
         paymentRepository.save(payment);
