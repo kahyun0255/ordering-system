@@ -184,7 +184,7 @@ class PaymentServiceCancelTest {
                 .build();
 
         processedMessageRepository.save(ProcessedMessage.builder()
-                        .messageId(paymentRequest.getId())
+                        .messageId(paymentRequest.getSagaId())
                         .messageType(MessageType.CANCEL_PAYMENT)
                         .processedAt(ZonedDateTime.now())
                 .build());

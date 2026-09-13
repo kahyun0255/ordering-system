@@ -36,6 +36,7 @@ public class PaymentValidateAndCancelService {
         return paymentCancelledEvent;
     }
 
+    @Transactional
     public PaymentEvent validateAndRefund(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
                                           List<String> failureMessages) {
         payment.validatePayment(failureMessages);

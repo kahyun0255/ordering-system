@@ -43,7 +43,7 @@ class CreditControllerGetBalanceTest extends ControllerTestSupport {
 
         //when, then
         mockMvc.perform(
-                        get("/api/accounts/balance")
+                        get("/api/payments/accounts/balance")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.balance").value(10000));
@@ -59,7 +59,7 @@ class CreditControllerGetBalanceTest extends ControllerTestSupport {
 
         //when, then
         mockMvc.perform(
-                        get("/api/accounts/balance")
+                        get("/api/payments/accounts/balance")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("Not Found"))

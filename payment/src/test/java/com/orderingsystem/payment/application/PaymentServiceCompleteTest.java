@@ -336,7 +336,7 @@ class PaymentServiceCompleteTest {
                 .build();
 
         processedMessageRepository.save(ProcessedMessage.builder()
-                .messageId(paymentRequest.getId())
+                .messageId(paymentRequest.getSagaId())
                 .messageType(MessageType.COMPLETE_PAYMENT)
                 .processedAt(ZonedDateTime.now())
                 .build());
