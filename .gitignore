@@ -47,3 +47,7 @@ out/
 
 application.yml
 src/main/resources/application.yml
+
+CLAUDE.md
+CLAUDE.local.md
+.claude/
