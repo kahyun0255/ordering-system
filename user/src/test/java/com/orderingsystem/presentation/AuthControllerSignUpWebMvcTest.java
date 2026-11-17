@@ -13,6 +13,7 @@ import com.orderingsystem.application.AuthFacade;
 import com.orderingsystem.application.dto.response.TokenResponse;
 import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.common.domain.status.UserType;
+import com.orderingsystem.domain.exception.UserDomainException;
 import com.orderingsystem.presentation.request.SignUpRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,7 +60,7 @@ class AuthControllerSignUpWebMvcTest {
         given(authFacade.signUp(any())).willReturn(tokenResponse);
 
         //when, then
-        mockMvc.perform(post("/api/auth/sign-up")
+        mockMvc.perform(post("/api/users/auth/sign-up")
                         .content(objectMapper.writeValueAsString(signUpRequest))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -79,7 +80,7 @@ class AuthControllerSignUpWebMvcTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -100,7 +101,7 @@ class AuthControllerSignUpWebMvcTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -121,7 +122,7 @@ class AuthControllerSignUpWebMvcTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -129,6 +130,25 @@ class AuthControllerSignUpWebMvcTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("Conflict"))
                 .andExpect(jsonPath("$.message").value("이미 존재하는 이메일입니다."));
+    }
+
+    @DisplayName("관리자 type으로 회원가입 할 경우, 400 예외가 발생한다.")
+    @Test
+    void shouldReturn400_whenSigningUpWithAdminType() throws Exception {
+        //given
+        SignUpRequest request = getSignUpRequest();
+
+        doThrow(new UserDomainException("관리자 계정은 회원가입으로 생성할 수 없습니다."))
+                .when(authFacade).signUp(any());
+
+        //when, then
+        mockMvc.perform(post("/api/users/auth/sign-up")
+                        .content(objectMapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("관리자 계정은 회원가입으로 생성할 수 없습니다."));
     }
 
     private SignUpRequest getSignUpRequest() {

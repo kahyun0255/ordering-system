@@ -9,8 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderingsystem.application.dto.response.TokenResponse;
-import com.orderingsystem.domain.model.User;
 import com.orderingsystem.common.domain.status.UserType;
+import com.orderingsystem.domain.model.User;
+import com.orderingsystem.domain.model.UserStatus;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
@@ -87,6 +88,7 @@ class AuthControllerSignInTest {
                 .username("테스트유저")
                 .type(UserType.CUSTOMER)
                 .phoneNumber("010-1234-5678")
+                .status(UserStatus.ACTIVE)
                 .build();
 
         String refreshToken = jwtUtil.createRefreshToken(user);
@@ -105,7 +107,7 @@ class AuthControllerSignInTest {
 
         //when
         MvcResult mvcResult = mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -142,7 +144,7 @@ class AuthControllerSignInTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -165,7 +167,7 @@ class AuthControllerSignInTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -196,6 +198,7 @@ class AuthControllerSignInTest {
                 .username("테스트유저2")
                 .type(UserType.CUSTOMER)
                 .phoneNumber("010-1234-5678")
+                .status(UserStatus.ACTIVE)
                 .build();
 
         userRepository.save(user);
@@ -204,7 +207,7 @@ class AuthControllerSignInTest {
 
         //when
         String json = mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -217,6 +220,42 @@ class AuthControllerSignInTest {
 
         String storedRefreshToken = refreshTokenRepository.findByUserId(userId);
         assertThat(storedRefreshToken).isEqualTo(tokenResponse.getRefreshToken());
+    }
+
+    @DisplayName("탈퇴한 사용자는 로그인에 실패하고 RefreshToken 쿠키가 발급되지 않는다.")
+    @Test
+    void failToSignIn_whenUserIsWithdrawn() throws Exception {
+        //given
+        UUID withdrawnUserId = UUID.randomUUID();
+        String withdrawnId = "withdrawnId";
+
+        userRepository.save(User.builder()
+                .userId(withdrawnUserId)
+                .id(withdrawnId)
+                .password(passwordEncoder.encode(password))
+                .email("withdrawn@test.com")
+                .nickname("탈퇴유저")
+                .username("탈퇴유저")
+                .type(UserType.CUSTOMER)
+                .phoneNumber("010-1234-5678")
+                .status(UserStatus.WITHDRAWN)
+                .build());
+
+        SignInRequest signInRequest = getSignInRequest(withdrawnId, password);
+
+        //when, then
+        mockMvc.perform(
+                        post("/api/users/auth/sign-in")
+                                .content(objectMapper.writeValueAsString(signInRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").value("탈퇴했거나 사용할 수 없는 계정입니다."))
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+
+        assertThat(refreshTokenRepository.findByUserId(withdrawnUserId)).isNull();
     }
 
     private SignInRequest getSignInRequest(String id, String password) {

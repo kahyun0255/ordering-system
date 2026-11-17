@@ -60,7 +60,7 @@ class AuthControllerSignUpTest {
 
         //when
         String json = mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -96,7 +96,7 @@ class AuthControllerSignUpTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -130,7 +130,7 @@ class AuthControllerSignUpTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -159,7 +159,7 @@ class AuthControllerSignUpTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -188,7 +188,7 @@ class AuthControllerSignUpTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -196,6 +196,34 @@ class AuthControllerSignUpTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("Conflict"))
                 .andExpect(jsonPath("$.message").value("이미 존재하는 이메일입니다."));
+    }
+
+    @DisplayName("관리자 유형으로 회원가입 할 경우, 회원가입에 실패한다.")
+    @Test
+    void shouldFailToSignUp_whenUserTypeIsAdmin() throws Exception {
+        //given
+        SignUpRequest signUpRequest = SignUpRequest.builder()
+                .username("테스트 유저")
+                .id("testId")
+                .password("password1234")
+                .email("test@test.com")
+                .nickname("테스트유저")
+                .phoneNumber("010-1234-5678")
+                .type(UserType.ADMIN)
+                .build();
+
+        //when, then
+        mockMvc.perform(
+                post("/api/users/auth/sign-up")
+                        .content(objectMapper.writeValueAsString(signUpRequest))
+                        .contentType(MediaType.APPLICATION_JSON)
+        )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("관리자 계정은 회원가입으로 생성할 수 없습니다."));
+
+        assertThat(userRepository.count()).isZero();
+        assertThat(userOutboxRepository.count()).isZero();
     }
 
     private SignUpRequest getSignUpRequest() {

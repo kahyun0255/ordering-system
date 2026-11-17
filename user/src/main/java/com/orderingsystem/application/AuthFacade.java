@@ -7,6 +7,7 @@ import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.common.util.CommonJwtUtil;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.model.User;
+import com.orderingsystem.domain.model.UserStatus;
 import com.orderingsystem.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -42,6 +43,10 @@ public class AuthFacade {
         User user = userService.findUser(signInApplicationRequest.getId());
         userService.verifyPassword(signInApplicationRequest.getPassword(), user.getPassword());
 
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new InvalidCredentialsException("탈퇴했거나 사용할 수 없는 계정입니다.");
+        }
+
         String newRefreshToken = jwtUtil.createRefreshToken(user);
         refreshTokenService.updateToken(user.getUserId(), newRefreshToken);
 
@@ -59,6 +64,10 @@ public class AuthFacade {
             Claims claims = jwtUtil.getClaims(refreshToken);
             String userId = claims.getSubject();
             User user = userService.findUserByUserId(UUID.fromString(userId));
+
+            if (user.getStatus() != UserStatus.ACTIVE) {
+                throw new InvalidCredentialsException("탈퇴했거나 사용할 수 없는 계정입니다.");
+            }
 
             String findRefreshToken = refreshTokenService.findRefreshToken(user.getUserId());
             if (!refreshToken.equals(findRefreshToken)) {

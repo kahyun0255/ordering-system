@@ -63,7 +63,7 @@ class AuthControllerSignInWebMvcTest {
         given(authFacade.signIn(any())).willReturn(tokenResponse);
 
         //when, then
-        mockMvc.perform(post("/api/auth/sign-in")
+        mockMvc.perform(post("/api/users/auth/sign-in")
                         .content(objectMapper.writeValueAsString(signInRequest))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -82,7 +82,7 @@ class AuthControllerSignInWebMvcTest {
                 .willThrow(new InvalidCredentialsException("비밀번호가 일치하지 않습니다."));
 
         // when, then
-        mockMvc.perform(post("/api/auth/sign-in")
+        mockMvc.perform(post("/api/users/auth/sign-in")
                         .content(objectMapper.writeValueAsString(signInRequest))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -102,7 +102,7 @@ class AuthControllerSignInWebMvcTest {
                 .willThrow(new UserNotFoundException("존재하지 않는 사용자입니다."));
 
         // when, then
-        mockMvc.perform(post("/api/auth/sign-in")
+        mockMvc.perform(post("/api/users/auth/sign-in")
                         .content(objectMapper.writeValueAsString(signInRequest))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
