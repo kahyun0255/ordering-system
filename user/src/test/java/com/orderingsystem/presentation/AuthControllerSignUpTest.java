@@ -60,7 +60,7 @@ class AuthControllerSignUpTest {
 
         //when
         String json = mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -96,7 +96,7 @@ class AuthControllerSignUpTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -130,7 +130,7 @@ class AuthControllerSignUpTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -159,7 +159,7 @@ class AuthControllerSignUpTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -188,7 +188,7 @@ class AuthControllerSignUpTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )

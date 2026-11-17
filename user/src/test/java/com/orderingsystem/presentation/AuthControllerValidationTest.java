@@ -59,7 +59,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -82,7 +82,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -108,7 +108,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -133,7 +133,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -159,7 +159,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -188,7 +188,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -214,7 +214,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -239,7 +239,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -265,7 +265,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -294,7 +294,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -320,7 +320,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -345,7 +345,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -371,7 +371,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -397,7 +397,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -422,7 +422,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -448,7 +448,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -477,7 +477,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -503,7 +503,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -529,7 +529,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -555,7 +555,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -581,7 +581,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -601,7 +601,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -622,7 +622,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -642,7 +642,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -663,7 +663,7 @@ class AuthControllerValidationTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )

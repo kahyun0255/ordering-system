@@ -105,7 +105,7 @@ class AuthControllerSignInTest {
 
         //when
         MvcResult mvcResult = mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -142,7 +142,7 @@ class AuthControllerSignInTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -165,7 +165,7 @@ class AuthControllerSignInTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -204,7 +204,7 @@ class AuthControllerSignInTest {
 
         //when
         String json = mockMvc.perform(
-                        post("/api/auth/sign-in")
+                        post("/api/users/auth/sign-in")
                                 .content(objectMapper.writeValueAsString(signInRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )

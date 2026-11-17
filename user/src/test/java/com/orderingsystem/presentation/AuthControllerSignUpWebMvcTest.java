@@ -60,7 +60,7 @@ class AuthControllerSignUpWebMvcTest {
         given(authFacade.signUp(any())).willReturn(tokenResponse);
 
         //when, then
-        mockMvc.perform(post("/api/auth/sign-up")
+        mockMvc.perform(post("/api/users/auth/sign-up")
                         .content(objectMapper.writeValueAsString(signUpRequest))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -80,7 +80,7 @@ class AuthControllerSignUpWebMvcTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -101,7 +101,7 @@ class AuthControllerSignUpWebMvcTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -122,7 +122,7 @@ class AuthControllerSignUpWebMvcTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/sign-up")
+                        post("/api/users/auth/sign-up")
                                 .content(objectMapper.writeValueAsString(signUpRequest))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -142,7 +142,7 @@ class AuthControllerSignUpWebMvcTest {
                 .when(authFacade).signUp(any());
 
         //when, then
-        mockMvc.perform(post("/api/auth/sign-up")
+        mockMvc.perform(post("/api/users/auth/sign-up")
                         .content(objectMapper.writeValueAsString(request))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())

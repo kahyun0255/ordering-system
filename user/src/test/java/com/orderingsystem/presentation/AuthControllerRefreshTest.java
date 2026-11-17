@@ -119,7 +119,7 @@ class AuthControllerRefreshTest {
 
         //when
         MvcResult mvcResult = mockMvc.perform(
-                        post("/api/auth/refresh")
+                        post("/api/users/auth/refresh")
                                 .cookie(new Cookie("refreshToken", refreshToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -155,7 +155,7 @@ class AuthControllerRefreshTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/refresh")
+                        post("/api/users/auth/refresh")
                                 .cookie(new Cookie("refreshToken", token))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -174,7 +174,7 @@ class AuthControllerRefreshTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/refresh")
+                        post("/api/users/auth/refresh")
                                 .cookie(new Cookie("refreshToken", token))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -193,7 +193,7 @@ class AuthControllerRefreshTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/refresh")
+                        post("/api/users/auth/refresh")
                                 .cookie(new Cookie("refreshToken", token))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -212,7 +212,7 @@ class AuthControllerRefreshTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/refresh")
+                        post("/api/users/auth/refresh")
                                 .cookie(new Cookie("refreshToken", tampered))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -242,7 +242,7 @@ class AuthControllerRefreshTest {
 
         //when, then
         mockMvc.perform(
-                        post("/api/auth/refresh")
+                        post("/api/users/auth/refresh")
                                 .cookie(new Cookie("refreshToken", refreshToken))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
