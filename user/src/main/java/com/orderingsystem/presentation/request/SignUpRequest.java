@@ -4,6 +4,7 @@ import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
 import com.orderingsystem.common.domain.status.UserType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -35,6 +36,7 @@ public class SignUpRequest {
     @Pattern(regexp = "^$|^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$", message = "유효한 휴대폰 번호 형식이 아닙니다.")
     private String phoneNumber;
 
+    @NotNull(message = "회원 유형은 생략이 불가능합니다.")
     private UserType type;
 
     public SignUpApplicationRequest toSignUpApplicationRequest(){

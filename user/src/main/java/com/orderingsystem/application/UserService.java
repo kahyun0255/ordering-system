@@ -5,9 +5,11 @@ import com.orderingsystem.application.dto.request.UpdateUserApplicationRequest;
 import com.orderingsystem.application.dto.response.UserProfileResponse;
 import com.orderingsystem.application.mapper.UserDataMapper;
 import com.orderingsystem.application.outbox.UserOutboxHelper;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.event.UserDeletedEvent;
+import com.orderingsystem.domain.exception.UserDomainException;
 import com.orderingsystem.domain.exception.UserNotFoundException;
 import com.orderingsystem.domain.model.User;
 import com.orderingsystem.domain.model.UserStatus;
@@ -132,6 +134,11 @@ public class UserService {
     }
 
     private void validSignUp(SignUpApplicationRequest signUpApplicationRequest) {
+        if (UserType.ADMIN.equals(signUpApplicationRequest.getType())) {
+            log.warn("관리자 권한 회원가입 시도 차단. loginId={}", signUpApplicationRequest.getId());
+            throw new UserDomainException("관리자 계정은 회원가입으로 생성할 수 없습니다.");
+        }
+
         boolean existsById = userRepository.existsById(signUpApplicationRequest.getId());
         if (existsById) {
             throw new DuplicateKeyException("이미 존재하는 아이디입니다.");

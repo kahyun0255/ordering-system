@@ -4,6 +4,7 @@ import com.orderingsystem.common.domain.AggregateRoot;
 import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.domain.event.UserCreatedEvent;
 import com.orderingsystem.domain.event.UserDeletedEvent;
+import com.orderingsystem.domain.exception.UserDomainException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -62,7 +63,12 @@ public class User extends AggregateRoot {
         return new UserDeletedEvent(this, ZonedDateTime.now());
     }
 
-    public static UserCreatedEvent createUser(String id, String username, UserType type, String password, String email, String nickname, String phoneNumber){
+    public static UserCreatedEvent createUser(String id, String username, UserType type, String password, String email,
+                                              String nickname, String phoneNumber) {
+        if (type.equals(UserType.ADMIN)) {
+            throw new UserDomainException("관리자 계정은 회원가입으로 생성할 수 없습니다.");
+        }
+
         User user = User.builder()
                 .userId(UUID.randomUUID())
                 .id(id)
@@ -77,4 +83,5 @@ public class User extends AggregateRoot {
 
         return new UserCreatedEvent(user, ZonedDateTime.now());
     }
+
 }

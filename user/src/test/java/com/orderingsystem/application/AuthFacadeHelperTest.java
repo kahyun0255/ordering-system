@@ -10,10 +10,11 @@ import static org.mockito.Mockito.never;
 import com.orderingsystem.application.dto.request.SignUpApplicationRequest;
 import com.orderingsystem.application.mapper.UserDataMapper;
 import com.orderingsystem.application.outbox.UserOutboxHelper;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.event.UserCreatedEvent;
+import com.orderingsystem.domain.exception.UserDomainException;
 import com.orderingsystem.domain.model.User;
-import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.domain.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -126,6 +127,30 @@ class AuthFacadeHelperTest {
         assertThatThrownBy(() -> userService.verifyPassword("testpassword1234", "testpassword12345"))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("비밀번호가 일치하지 않습니다.");
+    }
+
+    @DisplayName("관리자 유형으로 회원가입 하면 예외가 발생한다.")
+    @Test
+    void shouldThrowException_whenSigningUpAsAdmin() {
+        //given
+        SignUpApplicationRequest request = SignUpApplicationRequest.builder()
+                .username("테스트 유저")
+                .id("test")
+                .password("password1234")
+                .email("test@test.com")
+                .nickname("테스트트")
+                .phoneNumber("010-1234-5678")
+                .type(UserType.ADMIN)
+                .build();
+
+        //when, then
+        assertThatThrownBy(()-> userService.persistUser(request))
+                .isInstanceOf(UserDomainException.class)
+                .hasMessage("관리자 계정은 회원가입으로 생성할 수 없습니다.");
+
+        then(userRepository).shouldHaveNoInteractions();
+        then(bCryptPasswordEncoder).shouldHaveNoInteractions();
+        then(userOutboxHelper).shouldHaveNoInteractions();
     }
 
     private SignUpApplicationRequest getSignUpApplicationRequest() {
