@@ -4,9 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.orderingsystem.application.dto.response.TokenResponse;
+import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.domain.model.User;
-import com.orderingsystem.common.domain.status.UserType;
+import com.orderingsystem.domain.model.UserStatus;
 import com.orderingsystem.domain.repository.RefreshTokenRepository;
 import com.orderingsystem.domain.repository.UserRepository;
 import com.orderingsystem.domain.repository.outbox.UserOutboxRepository;
@@ -89,6 +90,7 @@ class AuthFacadeRotateRefreshTokenTest {
                 .username("테스트유저")
                 .type(UserType.CUSTOMER)
                 .phoneNumber("010-1234-5678")
+                .status(UserStatus.ACTIVE)
                 .build();
 
         refreshToken = jwtUtil.createRefreshToken(user);
@@ -184,6 +186,7 @@ class AuthFacadeRotateRefreshTokenTest {
                 .username("테스트유저")
                 .type(UserType.CUSTOMER)
                 .phoneNumber("010-1234-5678")
+                .status(UserStatus.ACTIVE)
                 .build();
 
         String refreshToken = jwtUtil.createRefreshToken(user);
@@ -192,6 +195,35 @@ class AuthFacadeRotateRefreshTokenTest {
         assertThatThrownBy(() -> authFacade.rotateRefreshAndIssueAccess(refreshToken))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Refresh Token이 일치하지 않습니다.");
+    }
+
+    @DisplayName("탈퇴한 사용자는 유효한 RefreshToken이 있어도 재발급에 실패한다.")
+    @Test
+    void failToReissueTokens_whenUserIsWithdrawn() {
+        //given
+        UUID withdrawnUserId = UUID.randomUUID();
+        User withdrawnUser = User.builder()
+                .userId(withdrawnUserId)
+                .id("withdrawnId")
+                .password(passwordEncoder.encode(password))
+                .email("withdrawn@test.com")
+                .nickname("탈퇴유저")
+                .username("탈퇴유저")
+                .type(UserType.CUSTOMER)
+                .phoneNumber("010-1234-5678")
+                .status(UserStatus.WITHDRAWN)
+                .build();
+        userRepository.save(withdrawnUser);
+
+        String withdrawnRefreshToken = jwtUtil.createRefreshToken(withdrawnUser);
+        refreshTokenRepository.save(withdrawnUserId, withdrawnRefreshToken, refreshTokenTtl);
+
+        //when, then
+        assertThatThrownBy(() -> authFacade.rotateRefreshAndIssueAccess(withdrawnRefreshToken))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessage("탈퇴했거나 사용할 수 없는 계정입니다.");
+
+        assertThat(refreshTokenRepository.findByUserId(withdrawnUserId)).isEqualTo(withdrawnRefreshToken);
     }
 
     private String buildToken(String typ, String iss, Instant exp) {
