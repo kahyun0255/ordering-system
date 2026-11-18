@@ -54,7 +54,10 @@ public class OrderApprovalService {
 
     private OrderApproval getOrderApproval(UUID restaurantId, UUID orderId){
         return orderApprovalRepository.findByOrderIdAndRestaurantId(orderId, restaurantId)
-                .orElseThrow(() -> new RestaurantNotFoundException("주문 내역을 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    log.warn("[{}] 레스토랑에서 [{}] 주문 내역을 찾을 수 없습니다.", restaurantId, orderId);
+                    return new RestaurantNotFoundException("주문 내역을 찾을 수 없습니다.");
+                });
     }
 
 }
