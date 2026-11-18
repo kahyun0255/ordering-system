@@ -331,7 +331,8 @@ class OrderControllerRejectTest extends ControllerTestSupport {
     @DisplayName("주문 상태가 DECLINED, APPROVED, REJECTED 상태라면 주문 거절에 실패하고  400을 반환한다.")
     @ParameterizedTest(name = "[{index}] 주문 상태 : {0}")
     @MethodSource("provideFinalOrderStatuses")
-    void shouldReturn400_whenOrderStatusIsNotRejectable(String status, OrderApprovalStatus orderApprovalStatus) throws Exception {
+    void shouldReturn400_whenOrderStatusIsNotRejectable(String status, OrderApprovalStatus orderApprovalStatus)
+            throws Exception {
         //given
         restaurantOwnershipRepository.save(RestaurantOwnership.builder()
                 .ownerId(ownerId)
@@ -369,6 +370,51 @@ class OrderControllerRejectTest extends ControllerTestSupport {
                 Arguments.of("REJECTED", OrderApprovalStatus.REJECTED),
                 Arguments.of("APPROVED", OrderApprovalStatus.APPROVED)
         );
+    }
+
+    @DisplayName("내 레스토랑 경로로 다른 레스토랑의 주문을 거절하면 404를 반환하고 주문 상태와 재고는 변하지 않는다.")
+    @Test
+    void shouldReturn404_whenRejectingOrderOfOtherRestaurant() throws Exception {
+        //given
+        UUID attackerRestaurantId = UUID.randomUUID();
+        UUID attackerOwnerId = UUID.randomUUID();
+
+        restaurantRepository.save(Restaurant.builder()
+                .restaurantId(attackerRestaurantId)
+                .name("공격자 레스토랑")
+                .status(RestaurantStatus.ACTIVE)
+                .build());
+        ownerRepository.save(Owner.builder()
+                .userId(attackerOwnerId)
+                .name("공격자")
+                .build());
+        restaurantOwnershipRepository.save(RestaurantOwnership.builder()
+                .ownerId(attackerOwnerId)
+                .restaurantId(attackerRestaurantId)
+                .build());
+
+        String token = buildToken(attackerOwnerId);
+
+        //when
+        mockMvc.perform(
+                        post("/api/restaurants/" + attackerRestaurantId + "/orders/" + orderId + "/reject")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("주문 내역을 찾을 수 없습니다."));
+
+        //then
+        Optional<OrderApproval> afterOrderApproval = orderApprovalRepository.findByOrderId(orderId);
+        assertThat(afterOrderApproval).isPresent();
+        assertThat(afterOrderApproval.get().getStatus()).isEqualTo(OrderApprovalStatus.ACCEPTED);
+
+        assertThat(productRepository.findById(productId1).get().getQuantity()).isEqualTo(10);
+        assertThat(productRepository.findById(productId2).get().getQuantity()).isEqualTo(20);
+        assertThat(redisTemplate.opsForValue().get(stockKey + productId1)).isEqualTo("10");
+        assertThat(redisTemplate.opsForValue().get(stockKey + productId2)).isEqualTo("20");
+
+        assertThat(orderOutboxRepository.count()).isZero();
     }
 
 }

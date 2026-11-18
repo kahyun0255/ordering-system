@@ -38,7 +38,7 @@ public class OrderApprovalFacade {
     }
 
     public void reject(UUID orderId, UUID restaurantId, UUID ownerId) {
-        log.info("[{}] 유저가 [{}] 레스토랑의 [{}] 주문을 거절.", ownerId, restaurantId, ownerId);
+        log.info("[{}] 유저가 [{}] 레스토랑의 [{}] 주문 거절 처리 시작.", ownerId, restaurantId, orderId);
 
         if (!restaurantAccessValidatorService.isRestaurantOwnership(ownerId, restaurantId)) {
             throw new AccessDeniedException("해당 레스토랑의 주문을 거절할 권한이 없습니다.");

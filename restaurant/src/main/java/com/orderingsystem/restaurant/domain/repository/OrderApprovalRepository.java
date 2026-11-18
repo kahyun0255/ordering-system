@@ -19,4 +19,6 @@ public interface OrderApprovalRepository extends JpaRepository<OrderApproval, UU
 
     Page<OrderApproval> findByRestaurantIdAndStatus(UUID restaurantId, OrderApprovalStatus statusEnum,
                                                     Pageable pageable);
+
+    Optional<OrderApproval> findByOrderIdAndRestaurantId(UUID orderId, UUID restaurantId);
 }
