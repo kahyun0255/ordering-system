@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 import com.orderingsystem.common.domain.status.OrderApprovalStatus;
 import com.orderingsystem.restaurant.application.mapper.RestaurantDataMapper;
@@ -50,7 +50,8 @@ class OrderApprovalServiceTest {
         OrderApproval orderApproval = mock(OrderApproval.class);
         OrderApprovedEvent orderApprovedEvent = mock(OrderApprovedEvent.class);
 
-        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.of(orderApproval));
+        given(orderApprovalRepository.findByOrderIdAndRestaurantId(orderId, restaurantId))
+                .willReturn(Optional.of(orderApproval));
         given(orderApproval.approval()).willReturn(orderApprovedEvent);
         given(orderApprovedEvent.getOrderApproval()).willReturn(orderApproval);
         given(orderApproval.getStatus()).willReturn(OrderApprovalStatus.APPROVED);
@@ -59,9 +60,10 @@ class OrderApprovalServiceTest {
         orderApprovalService.approval(restaurantId, orderId, ownerId);
 
         //then
-        verify(orderApprovalRepository).findByOrderId(orderId);
-        verify(orderApproval).approval();
-        verify(orderOutboxHelper).saveOrderOutboxMessage(any(), eq(OrderApprovalStatus.APPROVED), any(UUID.class));
+        then(orderApprovalRepository).should().findByOrderIdAndRestaurantId(orderId, restaurantId);
+        then(orderApproval).should().approval();
+        then(orderOutboxHelper).should()
+                .saveOrderOutboxMessage(any(), eq(OrderApprovalStatus.APPROVED), any(UUID.class));
     }
 
     @DisplayName("주문 승인시 주문이 존재하지 않으면 예외가 발생한다.")
@@ -72,7 +74,8 @@ class OrderApprovalServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
 
-        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.empty());
+        given(orderApprovalRepository.findByOrderIdAndRestaurantId(orderId, restaurantId))
+                .willReturn(Optional.empty());
 
         //when, then
         assertThatThrownBy(() -> orderApprovalService.approval(restaurantId, orderId, ownerId))
@@ -80,7 +83,7 @@ class OrderApprovalServiceTest {
                 .hasMessage("주문 내역을 찾을 수 없습니다.");
     }
 
-    @DisplayName("주문이 존재하면 주문이 거절된다.")
+    @DisplayName("해당 레스토랑의 주문이 존재하면 주문이 거절된다.")
     @Test
     void shouldRejectOrder_whenOrderExists() {
         //given
@@ -91,7 +94,8 @@ class OrderApprovalServiceTest {
         OrderApproval orderApproval = mock(OrderApproval.class);
         OrderRejectedEvent orderRejectedEvent = mock(OrderRejectedEvent.class);
 
-        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.of(orderApproval));
+        given(orderApprovalRepository.findByOrderIdAndRestaurantId(orderId, restaurantId))
+                .willReturn(Optional.of(orderApproval));
         given(orderApproval.reject()).willReturn(orderRejectedEvent);
         given(orderRejectedEvent.getOrderApproval()).willReturn(orderApproval);
         given(orderApproval.getStatus()).willReturn(OrderApprovalStatus.REJECTED);
@@ -100,9 +104,10 @@ class OrderApprovalServiceTest {
         orderApprovalService.reject(restaurantId, orderId, ownerId);
 
         //then
-        verify(orderApprovalRepository).findByOrderId(orderId);
-        verify(orderApproval).reject();
-        verify(orderOutboxHelper).saveOrderOutboxMessage(any(), eq(OrderApprovalStatus.REJECTED), any(UUID.class));
+        then(orderApprovalRepository).should().findByOrderIdAndRestaurantId(orderId, restaurantId);
+        then(orderApproval).should().reject();
+        then(orderOutboxHelper).should()
+                .saveOrderOutboxMessage(any(), eq(OrderApprovalStatus.REJECTED), any(UUID.class));
     }
 
     @DisplayName("주문 거절시 주문이 존재하지 않으면 예외가 발생한다.")
@@ -113,7 +118,8 @@ class OrderApprovalServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
 
-        given(orderApprovalRepository.findByOrderId(orderId)).willReturn(Optional.empty());
+        given(orderApprovalRepository.findByOrderIdAndRestaurantId(orderId, restaurantId))
+                .willReturn(Optional.empty());
 
         //when, then
         assertThatThrownBy(() -> orderApprovalService.reject(restaurantId, orderId, ownerId))

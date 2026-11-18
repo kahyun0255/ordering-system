@@ -335,4 +335,61 @@ class OrderControllerApproveTest extends ControllerTestSupport {
         assertThat(orderOutboxRepository.count()).isZero();
     }
 
+    @DisplayName("내 레스토랑 경로로 다른 레스토랑의 주문을 승인하면 404를 반환하고 주문 상태는 변하지 않는다.")
+    @Test
+    void shouldReturn404_whenApprovingOrderOfOtherRestaurant() throws Exception {
+        //given
+        Restaurant myRestaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .name("내 레스토랑")
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+        Restaurant otherRestaurant = Restaurant.builder()
+                .restaurantId(UUID.randomUUID())
+                .name("다른 레스토랑")
+                .status(RestaurantStatus.ACTIVE)
+                .build();
+        restaurantRepository.save(myRestaurant);
+        restaurantRepository.save(otherRestaurant);
+
+        Owner owner = Owner.builder()
+                .userId(UUID.randomUUID())
+                .name("소유자")
+                .build();
+        ownerRepository.save(owner);
+
+        restaurantOwnershipRepository.save(RestaurantOwnership.builder()
+                .restaurantId(myRestaurant.getRestaurantId())
+                .ownerId(owner.getUserId())
+                .build());
+
+        OrderApproval otherOrderApproval = OrderApproval.builder()
+                .id(UUID.randomUUID())
+                .orderId(UUID.randomUUID())
+                .status(OrderApprovalStatus.ACCEPTED)
+                .restaurantId(otherRestaurant.getRestaurantId())
+                .build();
+        orderApprovalRepository.save(otherOrderApproval);
+
+        String token = buildToken(owner.getUserId());
+
+        //when
+        mockMvc.perform(
+                        post("/api/restaurants/" + myRestaurant.getRestaurantId() + "/orders/" + otherOrderApproval.getOrderId()
+                                + "/approve")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("주문 내역을 찾을 수 없습니다."));
+
+        //then
+        Optional<OrderApproval> after = orderApprovalRepository.findById(otherOrderApproval.getId());
+        assertThat(after).isPresent();
+        assertThat(after.get().getStatus()).isEqualTo(OrderApprovalStatus.ACCEPTED);
+
+        assertThat(orderOutboxRepository.count()).isZero();
+    }
+
 }

@@ -24,7 +24,7 @@ public class OrderApprovalService {
 
     @Transactional
     public void approval(UUID restaurantId, UUID orderId, UUID ownerId) {
-        OrderApproval orderApproval = getOrderApproval(orderId);
+        OrderApproval orderApproval = getOrderApproval(restaurantId, orderId);
         OrderApprovedEvent orderApprovedEvent = orderApproval.approval();
 
         UUID sagaId = UUID.randomUUID();
@@ -39,7 +39,7 @@ public class OrderApprovalService {
 
     @Transactional
     public void reject(UUID restaurantId, UUID orderId, UUID ownerId) {
-        OrderApproval orderApproval = getOrderApproval(orderId);
+        OrderApproval orderApproval = getOrderApproval(restaurantId, orderId);
         OrderRejectedEvent orderRejectedEvent = orderApproval.reject();
 
         UUID sagaId = UUID.randomUUID();
@@ -52,8 +52,8 @@ public class OrderApprovalService {
         log.info("[{}] 유저가 [{}] 레스토랑의 [{}] 주문 거절 완료.", ownerId, restaurantId, orderId);
     }
 
-    private OrderApproval getOrderApproval(UUID orderId){
-        return orderApprovalRepository.findByOrderId(orderId)
+    private OrderApproval getOrderApproval(UUID restaurantId, UUID orderId){
+        return orderApprovalRepository.findByOrderIdAndRestaurantId(orderId, restaurantId)
                 .orElseThrow(() -> new RestaurantNotFoundException("주문 내역을 찾을 수 없습니다."));
     }
 
