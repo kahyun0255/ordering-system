@@ -43,9 +43,13 @@ public class OrderController {
     }
 
     @GetMapping("/{trackingId}")
-    public ResponseEntity<OrderStatusResponse> getOrderByTrackingId(@PathVariable UUID trackingId) {
+    public ResponseEntity<OrderStatusResponse> getOrderByTrackingId(@PathVariable UUID trackingId,
+                                                                    @RequestHeader("Authorization") String authorizationHeader) {
         log.info("주문 추적 시작 : {}", trackingId);
-        return ResponseEntity.ok(orderTrackingService.trackOrder(trackingId));
+
+        UUID customerId = commonJwtUtil.getUserIdFromToken(authorizationHeader);
+
+        return ResponseEntity.ok(orderTrackingService.trackOrder(trackingId, customerId));
     }
 
     @PostMapping("/{trackingId}/cancel")
