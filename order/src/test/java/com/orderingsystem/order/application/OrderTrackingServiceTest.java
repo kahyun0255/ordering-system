@@ -30,29 +30,20 @@ class OrderTrackingServiceTest {
     @Autowired
     private OrderRepository orderRepository;
 
-    @DisplayName("Tracking Id로 주문 상태 조회에 성공한다.")
+    @DisplayName("주문자가 Tracking Id로 조회하면 주문 상태 조회에 성공한다.")
     @Test
-    void trackOrder () {
+    void shouldReturnOrderStatus_whenCustomerTracksOwnOrder() {
         //given
         OrderStatus orderStatus = OrderStatus.PENDING;
         UUID trackingId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
         String failureMessage = "실패했습니다,금액이 일치하지 않습니다";
-        List<String> failureMessages = List.of("실패했습니다","금액이 일치하지 않습니다");
+        List<String> failureMessages = List.of("실패했습니다", "금액이 일치하지 않습니다");
 
-        orderRepository.save(Order.builder()
-                .id(UUID.randomUUID())
-                .customerId(UUID.randomUUID())
-                .restaurantId(UUID.randomUUID())
-                .trackingId(trackingId)
-                .address(UUID.randomUUID())
-                .price(new Money(new BigDecimal("20.00")))
-                .items(List.of())
-                .orderStatus(orderStatus)
-                .failureMessages(failureMessage)
-                .build());
+        orderRepository.save(createOrder(trackingId, customerId, orderStatus, failureMessage));
 
         //when
-        OrderStatusResponse response = orderTrackingService.trackOrder(trackingId);
+        OrderStatusResponse response = orderTrackingService.trackOrder(trackingId, customerId);
 
         //then
         assertThat(response.getOrderStatus()).isEqualTo(orderStatus);
@@ -60,15 +51,46 @@ class OrderTrackingServiceTest {
         assertThat(response.getFailureMessages()).isEqualTo(failureMessages);
     }
 
-    @DisplayName("Tracking Id에 대힌 주문 정보가 존재하지 않으면 예외가 발생한다.")
+    @DisplayName("Tracking Id에 대한 주문 정보가 존재하지 않으면 예외가 발생한다.")
     @Test
-    void notFoundOrder() {
+    void shouldThrowOrderNotFoundException_whenOrderDoesNotExist() {
         //given
         UUID trackingId = UUID.randomUUID();
 
         //when, then
-        assertThatThrownBy(()-> orderTrackingService.trackOrder(trackingId))
+        assertThatThrownBy(() -> orderTrackingService.trackOrder(trackingId, UUID.randomUUID()))
                 .isInstanceOf(OrderNotFoundException.class)
-                .hasMessage("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : " + trackingId);
+                .hasMessage("trackingId에 대한 주문을 찾을 수 없습니다.");
     }
+
+    @DisplayName("주문자가 아닌 유저가 Tracking Id로 조회하면 예외가 발생한다.")
+    @Test
+    void shouldThrowOrderNotFoundException_whenUserIsNotOrderer() {
+        //given
+        UUID trackingId = UUID.randomUUID();
+        UUID ordererId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+
+        orderRepository.save(createOrder(trackingId, ordererId, OrderStatus.PENDING, null));
+
+        //when, then
+        assertThatThrownBy(() -> orderTrackingService.trackOrder(trackingId, otherUserId))
+                .isInstanceOf(OrderNotFoundException.class)
+                .hasMessage("trackingId에 대한 주문을 찾을 수 없습니다.");
+    }
+
+    private Order createOrder(UUID trackingId, UUID customerId, OrderStatus orderStatus, String failureMessage) {
+        return Order.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .restaurantId(UUID.randomUUID())
+                .trackingId(trackingId)
+                .address(UUID.randomUUID())
+                .price(new Money(new BigDecimal("20.00")))
+                .items(List.of())
+                .orderStatus(orderStatus)
+                .failureMessages(failureMessage)
+                .build();
+    }
+
 }

@@ -8,5 +8,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
+
     Optional<Order> findByTrackingId(UUID trackingId);
+
+    Optional<Order> findByTrackingIdAndCustomerId(UUID trackingId, UUID customerId);
+
 }

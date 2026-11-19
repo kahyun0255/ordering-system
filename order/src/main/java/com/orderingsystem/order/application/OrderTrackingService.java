@@ -19,13 +19,14 @@ public class OrderTrackingService {
     private final OrderRepository orderRepository;
 
     @Transactional(readOnly = true)
-    public OrderStatusResponse trackOrder(UUID trackingId) {
-        Optional<Order> order = orderRepository.findByTrackingId(trackingId);
+    public OrderStatusResponse trackOrder(UUID trackingId, UUID customerId) {
+        Optional<Order> order = orderRepository.findByTrackingIdAndCustomerId(trackingId, customerId);
 
         if (order.isEmpty()) {
-            log.warn("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : {}", trackingId);
-            throw new OrderNotFoundException("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : " + trackingId);
+            log.warn("trackingId에 대한 주문을 찾을 수 없습니다. trackingId : [{}], customerId : [{}]", trackingId, customerId);
+            throw new OrderNotFoundException("trackingId에 대한 주문을 찾을 수 없습니다.");
         }
+
         return OrderStatusResponse.builder()
                 .orderTrackingId(order.get().getTrackingId())
                 .orderStatus(order.get().getOrderStatus())
