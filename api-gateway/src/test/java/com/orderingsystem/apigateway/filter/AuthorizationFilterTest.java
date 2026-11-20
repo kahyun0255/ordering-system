@@ -30,6 +30,7 @@ class AuthorizationFilterTest {
 
     private static final String SIGN_IN_PATH = "/api/users/auth/sign-in";
     private static final String SIGN_UP_PATH = "/api/users/auth/sign-up";
+    private static final String REFRESH_PATH = "/api/users/auth/refresh";
 
     @Mock
     private CommonJwtUtil commonJwtUtil;
@@ -44,6 +45,7 @@ class AuthorizationFilterTest {
         authorizationFilter = new AuthorizationFilter(commonJwtUtil);
         ReflectionTestUtils.setField(authorizationFilter, "signInPath", SIGN_IN_PATH);
         ReflectionTestUtils.setField(authorizationFilter, "signUpPath", SIGN_UP_PATH);
+        ReflectionTestUtils.setField(authorizationFilter, "refreshPath", REFRESH_PATH);
     }
 
     private ServerWebExchange exchangeFor(String path, String authHeader) {

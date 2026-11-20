@@ -33,6 +33,9 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
     @Value("${path.sign-up}")
     private String signUpPath;
 
+    @Value("${path.refresh}")
+    private String refreshPath;
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
@@ -40,7 +43,7 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
         PathContainer pathContainer = request.getPath().pathWithinApplication();
 
         if (isPermitAllPath(pathContainer)) {
-            log.info("로그인/회원가입 요청  Path : [{}]", path);
+            log.info("인증 없이 허용된 요청. Path : [{}]", path);
             return chain.filter(exchange);
         }
 
@@ -66,7 +69,7 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isPermitAllPath(PathContainer path) {
-        return matches(signInPath, path) || matches(signUpPath, path);
+        return matches(signInPath, path) || matches(signUpPath, path) || matches(refreshPath, path);
     }
 
     private boolean isAdminPath(PathContainer path) {
