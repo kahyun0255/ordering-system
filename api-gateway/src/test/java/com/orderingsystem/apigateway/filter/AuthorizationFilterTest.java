@@ -143,7 +143,7 @@ class AuthorizationFilterTest {
         void shouldPass_whenUserHasAdminRoleOnAdminPath() {
             //given
             String authHeader = "Bearer valid-admin-token";
-            ServerWebExchange exchange = exchangeFor("/api/restaurants/admin/menu", authHeader);
+            ServerWebExchange exchange = exchangeFor("/api/admin/restaurants/menu", authHeader);
             when(chain.filter(exchange)).thenReturn(Mono.empty());
             when(commonJwtUtil.getUserRoleFromToken(authHeader)).thenReturn(UserType.ADMIN);
             when(commonJwtUtil.getUserIdFromToken(authHeader)).thenReturn(UUID.randomUUID());
@@ -160,7 +160,7 @@ class AuthorizationFilterTest {
         void shouldReturn403_whenUserIsNotAdminOnAdminPath() {
             //given
             String authHeader = "Bearer valid-customer-token";
-            ServerWebExchange exchange = exchangeFor("/api/restaurants/admin/menu", authHeader);
+            ServerWebExchange exchange = exchangeFor("/api/admin/restaurants/menu", authHeader);
             when(commonJwtUtil.getUserRoleFromToken(authHeader)).thenReturn(UserType.CUSTOMER);
             when(commonJwtUtil.getUserIdFromToken(authHeader)).thenReturn(UUID.randomUUID());
 

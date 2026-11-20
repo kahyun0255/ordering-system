@@ -10,10 +10,12 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.PathContainer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
@@ -21,8 +23,7 @@ import reactor.core.publisher.Mono;
 @Component
 public class AuthorizationFilter implements GlobalFilter, Ordered {
 
-    private static final String ADMIN_PATH_PATTERN = "/api/*/admin/**";
-    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+    private static final PathPattern ADMIN_PATH_PATTERN = PathPatternParser.defaultInstance.parse("/api/admin/**");
 
     private final CommonJwtUtil commonJwtUtil;
 
@@ -36,8 +37,9 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
+        PathContainer pathContainer = request.getPath().pathWithinApplication();
 
-        if (isPermitAllPath(path)) {
+        if (isPermitAllPath(pathContainer)) {
             log.info("로그인/회원가입 요청  Path : [{}]", path);
             return chain.filter(exchange);
         }
@@ -53,7 +55,7 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
         UserType role = commonJwtUtil.getUserRoleFromToken(authHeader);
         UUID userId = commonJwtUtil.getUserIdFromToken(authHeader);
 
-        if (isAdminPath(path) && !UserType.ADMIN.equals(role)) {
+        if (isAdminPath(pathContainer) && !UserType.ADMIN.equals(role)) {
             log.info("관리자가 아닌 유저가 관리자 경로 접근 시도. User ID : [{}], Path : [{}]", userId, path);
             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
             return exchange.getResponse().setComplete();
@@ -63,12 +65,16 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
         return chain.filter(exchange);
     }
 
-    private boolean isPermitAllPath(String path) {
-        return PATH_MATCHER.match(signInPath, path) || PATH_MATCHER.match(signUpPath, path);
+    private boolean isPermitAllPath(PathContainer path) {
+        return matches(signInPath, path) || matches(signUpPath, path);
     }
 
-    private boolean isAdminPath(String path) {
-        return PATH_MATCHER.match(ADMIN_PATH_PATTERN, path);
+    private boolean isAdminPath(PathContainer path) {
+        return ADMIN_PATH_PATTERN.matches(path);
+    }
+
+    private boolean matches(String pattern, PathContainer path) {
+        return PathPatternParser.defaultInstance.parse(pattern).matches(path);
     }
 
     @Override
