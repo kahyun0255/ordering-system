@@ -2,12 +2,15 @@ package com.orderingsystem.apigateway.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.orderingsystem.common.domain.status.UserType;
+import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.common.util.CommonJwtUtil;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -207,6 +210,72 @@ class AuthorizationFilterTest {
             //then
             verify(chain, times(1)).filter(exchange);
         }
+    }
+
+    @DisplayName("토큰 검증에 실패하면 401을 반환한다.")
+    @Test
+    void shouldReturn401_shenTokenValidationFails() {
+        //given
+        String authHeader = "Bearer invalid-token";
+        ServerWebExchange exchange = exchangeFor("/api/orders", authHeader);
+        given(commonJwtUtil.getUserRoleFromToken(authHeader))
+                .willThrow(new InvalidCredentialsException("AccessToken 검증에 실패했습니다."));
+
+        //when
+        authorizationFilter.filter(exchange, chain).block();
+
+        //then
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        then(chain).should(never()).filter(any());
+    }
+
+    @DisplayName("토큰의 role 클레임이 알 수 없는 값이면 401을 반환한다.")
+    @Test
+    void shouldReturn401_whenRoleClaimIsUnknown() {
+        //given
+        String authHeader = "Bearer token-with-unknown-role";
+        ServerWebExchange exchange = exchangeFor("/api/orders", authHeader);
+        given(commonJwtUtil.getUserRoleFromToken(authHeader))
+                .willThrow(new IllegalArgumentException("No enum constant UserType.UNKNOWN"));
+
+        //when
+        authorizationFilter.filter(exchange, chain).block();
+
+        //then
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        then(chain).should(never()).filter(any());
+    }
+
+    @DisplayName("userId 추출에 실패하면 401을 반환한다.")
+    @Test
+    void shouldReturn401_whenUserIdExtractionFails() {
+        //given
+        String authHeader = "Bearer token-without-user-id";
+        ServerWebExchange exchange = exchangeFor("/api/orders", authHeader);
+        given(commonJwtUtil.getUserRoleFromToken(authHeader)).willReturn(UserType.CUSTOMER);
+        given(commonJwtUtil.getUserIdFromToken(authHeader))
+                .willThrow(new InvalidCredentialsException("userId 클레임이 없습니다."));
+
+        //when
+        authorizationFilter.filter(exchange,chain).block();
+
+        //then
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        then(chain).should(never()).filter(any());
+    }
+
+    @DisplayName("Bearer 뒤에 공백이 없는 헤더면 토큰 검증 없이 401을 반환한다.")
+    @Test
+    void shouldReturn401_whenBearerPrefixHasNoSpace() {
+        //given
+        ServerWebExchange exchange = exchangeFor("/api/orders","BearerAAA");
+
+        //when
+        authorizationFilter.filter(exchange, chain).block();
+
+        //then
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        then(commonJwtUtil).should(never()).getUserRoleFromToken(any());
     }
 
 }

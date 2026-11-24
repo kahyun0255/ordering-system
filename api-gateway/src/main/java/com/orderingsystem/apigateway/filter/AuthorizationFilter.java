@@ -3,6 +3,7 @@ package com.orderingsystem.apigateway.filter;
 import com.orderingsystem.common.domain.status.UserType;
 import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.common.util.CommonJwtUtil;
+import io.jsonwebtoken.JwtException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +51,7 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
 
         String authHeader = request.getHeaders().getFirst("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer")) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.info("인증 토큰이 없습니다. Path : [{}]", path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
@@ -61,7 +62,7 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
         try {
             role = commonJwtUtil.getUserRoleFromToken(authHeader);
             userId = commonJwtUtil.getUserIdFromToken(authHeader);
-        } catch (InvalidCredentialsException | IllegalArgumentException e) {
+        } catch (InvalidCredentialsException | IllegalArgumentException | JwtException e) {
             log.info("유효하지 않은 토큰입니다. Path : [{}], Reason : [{}]", path, e.getMessage());
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();

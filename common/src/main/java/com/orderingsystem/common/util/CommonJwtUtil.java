@@ -52,7 +52,7 @@ public class CommonJwtUtil {
     }
 
     public UUID getUserIdFromToken(String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")){
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             throw new InvalidCredentialsException("Authorization 헤더가 유효하지 않습니다.");
         }
 
@@ -63,11 +63,16 @@ public class CommonJwtUtil {
         }
 
         Claims claims = getClaims(accessToken);
-        return UUID.fromString(claims.get("userId", String.class));
+        String userId = claims.get("userId", String.class);
+        if (userId == null) {
+            throw new InvalidCredentialsException("userId 클레임이 없습니다.");
+        }
+
+        return UUID.fromString(userId);
     }
 
     public UserType getUserRoleFromToken(String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")){
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             throw new InvalidCredentialsException("Authorization 헤더가 유효하지 않습니다.");
         }
 
@@ -87,7 +92,9 @@ public class CommonJwtUtil {
         var list = claims.get("roles", java.util.List.class);
         if (list != null && !list.isEmpty()) {
             Object first = list.get(0);
-            if (first instanceof String fs) return UserType.valueOf(fs.toUpperCase());
+            if (first instanceof String fs) {
+                return UserType.valueOf(fs.toUpperCase());
+            }
         }
         throw new InvalidCredentialsException("role 클레임이 없거나 형식이 잘못되었습니다.");
     }
