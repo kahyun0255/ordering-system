@@ -1,6 +1,7 @@
 package com.orderingsystem.apigateway.filter;
 
 import com.orderingsystem.common.domain.status.UserType;
+import com.orderingsystem.common.exception.InvalidCredentialsException;
 import com.orderingsystem.common.util.CommonJwtUtil;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -55,8 +56,16 @@ public class AuthorizationFilter implements GlobalFilter, Ordered {
             return exchange.getResponse().setComplete();
         }
 
-        UserType role = commonJwtUtil.getUserRoleFromToken(authHeader);
-        UUID userId = commonJwtUtil.getUserIdFromToken(authHeader);
+        UserType role;
+        UUID userId;
+        try {
+            role = commonJwtUtil.getUserRoleFromToken(authHeader);
+            userId = commonJwtUtil.getUserIdFromToken(authHeader);
+        } catch (InvalidCredentialsException | IllegalArgumentException e) {
+            log.info("유효하지 않은 토큰입니다. Path : [{}], Reason : [{}]", path, e.getMessage());
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
 
         if (isAdminPath(pathContainer) && !UserType.ADMIN.equals(role)) {
             log.info("관리자가 아닌 유저가 관리자 경로 접근 시도. User ID : [{}], Path : [{}]", userId, path);
