@@ -98,12 +98,13 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
         log.info("해당 주문의 주문 취소를 시작합니다. Order Id : [{}], Saga Id : [{}]", orderId, sagaId);
 
         Optional<CouponOutbox> couponOutboxMessageResponse = couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(
-                sagaId, SagaStatus.PROCESSING);
+                sagaId, SagaStatus.STARTED);
 
         if (couponOutboxMessageResponse.isEmpty()) {
-            log.info("해당 Saga Id : [{}]에 대한 Outbox 메시지가 이미 롤백되어 메시지를 다시 처리하지 않습니다.", sagaId);
+            log.info("STARTED 상태의 CouponOutbox 없음. 이미 처리된 쿠폰 응답이므로 다시 처리하지 않습니다. Saga Id : [{}]", sagaId);
             return;
         }
+
         CouponOutbox couponOutbox = couponOutboxMessageResponse.get();
 
         Order order = findOrder(orderId);
