@@ -74,7 +74,7 @@ public class PaymentOutboxHelper {
         return paymentOutboxRepository.deleteOlderThan(threshold);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Optional<PaymentOutbox> getPaymentOutboxBySagaId(UUID sagaId) {
         return paymentOutboxRepository.findBySagaId(sagaId);
     }
