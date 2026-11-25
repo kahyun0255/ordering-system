@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -214,7 +215,7 @@ class OrderCouponServiceTest {
         CouponResponse couponResponse = createCouponResponse(orderId, sagaId, failureMessages);
 
         CouponOutbox couponOutbox = createCouponOutbox(sagaId);
-        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.PROCESSING)))
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.STARTED)))
                 .willReturn(Optional.of(couponOutbox));
 
         Order order = createOrder(orderId, OrderStatus.PENDING);
@@ -248,7 +249,7 @@ class OrderCouponServiceTest {
         CouponResponse couponResponse = createCouponResponse(orderId, sagaId, failureMessages);
 
         CouponOutbox couponOutbox = createCouponOutbox(sagaId);
-        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.PROCESSING)))
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.STARTED)))
                 .willReturn(Optional.of(couponOutbox));
 
         Order order = createOrder(orderId, OrderStatus.CANCELLED);
@@ -273,7 +274,7 @@ class OrderCouponServiceTest {
 
         CouponResponse couponResponse = createCouponResponse(orderId, sagaId, List.of("Error"));
 
-        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.PROCESSING)))
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.STARTED)))
                 .willReturn(Optional.empty());
 
         //when
@@ -294,7 +295,7 @@ class OrderCouponServiceTest {
         CouponResponse couponResponse = createCouponResponse(orderId, sagaId, List.of("Error"));
 
         CouponOutbox couponOutbox = createCouponOutbox(sagaId);
-        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.PROCESSING)))
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.STARTED)))
                 .willReturn(Optional.of(couponOutbox));
 
         Order order = createOrder(orderId, OrderStatus.PAID);
@@ -308,6 +309,32 @@ class OrderCouponServiceTest {
         //then
         verify(couponOutbox, never()).updateSagaStatus(any());
         verify(paymentOutboxHelper, never()).savePaymentOutboxMessage(any(), any(), any(), any());
+    }
+
+    @DisplayName("쿠폰 사용 실패 응답을 받았을 때 고객 취소로 주문이 이미 CANCELLING이면, 결제 취소 요청을 다시 보내지 않고 CouponOutbox만 FAILED로 바꾼다.")
+    @Test
+    void shouldSkipPaymentCancelRequest_whenOrderIsAlreadyCancelling() {
+        // given
+        UUID orderId = UUID.randomUUID();
+        UUID sagaId = UUID.randomUUID();
+        CouponResponse couponResponse = createCouponResponse(orderId, sagaId, List.of("쿠폰이 사용 불가능한 상태입니다."));
+
+        CouponOutbox couponOutbox = createCouponOutbox(sagaId);
+        given(couponOutboxHelper.getCouponOutboxBySagaIdAndSagaStatus(eq(sagaId), eq(SagaStatus.STARTED)))
+                .willReturn(Optional.of(couponOutbox));
+
+        Order order = createOrder(orderId, OrderStatus.CANCELLING);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        given(processedMessageRepository.insertIgnore(any(), any(), any())).willReturn(1);
+
+        // when
+        orderCouponService.rollback(couponResponse);
+
+        // then
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLING);
+        then(couponOutbox).should().updateSagaStatus(SagaStatus.FAILED);
+        then(paymentOutboxHelper).should(never()).savePaymentOutboxMessage(any(), any(), any(), any());
     }
 
     private CouponResponse createCouponResponse(UUID orderId, UUID sagaId) {
