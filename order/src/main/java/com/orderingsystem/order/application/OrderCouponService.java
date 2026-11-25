@@ -117,7 +117,7 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
                 (couponResponse.getFailureMessages() == null || couponResponse.getFailureMessages().isEmpty())
                         ? SagaStatus.COMPENSATED : SagaStatus.FAILED;
 
-        if (order.getOrderStatus() != OrderStatus.CANCELLED) {
+        if (order.getOrderStatus() != OrderStatus.CANCELLED && order.getOrderStatus() != CANCELLING) {
             order.initCancel(couponResponse.getFailureMessages());
             log.info("쿠폰 실패로 인해 결제 취소 요청 전송. Order Id : [{}]", orderId);
 
@@ -128,8 +128,8 @@ public class OrderCouponService implements SagaStep<CouponResponse> {
                     sagaId
             );
         } else {
-            log.info("주문이 이미 취소 상태이므로 추가적인 보상 트랜잭션 발행하지 않음. Order Id : [{}], Order Status : {}", orderId,
-                    order.getOrderStatus());
+            log.info("주문이 이미 취소 완료/취소 중 상태이므로 추가적인 보상 트랜잭션 발행하지 않음. Order Id : [{}], Order Status : {}",
+                    orderId, order.getOrderStatus());
         }
 
         updateCouponOutboxMessage(couponOutbox, nextSagaStatus, order.getOrderStatus());
