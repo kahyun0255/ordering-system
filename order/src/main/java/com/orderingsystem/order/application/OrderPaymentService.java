@@ -3,7 +3,6 @@ package com.orderingsystem.order.application;
 import static com.orderingsystem.common.domain.status.OrderStatus.CANCELLING;
 
 import com.orderingsystem.common.domain.status.OrderStatus;
-import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
@@ -173,14 +172,6 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
             return true;
         }
         return false;
-    }
-
-    private SagaStatus[] getCurrentSagaStatus(PaymentStatus paymentStatus) {
-        return switch (paymentStatus) {
-            case COMPLETED -> new SagaStatus[]{SagaStatus.STARTED};
-            case CANCELLED, REFUNDED -> new SagaStatus[]{SagaStatus.SUCCEEDED};
-            case FAILED -> new SagaStatus[]{SagaStatus.STARTED, SagaStatus.PROCESSING};
-        };
     }
 
     private void rollbackPaymentForOrder(Order order, PaymentResponse paymentResponse) {
