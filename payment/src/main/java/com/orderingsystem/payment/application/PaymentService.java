@@ -15,7 +15,6 @@ import com.orderingsystem.payment.domain.model.CreditHistory;
 import com.orderingsystem.payment.domain.model.CreditInfo;
 import com.orderingsystem.payment.domain.model.Payment;
 import com.orderingsystem.payment.domain.model.outbox.MessageType;
-import com.orderingsystem.payment.domain.model.outbox.OrderOutbox;
 import com.orderingsystem.payment.domain.repository.CreditEntryRepository;
 import com.orderingsystem.payment.domain.repository.CreditHistoryRepository;
 import com.orderingsystem.payment.domain.repository.PaymentRepository;
@@ -84,10 +83,13 @@ public class PaymentService {
 
     @Transactional
     public void cancelPayment(PaymentRequest paymentRequest, OrderStatus orderStatus) {
-        if (checkAndMarkProcessed(paymentRequest, MessageType.CANCEL_PAYMENT) &&
-                isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.CANCELLED)) {
-            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 취소 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
-                    paymentRequest.getSagaId());
+        boolean isAlreadyReceived = checkAndMarkProcessed(paymentRequest, MessageType.COMPLETE_PAYMENT);
+        PaymentStatus rollbackPaymentStatus = getRollbackPaymentStatus(paymentRequest, orderStatus);
+
+        if (isAlreadyReceived &&
+                isOutboxMessageProcessedForPayment(paymentRequest, rollbackPaymentStatus)) {
+            log.info("해당 Saga Id : [{}] 에 대한 Outbox 메시지가 이미 {} 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
+                    paymentRequest.getSagaId(), rollbackPaymentStatus);
             return;
         }
 
@@ -98,22 +100,22 @@ public class PaymentService {
         if (!payment.isCancellable()) {
             log.info("완료된 결제가 아니므로 결제 취소를 진행하지 않습니다. Order Id : [{}], Payment Status : [{}]",
                     paymentRequest.getOrderId(), payment.getStatus());
-             return;
+            return;
         }
 
         CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
         List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
         List<String> failureMessages = new ArrayList<>();
 
-        PaymentEvent paymentEvent = switch (orderStatus) {
-            case CANCELLING -> paymentValidateAndCancelService.validateAndCancel(payment, creditEntry, creditHistories,
+        PaymentEvent paymentEvent = switch (rollbackPaymentStatus) {
+            case CANCELLED -> paymentValidateAndCancelService.validateAndCancel(payment, creditEntry, creditHistories,
                     failureMessages);
-            case REJECTING -> paymentValidateAndCancelService.validateAndRefund(payment, creditEntry, creditHistories,
+            case REFUNDED -> paymentValidateAndCancelService.validateAndRefund(payment, creditEntry, creditHistories,
                     failureMessages);
             default -> {
-                log.info("결제 취소 처리를 할 수 없는 주문 상태입니다. Order Id : [{}], Order Status : [{}]", paymentRequest.getOrderId(),
-                        orderStatus);
-                throw new PaymentApplicationException("결제 취소 처리를 할 수 없는 주문 상태입니다.");
+                log.info("지원하지 않는 결제 Rollback 상태입니다. PaymentStatus : {}, Order Status : {}",
+                        rollbackPaymentStatus, orderStatus);
+                throw new PaymentApplicationException("지원하지 않는 결제 Rollback 상태입니다.");
             }
         };
 
@@ -136,12 +138,22 @@ public class PaymentService {
         return inserted == 0;
     }
 
-    private boolean isOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,
-                                                       PaymentStatus paymentStatus) {
-        Optional<OrderOutbox> orderOutboxMessage = orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatus(
-                ORDER_SAGA_NAME, paymentRequest.getSagaId(), paymentStatus);
+    private PaymentStatus getRollbackPaymentStatus(PaymentRequest paymentRequest, OrderStatus orderStatus) {
+        return switch (orderStatus) {
+            case CANCELLING -> PaymentStatus.CANCELLED;
+            case REJECTING -> PaymentStatus.REFUNDED;
+            default -> {
+                log.info("결제 취소를 처리할 수 없는 주문 상태입니다. OrderId : [{}], OrderStatus : [{}]", paymentRequest.getOrderId(),
+                        orderStatus);
+                throw new PaymentApplicationException("결제 취소 처리를 할 수 없는 주문 상태입니다.");
+            }
+        };
+    }
 
-        return orderOutboxMessage.isPresent();
+    private boolean isOutboxMessageProcessedForPayment(PaymentRequest paymentRequest,
+                                                       PaymentStatus... paymentStatus) {
+        return orderOutboxRepository.existsByTypeAndSagaIdAndPaymentStatusIn(ORDER_SAGA_NAME,
+                paymentRequest.getSagaId(), List.of(paymentStatus));
     }
 
     private Payment getPayment(UUID orderId) {
