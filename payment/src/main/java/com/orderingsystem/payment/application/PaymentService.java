@@ -94,6 +94,13 @@ public class PaymentService {
         log.info("결제 rollback 이벤트를 받았습니다. Order ID : {}", paymentRequest.getOrderId());
 
         Payment payment = getPayment(paymentRequest.getOrderId());
+
+        if (!payment.isCancellable()) {
+            log.info("완료된 결제가 아니므로 결제 취소를 진행하지 않습니다. Order Id : [{}], Payment Status : [{}]",
+                    paymentRequest.getOrderId(), payment.getStatus());
+             return;
+        }
+
         CreditEntry creditEntry = getCreditEntry(payment.getCustomerId());
         List<CreditHistory> creditHistories = getCreditHistories(payment.getCustomerId());
         List<String> failureMessages = new ArrayList<>();
