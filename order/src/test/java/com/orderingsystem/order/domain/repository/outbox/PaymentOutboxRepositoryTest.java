@@ -77,6 +77,24 @@ class PaymentOutboxRepositoryTest {
         assertThat(result).isFalse();
     }
 
+    @DisplayName("같은 sagaId에 PROCESSING, COMPENSATING Outbox가 함께 있어도 STARTED, PROCESSING 조건으로 조회하면 원래 Outbox 하나만 반환한다.")
+    @Test
+    void shouldReturnOnlyOriginalOutbox_whenCompensatingOutboxWithSameSagaIdExists() {
+        //given
+        UUID sagaId = UUID.randomUUID();
+        PaymentOutbox originalOutbox = getPaymentOutbox(sagaId, SagaStatus.PROCESSING);
+        PaymentOutbox cancelRequestOutbox = getPaymentOutbox(sagaId, SagaStatus.COMPENSATING);
+        paymentOutboxRepository.saveAll(List.of(originalOutbox, cancelRequestOutbox));
+
+        //when
+        Optional<PaymentOutbox> result = paymentOutboxRepository.findByTypeAndSagaIdAndSagaStatusIn(
+                type, sagaId, List.of(SagaStatus.STARTED, SagaStatus.PROCESSING));
+
+        //then
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(originalOutbox.getId());
+    }
+
     private PaymentOutbox getPaymentOutbox(UUID sagaId, SagaStatus sagaStatus) {
         return PaymentOutbox.builder()
                 .id(UUID.randomUUID())

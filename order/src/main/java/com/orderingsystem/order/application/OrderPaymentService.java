@@ -3,7 +3,6 @@ package com.orderingsystem.order.application;
 import static com.orderingsystem.common.domain.status.OrderStatus.CANCELLING;
 
 import com.orderingsystem.common.domain.status.OrderStatus;
-import com.orderingsystem.common.domain.status.PaymentStatus;
 import com.orderingsystem.common.saga.SagaConstants;
 import com.orderingsystem.common.saga.SagaStatus;
 import com.orderingsystem.common.saga.SagaStep;
@@ -100,23 +99,16 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
     public void rollback(PaymentResponse paymentResponse) {
         log.info("해당 주문의 주문 취소를 시작합니다. Order Id : {}", paymentResponse.getOrderId());
 
-        Optional<PaymentOutbox> paymentOutboxMessageResponse = paymentOutboxHelper.getPaymentOutboxBySagaId(paymentResponse.getSagaId());
+        Optional<PaymentOutbox> paymentOutboxMessageResponse =
+                findPaymentOutboxForRollback(paymentResponse.getSagaId());
 
         if (paymentOutboxMessageResponse.isEmpty()) {
-            log.warn("해당 Saga Id : {} 에 대한 Outbox 메시지를 찾을 수 없습니다.", paymentResponse.getSagaId());
+            log.warn("해당 Saga Id : {} 에 대한 롤백 대상 Outbox 메시지를 찾을 수 없습니다. 이미 롤백(COMPENSATED) 처리된 SAGA 일 수 있습니다.",
+                    paymentResponse.getSagaId());
             return;
         }
 
         PaymentOutbox paymentOutbox = paymentOutboxMessageResponse.get();
-
-        if (SagaStatus.COMPENSATED == paymentOutbox.getSagaStatus()) {
-            log.info("이미 롤백(COMPENSATED) 처리가 완료된 Saga 입니다. Saga Id: {}", paymentResponse.getSagaId());
-            return;
-        }
-
-        if (SagaStatus.SUCCEEDED == paymentOutbox.getSagaStatus()) {
-            log.warn("이미 처리(SUCCEEDED)된 주문에 대한 비정상 롤백 요청입니다. Order Id: {}", paymentResponse.getOrderId());
-        }
         Order order = findOrder(paymentResponse.getOrderId());
 
         if (checkAndMarkProcessed(paymentResponse, MessageType.PAYMENT_ROLLBACK)) {
@@ -156,6 +148,17 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
         log.info("해당 주문의 주문 취소가 성공적으로 완료되었습니다. Order Id : {}", paymentResponse.getOrderId());
     }
 
+    private Optional<PaymentOutbox> findPaymentOutboxForRollback(UUID sagaId) {
+        Optional<PaymentOutbox> sagaPaymentOutbox = paymentOutboxHelper.getPaymentOutboxBySagaIdAndSagaStatus(sagaId,
+                SagaStatus.STARTED, SagaStatus.PROCESSING);
+
+        if (sagaPaymentOutbox.isPresent()) {
+            return sagaPaymentOutbox;
+        }
+
+        return paymentOutboxHelper.getPaymentOutboxBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATING);
+    }
+
     private boolean checkAndMarkProcessed(PaymentResponse paymentRequest, MessageType messageType) {
         int inserted = processedMessageRepository.insertIgnore(
                 paymentRequest.getId(),
@@ -169,14 +172,6 @@ public class OrderPaymentService implements SagaStep<PaymentResponse> {
             return true;
         }
         return false;
-    }
-
-    private SagaStatus[] getCurrentSagaStatus(PaymentStatus paymentStatus) {
-        return switch (paymentStatus) {
-            case COMPLETED -> new SagaStatus[]{SagaStatus.STARTED};
-            case CANCELLED, REFUNDED -> new SagaStatus[]{SagaStatus.SUCCEEDED};
-            case FAILED -> new SagaStatus[]{SagaStatus.STARTED, SagaStatus.PROCESSING};
-        };
     }
 
     private void rollbackPaymentForOrder(Order order, PaymentResponse paymentResponse) {

@@ -61,7 +61,6 @@ class OrderPaymentServiceRollbackTest {
     @Autowired
     private ProcessedMessageRepository processedMessageRepository;
 
-    private final UUID sagaId = UUID.randomUUID();
     private final UUID paymentId = UUID.randomUUID();
     private final UUID orderId = UUID.randomUUID();
     private final UUID customerId = UUID.randomUUID();
@@ -91,7 +90,7 @@ class OrderPaymentServiceRollbackTest {
         paymentOutboxRepository.save(PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
-                .sagaStatus(SagaStatus.SUCCEEDED)
+                .sagaStatus(SagaStatus.STARTED)
                 .orderStatus(OrderStatus.PENDING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
@@ -128,8 +127,8 @@ class OrderPaymentServiceRollbackTest {
         paymentOutboxRepository.save(PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
-                .sagaStatus(SagaStatus.SUCCEEDED)
-                .orderStatus(OrderStatus.PENDING)
+                .sagaStatus(SagaStatus.COMPENSATING)
+                .orderStatus(OrderStatus.CANCELLING)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
                 .build());
@@ -200,8 +199,8 @@ class OrderPaymentServiceRollbackTest {
         paymentOutboxRepository.save(PaymentOutbox.builder()
                 .id(UUID.randomUUID())
                 .sagaId(sagaId)
-                .sagaStatus(SagaStatus.SUCCEEDED)
-                .orderStatus(OrderStatus.PENDING)
+                .sagaStatus(SagaStatus.PROCESSING)
+                .orderStatus(OrderStatus.PAID)
                 .type(ORDER_SAGA_NAME)
                 .payload("")
                 .build());
@@ -214,10 +213,12 @@ class OrderPaymentServiceRollbackTest {
         assertThat(order).isPresent();
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
 
-        Optional<CouponOutbox> couponOutbox = couponOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATED);
+        Optional<CouponOutbox> couponOutbox = couponOutboxRepository.findBySagaIdAndSagaStatus(sagaId,
+                SagaStatus.COMPENSATED);
         assertThat(couponOutbox).isPresent();
 
-        Optional<ProductOutbox> productOutbox = productOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATED);
+        Optional<ProductOutbox> productOutbox = productOutboxRepository.findBySagaIdAndSagaStatus(sagaId,
+                SagaStatus.COMPENSATED);
         assertThat(productOutbox).isPresent();
     }
 
@@ -259,42 +260,95 @@ class OrderPaymentServiceRollbackTest {
         assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 
-    @DisplayName("결제 상태가 COMPLETED이면 SagaStatus는 STARTED인 PaymentOutbox를 찾아야 한다")
+    @DisplayName("레스토랑 접수 거절로 같은 sagaId에 PROCESSING, COMPENSATING PaymentOutbox가 함께 있으면, 주문을 취소하고 원래 PROCESSING Outbox를 COMPENSATED로 바꾼다.")
     @Test
-    void rollback_whenPaymentStatusIsCOMPLETED_shouldUseStartedSagaStatus() {
+    void shouldCancelOrderAndCompensateOriginalOutbox_whenRestaurantDeclinedOutboxAlsoExists() {
         //given
         UUID sagaId = UUID.randomUUID();
-        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId, PaymentStatus.COMPLETED);
+        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
+        saveOrder(OrderStatus.CANCELLING);
 
-        saveOrder(OrderStatus.PENDING);
+        PaymentOutbox originalOutbox = savePaymentOutbox(sagaId, SagaStatus.PROCESSING, OrderStatus.PAID);
+        PaymentOutbox cancelRequestOutbox = savePaymentOutbox(sagaId, SagaStatus.COMPENSATING, OrderStatus.CANCELLING);
 
-        paymentOutboxRepository.save(PaymentOutbox.builder()
-                .id(UUID.randomUUID())
-                .sagaId(sagaId)
-                .sagaStatus(SagaStatus.STARTED)
-                .orderStatus(OrderStatus.PENDING)
-                .type(ORDER_SAGA_NAME)
-                .payload("")
-                .build());
-
-        restaurantAcceptOutboxRepository.save(RestaurantAcceptOutbox.builder()
-                .id(UUID.randomUUID())
-                .sagaId(sagaId)
-                .createdAt(ZonedDateTime.now())
-                .processedAt(null)
-                .type("OrderProcessingSaga")
-                .sagaStatus(SagaStatus.COMPENSATING)
-                .payload("{}")
-                .orderStatus(OrderStatus.CANCELLING)
-                .build());
-
-        // when
+        //when
         orderPaymentService.rollback(paymentResponse);
 
-        // then
-        Optional<Order> order = orderRepository.findById(orderId);
-        assertThat(order).isPresent();
-        assertThat(order.get().getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        //then
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+
+        assertThat(paymentOutboxRepository.findById(originalOutbox.getId()).orElseThrow().getSagaStatus()).isEqualTo(
+                SagaStatus.COMPENSATED);
+        assertThat(
+                paymentOutboxRepository.findById(cancelRequestOutbox.getId()).orElseThrow().getSagaStatus()).isEqualTo(
+                SagaStatus.COMPENSATING);
+
+        assertThat(productOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATED)).isPresent();
+    }
+
+    @DisplayName("쿠폰 사용 실패로 같은 sagaId에 STARTED, FAILED PaymentOutbox가 함께 있으면, 주문을 취소하고 쿠폰 복구와 재고 해제 Outbox를 저장한다.")
+    @Test
+    void shouldCancelOrderAndSaveCompensationOutboxes_whenCouponFailedOutboxAlsoExists() {
+        //given
+        UUID sagaId = UUID.randomUUID();
+        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
+        saveOrder(OrderStatus.CANCELLING, List.of(1L));
+
+        PaymentOutbox originalOutbox = savePaymentOutbox(sagaId, SagaStatus.STARTED, OrderStatus.PENDING);
+        savePaymentOutbox(sagaId, SagaStatus.FAILED, OrderStatus.CANCELLING);
+
+        //when
+        orderPaymentService.rollback(paymentResponse);
+
+        //then
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+
+        assertThat(paymentOutboxRepository.findById(originalOutbox.getId()).orElseThrow().getSagaStatus()).isEqualTo(
+                SagaStatus.COMPENSATED);
+        assertThat(couponOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATED)).isPresent();
+        assertThat(productOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATED)).isPresent();
+    }
+
+    @DisplayName("고객 취소로 COMPENSATING PaymentOutbox만 있으면, 그 Outbox로 주문을 취소하고 COMPENSATED로 바꾼다.")
+    @Test
+    void shouldCancelOrderWithCompensatingOutbox_whenOnlyCustomerCancelOutboxExists() {
+        //given
+        UUID sagaId = UUID.randomUUID();
+        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
+        saveOrder(OrderStatus.CANCELLING);
+
+        PaymentOutbox cancelRequestOutbox = savePaymentOutbox(sagaId, SagaStatus.COMPENSATING, OrderStatus.CANCELLING);
+
+        //when
+        orderPaymentService.rollback(paymentResponse);
+
+        //then
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(
+                paymentOutboxRepository.findById(cancelRequestOutbox.getId()).orElseThrow().getSagaStatus()).isEqualTo(
+                SagaStatus.COMPENSATED);
+    }
+
+    @DisplayName("원래 PaymentOutbox가 이미 COMPENSATED이면, 롤백을 다시 처리하지 않고 재고 해제 Outbox도 저장하지 않는다.")
+    @Test
+    void shouldSkipRollback_whenOriginalOutboxIsAlreadyCompensated() {
+        //given
+        UUID sagaId = UUID.randomUUID();
+        PaymentResponse paymentResponse = getPaymentResponse(sagaId, orderId);
+        saveOrder(OrderStatus.CANCELLING);
+
+        savePaymentOutbox(sagaId, SagaStatus.COMPENSATED, OrderStatus.CANCELLED);
+
+        //when
+        orderPaymentService.rollback(paymentResponse);
+
+        //then
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLING);
+        assertThat(productOutboxRepository.findBySagaIdAndSagaStatus(sagaId, SagaStatus.COMPENSATED)).isEmpty();
     }
 
     private void saveOrder(OrderStatus orderStatus) {
@@ -330,6 +384,17 @@ class OrderPaymentServiceRollbackTest {
                 .paymentStatus(paymentStatus.name())
                 .failureMessages(new ArrayList<>())
                 .build();
+    }
+
+    private PaymentOutbox savePaymentOutbox(UUID sagaId, SagaStatus sagaStatus, OrderStatus orderStatus) {
+        return paymentOutboxRepository.save(PaymentOutbox.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .sagaStatus(sagaStatus)
+                .orderStatus(orderStatus)
+                .type(ORDER_SAGA_NAME)
+                .payload("")
+                .build());
     }
 
 }

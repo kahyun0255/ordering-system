@@ -22,6 +22,4 @@ public interface PaymentOutboxRepository extends JpaRepository<PaymentOutbox, UU
     @Query(value = "DELETE FROM payment_outbox WHERE created_at < :threshold", nativeQuery = true)
     int deleteOlderThan(ZonedDateTime threshold);
 
-    Optional<PaymentOutbox> findBySagaId(UUID sagaId);
-
 }
