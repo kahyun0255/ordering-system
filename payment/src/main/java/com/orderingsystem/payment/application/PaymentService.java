@@ -50,9 +50,14 @@ public class PaymentService {
     @Transactional
     public void completePayment(PaymentRequest paymentRequest) {
         if (checkAndMarkProcessed(paymentRequest, MessageType.COMPLETE_PAYMENT) &&
-                isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.COMPLETED)) {
-            log.info("해당 Saga Id : {} 에 대한 Outbox 메시지가 이미 결제 완료 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
+                isOutboxMessageProcessedForPayment(paymentRequest, PaymentStatus.COMPLETED, PaymentStatus.FAILED)) {
+            log.info("해당 Saga Id : [{}] 에 대한 Outbox 메시지가 이미 결제 완료/실패 상태로 저장되어있어 메시지를 다시 처리하지 않습니다.",
                     paymentRequest.getSagaId());
+            return;
+        }
+
+        if (paymentRepository.existsByOrderId(paymentRequest.getOrderId())){
+            log.info("해당 주문에 대한 결제가 이미 존재하여 결제를 다시 진행하지 않습니다. Order Id : [{}]", paymentRequest.getOrderId());
             return;
         }
 

@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -133,22 +135,22 @@ class PaymentServiceTest {
         @DisplayName("CANCELLING이면 validateAndCancel을 호출한다")
         void shouldCallValidateAndCancel_whenOrderStatusIsCancelling() {
             //given
-            when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
-            when(creditEntryRepository.findByCustomerId(customerId)).thenReturn(Optional.of(creditEntry));
-            when(creditHistoryRepository.findByCustomerId(customerId)).thenReturn(creditHistories);
+            given(paymentRepository.findByOrderId(orderId)).willReturn(Optional.of(payment));
+            given(creditEntryRepository.findByCustomerId(customerId)).willReturn(Optional.of(creditEntry));
+            given(creditHistoryRepository.findByCustomerId(customerId)).willReturn(creditHistories);
 
             PaymentEvent event = mock(PaymentEvent.class);
-            when(event.getPayment()).thenReturn(payment);
-            when(paymentValidateAndCancelService.validateAndCancel(any(), any(), anyList(), anyList()))
-                    .thenReturn(event);
+            given(event.getPayment()).willReturn(payment);
+            given(paymentValidateAndCancelService.validateAndCancel(any(), any(), anyList(), anyList()))
+                    .willReturn(event);
 
             //when
             paymentService.cancelPayment(paymentRequestOf(OrderStatus.CANCELLING), OrderStatus.CANCELLING);
 
             //then
-            verify(paymentValidateAndCancelService, times(1))
+            then(paymentValidateAndCancelService).should(times(1))
                     .validateAndCancel(any(), any(), anyList(), anyList());
-            verify(paymentValidateAndCancelService, never())
+            then(paymentValidateAndCancelService).should(never())
                     .validateAndRefund(any(), any(), anyList(), anyList());
         }
 
@@ -156,22 +158,22 @@ class PaymentServiceTest {
         @DisplayName("REJECTING이면 validateAndRefund를 호출한다")
         void shouldCallValidateAndRefund_whenOrderStatusIsRejecting() {
             //given
-            when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
-            when(creditEntryRepository.findByCustomerId(customerId)).thenReturn(Optional.of(creditEntry));
-            when(creditHistoryRepository.findByCustomerId(customerId)).thenReturn(creditHistories);
+            given(paymentRepository.findByOrderId(orderId)).willReturn(Optional.of(payment));
+            given(creditEntryRepository.findByCustomerId(customerId)).willReturn(Optional.of(creditEntry));
+            given(creditHistoryRepository.findByCustomerId(customerId)).willReturn(creditHistories);
 
             PaymentEvent event = mock(PaymentEvent.class);
-            when(event.getPayment()).thenReturn(payment);
-            when(paymentValidateAndCancelService.validateAndRefund(any(), any(), anyList(), anyList()))
-                    .thenReturn(event);
+            given(event.getPayment()).willReturn(payment);
+            given(paymentValidateAndCancelService.validateAndRefund(any(), any(), anyList(), anyList()))
+                    .willReturn(event);
 
             //when
             paymentService.cancelPayment(paymentRequestOf(OrderStatus.REJECTING), OrderStatus.REJECTING);
 
             //then
-            verify(paymentValidateAndCancelService, times(1))
+            then(paymentValidateAndCancelService).should(times(1))
                     .validateAndRefund(any(), any(), anyList(), anyList());
-            verify(paymentValidateAndCancelService, never())
+            then(paymentValidateAndCancelService).should(never())
                     .validateAndCancel(any(), any(), anyList(), anyList());
         }
 
@@ -179,23 +181,38 @@ class PaymentServiceTest {
         @DisplayName("CANCELLING/REJECTING이 아니면 NPE 대신 PaymentApplicationException을 던진다")
         void shouldThrowPaymentApplicationException_whenOrderStatusIsUnexpected() {
             //given
-            when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
-            when(creditEntryRepository.findByCustomerId(customerId)).thenReturn(Optional.of(creditEntry));
-            when(creditHistoryRepository.findByCustomerId(customerId)).thenReturn(creditHistories);
-
             PaymentRequest request = paymentRequestOf(OrderStatus.PENDING);
 
             //when, then
-            assertThatThrownBy(() -> paymentService.cancelPayment(request, OrderStatus.PENDING))
+            assertThatThrownBy(()->paymentService.cancelPayment(request, OrderStatus.PENDING))
                     .isInstanceOf(PaymentApplicationException.class)
                     .isNotInstanceOf(NullPointerException.class);
 
-            verify(paymentValidateAndCancelService, never())
-                    .validateAndCancel(any(), any(), anyList(), anyList());
-            verify(paymentValidateAndCancelService, never())
-                    .validateAndRefund(any(), any(), anyList(), anyList());
-            verify(orderOutboxHelper, never())
-                    .saveOrderOutboxMessage(any(), any(), any());
+            then(paymentRepository).should(never()).findByOrderId(any());
+            then(paymentValidateAndCancelService).shouldHaveNoInteractions();
+            then(orderOutboxHelper).shouldHaveNoInteractions();
+        }
+
+        @DisplayName("결제 상태가 FAILED이면 취소 도메인 서비스를 호출하지 ㅇ낳고 크레딧 조회화 Outbox 저장도 하지 않는다.")
+        @Test
+        void shouldSkipCancel_whenPaymentStatusIsFailed() {
+            //given
+            Payment failedPayment = Payment.builder()
+                    .id(UUID.randomUUID())
+                    .orderId(orderId)
+                    .customerId(customerId)
+                    .price(new Money(BigDecimal.valueOf(1000)))
+                    .status(PaymentStatus.FAILED)
+                    .build();
+            given(paymentRepository.findByOrderId(orderId)).willReturn(Optional.of(failedPayment));
+
+            //when
+            paymentService.cancelPayment(paymentRequestOf(OrderStatus.CANCELLING), OrderStatus.CANCELLING);
+
+            //then
+            then(creditEntryRepository).should(never()).findByCustomerId(any());
+            then(paymentValidateAndCancelService).shouldHaveNoInteractions();
+            then(orderOutboxHelper).shouldHaveNoInteractions();
         }
     }
 
