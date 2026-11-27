@@ -396,4 +396,101 @@ class PaymentServiceCompleteTest {
         assertThat(payment.get().getStatus()).isEqualTo(PaymentStatus.COMPLETED);
     }
 
+    @DisplayName("해당 결제 요청을 이미 처리했고 결제에 실패했으면, 결제 로직을 다시 진행하지 않는다.")
+    @Test
+    void shouldNotProcessPaymentAgain_whenPaymentRequestAlreadyProcessedAndFailed() {
+        //given
+        PaymentRequest paymentRequest = PaymentRequest.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .orderId(orderId)
+                .customerId(customerId)
+                .price(new BigDecimal("25.00"))
+                .createdAt(Instant.now())
+                .paymentOrderStatus(PaymentOrderStatus.PENDING)
+                .build();
+
+        processedMessageRepository.save(ProcessedMessage.builder()
+                .messageId(paymentRequest.getSagaId())
+                .messageType(MessageType.COMPLETE_PAYMENT)
+                .processedAt(ZonedDateTime.now())
+                .build());
+
+        orderOutboxRepository.save(OrderOutbox.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .paymentStatus(PaymentStatus.FAILED)
+                .type(ORDER_SAGA_NAME)
+                .payload("payload")
+                .build());
+
+        //when
+        paymentService.completePayment(paymentRequest);
+
+        //then
+        CreditEntry creditEntry = creditEntryRepository.findByCustomerId(customerId).orElseThrow();
+
+        assertThat(paymentRepository.count()).isEqualTo(0L);
+        assertThat(creditEntry.getTotalCreditAmount()).isEqualTo(new Money(new BigDecimal("1000.00")));
+    }
+
+    @DisplayName("잔액 부족으로 실패한 결제 요청이 중복으로 들어와도 Payment는 하나만 저장된다.")
+    @Test
+    void shouldSavePaymentOnlyOnce_whenFailedPaymentRequestIsDuplicated() {
+        //given
+        PaymentRequest paymentRequest = PaymentRequest.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .orderId(orderId)
+                .customerId(customerId)
+                .price(new BigDecimal("100000.00"))
+                .createdAt(Instant.now())
+                .paymentOrderStatus(PaymentOrderStatus.PENDING)
+                .build();
+
+        //when
+        paymentService.completePayment(paymentRequest);
+        paymentService.completePayment(paymentRequest);
+
+        //then
+        Payment payment = paymentRepository.findByOrderId(orderId).orElseThrow();
+
+        assertThat(paymentRepository.count()).isEqualTo(1L);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+    }
+
+    @DisplayName("해당 주문의 Payment가 이미 존재하면 결제 로직을 진행하지 않는다.")
+    @Test
+    void shouldNotCreatePayment_whenPaymentAlreadyExistsOrder() {
+        //given
+        paymentRepository.save(Payment.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .orderId(orderId)
+                .price(new Money(new BigDecimal("25.00")))
+                .status(PaymentStatus.FAILED)
+                .build());
+
+        PaymentRequest paymentRequest = PaymentRequest.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .orderId(orderId)
+                .customerId(customerId)
+                .price(new BigDecimal("25.00"))
+                .createdAt(Instant.now())
+                .paymentOrderStatus(PaymentOrderStatus.PENDING)
+                .build();
+
+        //when
+        paymentService.completePayment(paymentRequest);
+
+        //then
+        Payment payment = paymentRepository.findByOrderId(orderId).orElseThrow();
+        CreditEntry creditEntry = creditEntryRepository.findByCustomerId(customerId).orElseThrow();
+
+        assertThat(paymentRepository.count()).isEqualTo(1L);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+        assertThat(creditEntry.getTotalCreditAmount()).isEqualTo(new Money(new BigDecimal("1000.00")));
+    }
+
 }

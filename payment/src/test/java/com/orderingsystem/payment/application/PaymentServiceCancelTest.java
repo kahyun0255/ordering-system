@@ -74,7 +74,9 @@ class PaymentServiceCancelTest {
     void tearDown() {
         paymentRepository.deleteAllInBatch();
         creditEntryRepository.deleteAllInBatch();
-        creditEntryRepository.deleteAllInBatch();
+        creditHistoryRepository.deleteAllInBatch();
+        orderOutboxRepository.deleteAllInBatch();
+        processedMessageRepository.deleteAllInBatch();
     }
 
     @BeforeEach
@@ -184,9 +186,9 @@ class PaymentServiceCancelTest {
                 .build();
 
         processedMessageRepository.save(ProcessedMessage.builder()
-                        .messageId(paymentRequest.getSagaId())
-                        .messageType(MessageType.CANCEL_PAYMENT)
-                        .processedAt(ZonedDateTime.now())
+                .messageId(paymentRequest.getSagaId())
+                .messageType(MessageType.CANCEL_PAYMENT)
+                .processedAt(ZonedDateTime.now())
                 .build());
 
         orderOutboxRepository.save(OrderOutbox.builder()
@@ -321,6 +323,129 @@ class PaymentServiceCancelTest {
         // then
         long afterCount = creditHistoryRepository.count();
         assertThat(afterCount).isEqualTo(beforeCount);
+    }
+
+    @DisplayName("결제 상태가 FAILED이면 결제 취소 요청이 와도 크레딧을 돌려주지 않는다.")
+    @Test
+    void shouldNotRefundCredit_whenPaymentStatusIsFailed() {
+        //given
+        UUID failedOrderId = UUID.randomUUID();
+
+        paymentRepository.save(Payment.builder()
+                .id(UUID.randomUUID())
+                .customerId(customerId)
+                .orderId(failedOrderId)
+                .price(new Money(new BigDecimal("25.00")))
+                .status(PaymentStatus.FAILED)
+                .build());
+
+        PaymentRequest paymentRequest = cancelPaymentRequestOf(failedOrderId);
+        long historyCountBefore = creditHistoryRepository.count();
+
+        //when
+        paymentService.cancelPayment(paymentRequest, OrderStatus.CANCELLING);
+
+        //then
+        Payment payment = paymentRepository.findByOrderId(failedOrderId).orElseThrow();
+        CreditEntry creditEntry = creditEntryRepository.findByCustomerId(customerId).orElseThrow();
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+        assertThat(creditEntry.getTotalCreditAmount()).isEqualTo(new Money(new BigDecimal("1000.00")));
+        assertThat(creditHistoryRepository.count()).isEqualTo(historyCountBefore);
+        assertThat(orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatus(ORDER_SAGA_NAME, sagaId,
+                PaymentStatus.CANCELLED)).isEmpty();
+    }
+
+    @DisplayName("이미 환불된 결제에 환불 요청이 오면 크레딧을 다시 돌려주지 않는다.")
+    @Test
+    void shouldNotRefundCredit_whenPaymentStatusIsRefunded() {
+        //given
+        UUID refundedOrderId = UUID.randomUUID();
+
+        paymentRepository.save(Payment.builder()
+                        .id(UUID.randomUUID())
+                        .customerId(customerId)
+                        .orderId(refundedOrderId)
+                        .price(new Money(new BigDecimal("25.00")))
+                        .status(PaymentStatus.REFUNDED)
+                .build());
+
+        PaymentRequest paymentRequest = cancelPaymentRequestOf(refundedOrderId);
+
+        //when
+        paymentService.cancelPayment(paymentRequest, OrderStatus.REJECTING);
+
+        //then
+        Payment payment = paymentRepository.findByOrderId(refundedOrderId).orElseThrow();
+        CreditEntry creditEntry = creditEntryRepository.findByCustomerId(customerId).orElseThrow();
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.REFUNDED);
+        assertThat(creditEntry.getTotalCreditAmount()).isEqualTo(new Money(new BigDecimal("1000.00")));
+    }
+
+    @DisplayName("환불 요청을 이미 처리했고 REFUNDED Outbox가 저장되어 있으면, 환불 로직을 진행하지 않는다.")
+    @Test
+    void shouldNotRefundPayment_whenRefundRequestAlreadyProcessed() {
+        // given
+        PaymentRequest paymentRequest = cancelPaymentRequestOf(orderId);
+
+        processedMessageRepository.save(ProcessedMessage.builder()
+                .messageId(paymentRequest.getSagaId())
+                .messageType(MessageType.CANCEL_PAYMENT)
+                .processedAt(ZonedDateTime.now())
+                .build());
+
+        orderOutboxRepository.save(OrderOutbox.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .paymentStatus(PaymentStatus.REFUNDED)
+                .type(ORDER_SAGA_NAME)
+                .payload("payload")
+                .build());
+
+        // when
+        paymentService.cancelPayment(paymentRequest, OrderStatus.REJECTING);
+
+        // then
+        Payment payment = paymentRepository.findByOrderId(orderId).orElseThrow();
+        CreditEntry creditEntry = creditEntryRepository.findByCustomerId(customerId).orElseThrow();
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+        assertThat(creditEntry.getTotalCreditAmount()).isEqualTo(new Money(new BigDecimal("1000.00")));
+    }
+
+    @DisplayName("환불(REJECTING) 요청이 중복으로 들어와도 크레딧은 한 번만 환불된다.")
+    @Test
+    void shouldRefundCreditOnlyOnce_whenRejectingRequestIsDuplicated() {
+        // given
+        PaymentRequest paymentRequest = cancelPaymentRequestOf(orderId);
+        long historyCountBefore = creditHistoryRepository.count();
+
+        // when
+        paymentService.cancelPayment(paymentRequest, OrderStatus.REJECTING);
+        paymentService.cancelPayment(paymentRequest, OrderStatus.REJECTING);
+
+        // then
+        Payment payment = paymentRepository.findByOrderId(orderId).orElseThrow();
+        CreditEntry creditEntry = creditEntryRepository.findByCustomerId(customerId).orElseThrow();
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.REFUNDED);
+        assertThat(creditEntry.getTotalCreditAmount()).isEqualTo(new Money(new BigDecimal("1025.00")));
+        assertThat(creditHistoryRepository.count()).isEqualTo(historyCountBefore + 1);
+        assertThat(orderOutboxRepository.findByTypeAndSagaIdAndPaymentStatus(
+                ORDER_SAGA_NAME, sagaId, PaymentStatus.REFUNDED)).isPresent();
+    }
+
+    private PaymentRequest cancelPaymentRequestOf(UUID orderId) {
+        return PaymentRequest.builder()
+                .id(UUID.randomUUID())
+                .sagaId(sagaId)
+                .orderId(orderId)
+                .customerId(customerId)
+                .price(new BigDecimal("25.00"))
+                .createdAt(Instant.now())
+                .paymentOrderStatus(PaymentOrderStatus.CANCELLED)
+                .build();
     }
 
 }
