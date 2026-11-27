@@ -113,9 +113,9 @@ public class PaymentService {
         List<String> failureMessages = new ArrayList<>();
 
         PaymentEvent paymentEvent = switch (rollbackPaymentStatus) {
-            case CANCELLED -> paymentValidateAndCancelService.validateAndCancel(payment, creditEntry, creditHistories,
+            case CANCELLED -> paymentValidateAndCancelService.validateAndCancel(payment, creditHistories,
                     failureMessages);
-            case REFUNDED -> paymentValidateAndCancelService.validateAndRefund(payment, creditEntry, creditHistories,
+            case REFUNDED -> paymentValidateAndCancelService.validateAndRefund(payment, creditHistories,
                     failureMessages);
             default -> {
                 log.info("지원하지 않는 결제 Rollback 상태입니다. PaymentStatus : {}, Order Status : {}",
@@ -124,7 +124,7 @@ public class PaymentService {
             }
         };
 
-        persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages);
+        persistCancelDataBase(payment, creditEntry, creditHistories, failureMessages, payment.getPrice());
 
         orderOutboxHelper.saveOrderOutboxMessage(
                 paymentDataMapper.paymentEventToOrderEventPayload(paymentEvent, paymentRequest.getSagaId(),
@@ -206,9 +206,10 @@ public class PaymentService {
     }
 
     private void persistCancelDataBase(Payment payment, CreditEntry creditEntry, List<CreditHistory> creditHistories,
-                                       List<String> failureMessages) {
+                                       List<String> failureMessages, Money price) {
         paymentRepository.save(payment);
         if (failureMessages.isEmpty()) {
+            creditEntry.addCreditAmount(price);
             creditEntryRepository.save(creditEntry);
             creditHistoryRepository.save(creditHistories.get(creditHistories.size() - 1));
         }

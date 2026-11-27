@@ -141,7 +141,7 @@ class PaymentServiceTest {
 
             PaymentEvent event = mock(PaymentEvent.class);
             given(event.getPayment()).willReturn(payment);
-            given(paymentValidateAndCancelService.validateAndCancel(any(), any(), anyList(), anyList()))
+            given(paymentValidateAndCancelService.validateAndCancel(any(), anyList(), anyList()))
                     .willReturn(event);
 
             //when
@@ -149,9 +149,9 @@ class PaymentServiceTest {
 
             //then
             then(paymentValidateAndCancelService).should(times(1))
-                    .validateAndCancel(any(), any(), anyList(), anyList());
+                    .validateAndCancel(any(), anyList(), anyList());
             then(paymentValidateAndCancelService).should(never())
-                    .validateAndRefund(any(), any(), anyList(), anyList());
+                    .validateAndRefund(any(), anyList(), anyList());
         }
 
         @Test
@@ -164,7 +164,7 @@ class PaymentServiceTest {
 
             PaymentEvent event = mock(PaymentEvent.class);
             given(event.getPayment()).willReturn(payment);
-            given(paymentValidateAndCancelService.validateAndRefund(any(), any(), anyList(), anyList()))
+            given(paymentValidateAndCancelService.validateAndRefund(any(), anyList(), anyList()))
                     .willReturn(event);
 
             //when
@@ -172,9 +172,9 @@ class PaymentServiceTest {
 
             //then
             then(paymentValidateAndCancelService).should(times(1))
-                    .validateAndRefund(any(), any(), anyList(), anyList());
+                    .validateAndRefund(any(), anyList(), anyList());
             then(paymentValidateAndCancelService).should(never())
-                    .validateAndCancel(any(), any(), anyList(), anyList());
+                    .validateAndCancel(any(), anyList(), anyList());
         }
 
         @Test
@@ -277,28 +277,27 @@ class PaymentServiceTest {
     class CancelPaymentCreditPersistence {
 
         @Test
-        @DisplayName("취소 성공 시 creditEntry가 dirty checking이 아니라 명시적으로 save() 호출된다")
+        @DisplayName("취소 성공 시 PaymentService가 creditEntry에 결제 금액을 더하고 명시적으로 save() 호출한다")
         void shouldSaveCreditEntryExplicitly_whenCancelSucceeds() {
             //given
-            when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
-            when(creditEntryRepository.findByCustomerId(customerId)).thenReturn(Optional.of(creditEntry));
-            when(creditHistoryRepository.findByCustomerId(customerId)).thenReturn(creditHistories);
+            given(paymentRepository.findByOrderId(orderId)).willReturn(Optional.of(payment));
+            given(creditEntryRepository.findByCustomerId(customerId)).willReturn(Optional.of(creditEntry));
+            given(creditHistoryRepository.findByCustomerId(customerId)).willReturn(creditHistories);
 
             PaymentEvent event = mock(PaymentEvent.class);
-            when(event.getPayment()).thenReturn(payment);
+            given(event.getPayment()).willReturn(payment);
+            given(paymentValidateAndCancelService.validateAndCancel(any(), anyList(), anyList()))
+                    .willReturn(event);
 
-            when(paymentValidateAndCancelService.validateAndCancel(any(), any(), anyList(), anyList()))
-                    .thenAnswer(invocation -> {
-                        CreditEntry entry = invocation.getArgument(1);
-                        entry.addCreditAmount(new Money(BigDecimal.valueOf(10_000)));
-                        return event;
-                    });
+            Money before = creditEntry.getTotalCreditAmount();
 
             //when
             paymentService.cancelPayment(paymentRequestOf(OrderStatus.CANCELLING), OrderStatus.CANCELLING);
 
             //then
-            verify(creditEntryRepository, times(1)).save(creditEntry);
+            assertThat(creditEntry.getTotalCreditAmount())
+                    .isEqualTo(before.add(new Money(BigDecimal.valueOf(10_000))));
+            then(creditEntryRepository).should(times(1)).save(creditEntry);
         }
     }
 

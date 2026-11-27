@@ -267,11 +267,9 @@ class PaymentServicePersistenceTest {
 
             PaymentEvent event = mock(PaymentEvent.class);
             when(event.getPayment()).thenReturn(payment);
-            when(paymentValidateAndCancelService.validateAndCancel(any(), any(), anyList(), anyList()))
+            when(paymentValidateAndCancelService.validateAndCancel(any(), anyList(), anyList()))
                     .thenAnswer(invocation -> {
-                        CreditEntry entry = invocation.getArgument(1);
-                        List<CreditHistory> h = invocation.getArgument(2);
-                        entry.addCreditAmount(price); // 실제 서비스처럼 환급
+                        List<CreditHistory> h = invocation.getArgument(1);
                         h.add(refundHistory);
                         return event;
                     });
@@ -301,11 +299,9 @@ class PaymentServicePersistenceTest {
 
             PaymentEvent event = mock(PaymentEvent.class);
             when(event.getPayment()).thenReturn(payment);
-            when(paymentValidateAndCancelService.validateAndRefund(any(), any(), anyList(), anyList()))
+            when(paymentValidateAndCancelService.validateAndRefund(any(), anyList(), anyList()))
                     .thenAnswer(invocation -> {
-                        CreditEntry entry = invocation.getArgument(1);
-                        List<CreditHistory> h = invocation.getArgument(2);
-                        entry.addCreditAmount(price);
+                        List<CreditHistory> h = invocation.getArgument(1);
                         h.add(historyOf(TransactionType.CREDIT, price.getAmount()));
                         return event;
                     });
@@ -331,11 +327,11 @@ class PaymentServicePersistenceTest {
 
             PaymentEvent event = mock(PaymentEvent.class);
             when(event.getPayment()).thenReturn(payment);
-            when(paymentValidateAndCancelService.validateAndCancel(any(), any(), anyList(), anyList()))
+            when(paymentValidateAndCancelService.validateAndCancel(any(), anyList(), anyList()))
                     .thenAnswer(invocation -> {
-                        List<String> failureMessages = invocation.getArgument(3);
+                        List<String> failureMessages = invocation.getArgument(2);
                         failureMessages.add("결제 검증에 실패했습니다.");
-                        return event; // creditEntry는 건드리지 않고 실패 이벤트만 반환
+                        return event;
                     });
 
             // when
@@ -360,11 +356,9 @@ class PaymentServicePersistenceTest {
 
             PaymentEvent event = mock(PaymentEvent.class);
             when(event.getPayment()).thenReturn(payment);
-            when(paymentValidateAndCancelService.validateAndCancel(any(), any(), anyList(), anyList()))
+            when(paymentValidateAndCancelService.validateAndCancel(any(), anyList(), anyList()))
                     .thenAnswer(invocation -> {
-                        CreditEntry entry = invocation.getArgument(1);
-                        entry.addCreditAmount(price);
-                        List<CreditHistory> h = invocation.getArgument(2);
+                        List<CreditHistory> h = invocation.getArgument(1);
                         h.add(historyOf(TransactionType.CREDIT, price.getAmount()));
                         return event;
                     });
