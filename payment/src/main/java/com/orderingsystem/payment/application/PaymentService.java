@@ -88,7 +88,7 @@ public class PaymentService {
 
     @Transactional
     public void cancelPayment(PaymentRequest paymentRequest, OrderStatus orderStatus) {
-        boolean isAlreadyReceived = checkAndMarkProcessed(paymentRequest, MessageType.COMPLETE_PAYMENT);
+        boolean isAlreadyReceived = checkAndMarkProcessed(paymentRequest, MessageType.CANCEL_PAYMENT);
         PaymentStatus rollbackPaymentStatus = getRollbackPaymentStatus(paymentRequest, orderStatus);
 
         if (isAlreadyReceived &&
