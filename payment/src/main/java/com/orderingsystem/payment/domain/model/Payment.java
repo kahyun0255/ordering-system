@@ -59,6 +59,10 @@ public class Payment extends AggregateRoot {
         this.status = paymentStatus;
     }
 
+    public boolean isCancellable() {
+        return status == PaymentStatus.COMPLETED;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

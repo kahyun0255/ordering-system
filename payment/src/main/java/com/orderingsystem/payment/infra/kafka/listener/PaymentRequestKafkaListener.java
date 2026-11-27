@@ -54,7 +54,7 @@ public class PaymentRequestKafkaListener implements KafkaSingleConsumer<String> 
                 } else if (PaymentOrderStatus.CANCELLED.equals(requestMessage.getPaymentOrderStatus())) {
                     log.info("결제 취소 진행. order Id : {}", requestMessage.getOrderId());
                     paymentService.cancelPayment(requestMessage.toPaymentRequest(),
-                            OrderStatus.valueOf(debeziumMessage.getAfter().getOrderStatus()));
+                            getRollbackOrderStatus(payload, requestMessage));
                 }
             }
 
@@ -74,4 +74,16 @@ public class PaymentRequestKafkaListener implements KafkaSingleConsumer<String> 
             }
         }
     }
+
+    private OrderStatus getRollbackOrderStatus(PaymentRequestDebeziumMessage.Payload payload,
+                                               PaymentRequestMessage requestMessage) {
+        if (payload.getOrderStatus() == null) {
+            log.error("결제 rollback 메시지에 order_status가 없습니다. Order Id : {}", requestMessage.getOrderId());
+            throw new PaymentApplicationException(
+                    "결제 rollback 메시지에 order_status가 없습니다. Order Id : " + requestMessage.getOrderId());
+        }
+
+        return OrderStatus.valueOf(payload.getOrderStatus());
+    }
+
 }
